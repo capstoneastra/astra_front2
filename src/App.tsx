@@ -153,7 +153,8 @@ function Workspace() {
         return <Home ownsEquipment={ownsEquipment} setActiveMenu={navigate} openRequest={openRequest}
           openApprovals={(approvalFocus) => workspaceNavigation.go("admin", null, { approvalFocus })} onSearch={searchEquipment} />;
       case "request":
-        return <RequestFlow key={draftRequestId ?? "new"} setActiveMenu={navigate} openRequest={openRequest} />;
+        // 다른 화면(장비 찾기·AI 상담)에서 장비·조건을 넘겨받으면 알맞은 단계로 다시 연다
+        return <RequestFlow key={`${draftRequestId ?? ""}:${selectedEquipment?.id ?? ""}:${requirementId ?? ""}`} setActiveMenu={navigate} openRequest={openRequest} />;
       case "search":
         return (
           <EquipmentSearch

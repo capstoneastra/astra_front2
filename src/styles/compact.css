@@ -407,6 +407,7 @@ td {
 .equipment-table th:first-child,
 .equipment-table td:first-child {
   width: 1%;
+  min-width: 0;
   padding-right: 0;
 }
 .equipment-table td:nth-child(2) {
@@ -432,4 +433,225 @@ td {
   min-height: 0;
   padding: 0;
   accent-color: var(--cyan);
+}
+
+/* ── 시험 맡기기 ── */
+.stepper {
+  display: flex;
+  gap: 4px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.stepper button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 4px 12px 4px 4px;
+  background: var(--surface-sunken);
+  color: var(--text-muted);
+  font-size: 12px;
+}
+.stepper button span {
+  display: inline-grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--surface-raised);
+  font-size: 11px;
+}
+.stepper button[aria-current="step"] {
+  color: var(--text);
+  border-color: var(--accent-border);
+  background: var(--accent-background);
+}
+.stepper button[aria-current="step"] span {
+  background: var(--cyan);
+  color: var(--primary-ink);
+}
+.stepper button:disabled {
+  opacity: 0.5;
+}
+.request-step {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  gap: var(--gap);
+  align-items: start;
+}
+.request-step__aside {
+  display: grid;
+  gap: var(--gap);
+}
+.request-help {
+  padding: 0 var(--pad) 12px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  display: grid;
+  gap: 8px;
+}
+.request-help ul {
+  margin: 0;
+  padding-left: 16px;
+  display: grid;
+  gap: 3px;
+}
+.request-form__body {
+  padding: 0 var(--pad) 12px;
+}
+.request-form__bar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: var(--gap);
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+.request-form {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+  gap: var(--gap);
+  align-items: start;
+}
+.request-form__main,
+.request-form__side {
+  display: grid;
+  gap: var(--gap);
+  min-width: 0;
+}
+.request-form__actions {
+  position: sticky;
+  bottom: 0;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: var(--gap);
+  /* 오른쪽 아래 ASTRA AI 버튼과 겹치지 않게 */
+  padding: 10px 170px 10px 0;
+  background: linear-gradient(transparent, var(--bg) 30%);
+}
+.request-form__actions > .small-note {
+  margin-right: auto;
+}
+.request-form__actions .content-note {
+  margin: 0;
+  flex-basis: 100%;
+}
+.label-required b,
+label b {
+  color: var(--red);
+  font-weight: 600;
+}
+.form-field > label.label-required {
+  font-weight: 600;
+  color: var(--text);
+}
+.form-field > label.label-optional {
+  font-weight: 400;
+  color: var(--text-muted);
+}
+.form-field > label.label-optional span {
+  font-size: 11px;
+}
+.input--short {
+  max-width: 140px;
+}
+.match-reason {
+  font-size: 11px;
+  max-width: 360px;
+}
+.match-checks td {
+  border-top: 0;
+  padding-top: 0;
+}
+@media (max-width: 1100px) {
+  .request-step,
+  .request-form { grid-template-columns: minmax(0, 1fr); }
+}
+.chat-suggested {
+  display: grid;
+  gap: 6px;
+  margin: 8px 0;
+}
+.chat-suggested__item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 12px;
+}
+.chat-suggested__item > div {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+  justify-items: start;
+}
+.chat-suggested__item small {
+  color: var(--text-muted);
+  font-size: 10px;
+}
+
+/* ── 시험 조건 입력: 한 줄에 조건 하나, 두 열 ── */
+.condition-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(330px, 1fr));
+  gap: 6px 16px;
+}
+.condition-row {
+  display: grid;
+  grid-template-columns: 110px minmax(0, 1fr) 76px;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+}
+.condition-row__label {
+  color: var(--text);
+  font-weight: 500;
+}
+.condition-row__label small {
+  display: block;
+  color: var(--text-muted);
+  font-size: 10px;
+  font-weight: 400;
+}
+.condition-row__inputs {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+.condition-row input,
+.condition-row select {
+  min-width: 0;
+  height: 30px;
+  min-height: 30px;
+  padding: 3px 8px;
+  font-size: 12px;
+}
+.condition-row__unit {
+  color: var(--text-muted);
+  font-size: 11px;
+  white-space: nowrap;
+}
+.condition-row--missing input {
+  border-color: color-mix(in srgb, var(--amber) 40%, var(--border));
+}
+.workbench > :not(.panel__header) {
+  margin-inline: var(--pad);
+}
+.workbench > .form-actions {
+  margin-bottom: 12px;
 }

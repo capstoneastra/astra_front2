@@ -72,8 +72,9 @@ export default function RequirementWorkbench({
   };
   return (
     <Panel
-      title="시험조건 확인·보완"
-      description="입력하지 않은 조건은 미확인으로 남습니다. 실제 분석·시험 적합성 보장이 아닙니다."
+      className="workbench"
+      title="세부 조건"
+      description="입력하지 않은 조건은 미확인으로 남고, 조직이 확인합니다."
     >
       <p className="field-hint">
         {rules.data?.nameKo} · 조건 #{data.id} ·{" "}

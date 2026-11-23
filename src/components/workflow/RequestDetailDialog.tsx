@@ -61,7 +61,7 @@ export default function RequestDetailDialog({ requestId, onClose, initialReserva
   useEffect(() => {
     dialog.current.showModal();
   }, []);
-  const openSupplement = r?.supplements.find((s) => s.status === "OPEN");
+  const openSupplement = r?.openSupplement?.status === "OPEN" ? r.openSupplement : null;
   const fields = [
     ...(content?.conditions ?? []).map((c) => ({
       fieldKey: c.key,

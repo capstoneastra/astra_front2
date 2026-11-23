@@ -4,6 +4,8 @@ export interface ApiErrorDetails {
   remainingAttempts?: number;
   retryAfter?: number;
   fieldErrors?: Record<string, string>;
+  /** 제출 시 빠진 칸 (예: schedule.desiredStartDate, accounting.contact) */
+  missingItems?: string[];
 }
 
 interface ApiErrorOptions {
@@ -89,12 +91,28 @@ export function errorFromEnvelope(body: ErrorEnvelope | null | undefined, status
       Number.isSafeInteger(source.retryAfter) && source.retryAfter >= 0)
     details = { retryAfter: source.retryAfter };
   if (code === "VALIDATION_FAILED" && source) {
-    const fields = source.fieldErrors ?? source;
-    if (fields && typeof fields === "object" && !Array.isArray(fields)) {
-      const errors = Object.entries(fields)
-        .filter((entry): entry is [string, string] => typeof entry[1] === "string" && Boolean(entry[1].trim()));
-      if (errors.length) details = { fieldErrors: Object.fromEntries(errors) };
-    }
+    const fieldErrors: Record<string, string> = {};
+    // 명세 형식: details.fields = [{ field, reason }]
+    if (Array.isArray(source.fields))
+      for (const item of source.fields)
+        if (item && typeof item.field === "string" && typeof item.reason === "string" && item.reason.trim())
+          fieldErrors[item.field] ??= item.reason;
+    // 단일 필드 형식: details.field (+ details.reason)
+    if (typeof source.field === "string")
+      fieldErrors[source.field] ??= typeof source.reason === "string" ? source.reason : message;
+    // 이전 형식: details.fieldErrors 또는 { 필드: 사유 }
+    const legacy = source.fieldErrors ?? source;
+    if (legacy && typeof legacy === "object" && !Array.isArray(legacy))
+      for (const [field, reason] of Object.entries(legacy))
+        if (typeof reason === "string" && reason.trim() && !["field", "reason"].includes(field)) fieldErrors[field] ??= reason;
+    const missingItems = Array.isArray(source.missingItems)
+      ? source.missingItems.filter((item): item is string => typeof item === "string")
+      : [];
+    if (Object.keys(fieldErrors).length || missingItems.length)
+      details = {
+        ...(Object.keys(fieldErrors).length ? { fieldErrors } : {}),
+        ...(missingItems.length ? { missingItems } : {}),
+      };
   }
   return new ApiError(message, { status, code, details });
 }

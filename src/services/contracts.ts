@@ -93,24 +93,74 @@ export interface RequestRevision {
   content: RequestContent;
 }
 
+export interface ContactPerson { name?: string; phone?: string; email?: string }
+
 export interface RequestContent {
   applicant: { companyName?: string; contactName?: string; email?: string; phone?: string };
-  test: { testTypeCode?: string; purpose?: string; conditions?: RequirementCondition[] };
+  /** 실사용자. 의뢰를 만들 때 서버가 신청자로 미리 채움 */
+  actualUser?: ContactPerson;
+  /** 회계 담당자. 제출 필수(이름 + 전화 또는 이메일) */
+  accounting?: ContactPerson;
+  /** 아래 4개는 받는 쪽의 추가 정보 요청(ADDITIONAL_INFO)으로 받는다 */
+  responsible?: { name?: string };
+  report?: { type?: string };
+  billing?: { method?: string };
+  test: { testTypeCode?: string; purpose?: string; standard?: string; conditions?: RequirementCondition[] };
   schedule: { desiredStartDate?: string | null; desiredEndDate?: string | null };
-  sample: { name?: string; quantity?: number | null; size?: string; weight?: string; notes?: string; readyDate?: string | null };
+  sample: { name?: string; quantity?: number | null; size?: string; weight?: string; notes?: string; readyDate?: string | null; disposal?: string };
+  equipment?: { id: number; name?: string; externalId?: string };
+  notes?: string;
   conditions: RequirementCondition[];
+}
+
+export interface Supplement {
+  id: number;
+  requestId?: number;
+  status: string;
+  kind?: "SUPPLEMENT" | "ADDITIONAL_INFO";
+  message: string;
+  dueDate?: string | null;
+  requestedBy?: NamedResource;
+  items: { fieldKey: string; label?: string; message?: string; required?: boolean }[];
+  responseMessage?: string | null;
+  createdAt?: string;
+  respondedAt?: string | null;
+}
+
+export interface EstimatedFee { amount: number; note?: string | null; updatedAt?: string }
+
+export interface TestResult {
+  summary: string;
+  reportNo?: string | null;
+  reportUrl?: string | null;
+  registeredBy?: NamedResource;
+  registeredAt?: string;
+  updatedAt?: string;
+}
+
+export interface Attachment {
+  id: number;
+  requestId: number;
+  category: "GENERAL" | "RESULT_REPORT";
+  fileName: string;
+  mimeType?: string;
+  sizeBytes: number;
+  uploadedBy?: NamedResource;
+  createdAt: string;
+  downloadUrl?: string;
 }
 
 export interface RequestDetail extends RequestSummary {
   reservations: ReservationRecord[];
   version: number;
-  supplements: {
-    id: number;
-    status: string;
-    message: string;
-    dueDate?: string | null;
-    items: { fieldKey: string; label?: string; message?: string; required?: boolean }[];
-  }[];
+  requester?: NamedResource;
+  companyName?: string;
+  /** 답변을 기다리는 보완·추가 정보 요청 (없으면 null) */
+  openSupplement?: Supplement | null;
+  /** 서버가 알려 주는 지금 가능한 동작 (SUBMIT, RESPOND_SUPPLEMENT, ACCEPT, COMPLETE …) */
+  availableActions?: string[];
+  estimatedFee?: EstimatedFee | null;
+  result?: TestResult | null;
 }
 
 export interface TestType {

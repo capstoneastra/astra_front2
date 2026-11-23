@@ -101,6 +101,8 @@ export function createApiClient({
   });
   client.interceptors.response.use(
     (response) => {
+      // 파일 내려받기(responseType: "blob")는 JSON 봉투가 없다.
+      if (response.config.responseType === "blob") return response;
       validateEnvelope(response.data, response.status);
       return response;
     },

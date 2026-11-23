@@ -1,4 +1,3 @@
-import { FormField } from "../ui/index";
 export default function ConditionEditor({
   rules,
   conditions,
@@ -27,92 +26,42 @@ export default function ConditionEditor({
   };
   const number = (value) => (value === "" ? null : Number(value));
   return (
-    <div className="form-grid">
+    <div className="condition-grid">
       {rules.map((rule) => {
         const c = conditions.find((c) => c.key === rule.conditionKey) ?? {
             status: "MISSING",
           },
           id = `${idPrefix}condition-${rule.conditionKey}`;
+        const unit = rule.unit ? <span className="condition-row__unit">{rule.unit}</span> : null;
         return (
-          <div className="form-field form-field--full" key={rule.conditionKey}>
-            <div className="form-section-heading">
-              <div>
-                <h3>
-                  {rule.label}
-                  {rule.isRequired ? " *" : ""}
-                </h3>
-                <p>
-                  {rule.unit ?? "텍스트"} ·{" "}
-                  {rule.comparator === "NONE"
-                    ? "기관 확인 항목"
-                    : "규칙 비교 대상"}
-                </p>
-              </div>
-            </div>
-            <div className="form-grid">
+          <div className={`condition-row ${rule.isRequired && c.status === "MISSING" ? "condition-row--missing" : ""}`} key={rule.conditionKey}>
+            <span className="condition-row__label" id={`${id}-label`}>
+              {rule.label}
+              {rule.isRequired && <b aria-label="필수"> *</b>}
+              {rule.comparator === "NONE" && <small> 조직 확인</small>}
+            </span>
+            <span className="condition-row__inputs">
               {rule.valueType === "RANGE" ? (
                 <>
-                  <FormField id={`${id}-min`} label="최솟값">
-                    <input
-                      id={`${id}-min`}
-                      type="number"
-                      step="any"
-                      value={c.min ?? ""}
-                      disabled={disabled}
-                      onChange={(e) =>
-                        update(rule, { min: number(e.target.value) })
-                      }
-                    />
-                  </FormField>
-                  <FormField id={`${id}-max`} label="최댓값">
-                    <input
-                      id={`${id}-max`}
-                      type="number"
-                      step="any"
-                      value={c.max ?? ""}
-                      disabled={disabled}
-                      onChange={(e) =>
-                        update(rule, { max: number(e.target.value) })
-                      }
-                    />
-                  </FormField>
+                  <input id={`${id}-min`} aria-label={`${rule.label} 최솟값`} type="number" step="any" placeholder="최소"
+                    value={c.min ?? ""} disabled={disabled} onChange={(e) => update(rule, { min: number(e.target.value) })} />
+                  <span aria-hidden="true">~</span>
+                  <input id={`${id}-max`} aria-label={`${rule.label} 최댓값`} type="number" step="any" placeholder="최대"
+                    value={c.max ?? ""} disabled={disabled} onChange={(e) => update(rule, { max: number(e.target.value) })} />
                 </>
               ) : (
-                <FormField id={id} label="요구 조건">
-                  <input
-                    id={id}
-                    type={rule.valueType === "TEXT" ? "text" : "number"}
-                    step="any"
-                    value={
-                      rule.valueType === "TEXT"
-                        ? (c.valueText ?? "")
-                        : (c.value ?? "")
-                    }
-                    disabled={disabled}
-                    onChange={(e) =>
-                      update(
-                        rule,
-                        rule.valueType === "TEXT"
-                          ? { valueText: e.target.value }
-                          : { value: number(e.target.value) },
-                      )
-                    }
-                  />
-                </FormField>
+                <input id={id} aria-labelledby={`${id}-label`} type={rule.valueType === "TEXT" ? "text" : "number"} step="any"
+                  value={rule.valueType === "TEXT" ? (c.valueText ?? "") : (c.value ?? "")} disabled={disabled}
+                  onChange={(e) => update(rule, rule.valueType === "TEXT" ? { valueText: e.target.value } : { value: number(e.target.value) })} />
               )}
-              <FormField id={`${id}-status`} label="확인 상태">
-                <select
-                  id={`${id}-status`}
-                  value={c.status ?? "MISSING"}
-                  disabled={disabled}
-                  onChange={(e) => update(rule, { status: e.target.value })}
-                >
-                  <option value="MISSING">미입력</option>
-                  <option value="UNCONFIRMED">미확인</option>
-                  <option value="CONFIRMED">사용자 확인</option>
-                </select>
-              </FormField>
-            </div>
+              {unit}
+            </span>
+            <select id={`${id}-status`} aria-label={`${rule.label} 확인 상태`} value={c.status ?? "MISSING"} disabled={disabled}
+              onChange={(e) => update(rule, { status: e.target.value })}>
+              <option value="MISSING">미입력</option>
+              <option value="UNCONFIRMED">미확인</option>
+              <option value="CONFIRMED">확인</option>
+            </select>
           </div>
         );
       })}

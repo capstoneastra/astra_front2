@@ -7,7 +7,9 @@ import { useAction } from "../hooks/useAction";
 import { chatService } from "../services/chatService";
 import type { ChatExchange } from "../services/chatService";
 import { Feedback } from "./workflow/Feedback";
-import { valueText } from "../domain/constants";
+import { availabilityLabels, availabilityTone, valueText } from "../domain/constants";
+import { equipmentService } from "../services/equipmentService";
+import type { Equipment } from "../services/equipmentService";
 
 export default function Chatbot({ setActiveMenu }) {
   const {
@@ -16,6 +18,8 @@ export default function Chatbot({ setActiveMenu }) {
     setChatSessionId,
     setRequirementId,
     setMatchRun,
+    setSelectedEquipment,
+    setDraftRequestId,
   } = useWorkspace();
   const history = useApiQuery(
     (signal) => chatService.messages(chatSessionId, signal),
@@ -45,6 +49,22 @@ export default function Chatbot({ setActiveMenu }) {
   const metadata =
     exchange?.assistantMessage.metadata ??
     historyMessages.filter((m) => m.role === "ASSISTANT").at(-1)?.metadata;
+  const suggestedIds = (metadata?.suggestedEquipmentIds ?? []).slice(0, 5);
+  const suggested = useApiQuery(
+    (signal) => Promise.all(suggestedIds.map((id) => equipmentService.detail(id, signal))),
+    `chat-suggested:${suggestedIds.join(",")}`,
+    suggestedIds.length > 0,
+  );
+  // 상담 결과(조건, 고른 장비)를 '시험 맡기기' 흐름으로 넘긴다.
+  const handOff = (equipment?: Equipment) =>
+    action.run(async (signal) => {
+      const requirement = await chatService.requirement(chatSessionId, signal);
+      setRequirementId(requirement.id);
+      setMatchRun(null);
+      setDraftRequestId(null);
+      setSelectedEquipment(equipment ?? null);
+      setActiveMenu("request");
+    });
   const [input, setInput] = useState("");
   const isConditionReady = Boolean(metadata?.suggestedTestType);
   const isSending = action.busy;
@@ -198,34 +218,28 @@ export default function Chatbot({ setActiveMenu }) {
                     </p>
                   ))}
                 </div>
-                <p>
-                  조건 분석 화면에서 누락 항목을 보완하고 장비별 규칙 비교와
-                  의뢰서 초안 작성을 진행할 수 있습니다.
-                </p>
-                <div style={{ height: 17 }} />
-                <Button
-                  icon={ArrowRight}
-                  disabled={action.busy}
-                  onClick={() =>
-                    action.run(async (signal) => {
-                      const requirement = await chatService.requirement(
-                        chatSessionId,
-                        signal,
-                      );
-                      setRequirementId(requirement.id);
-                      setMatchRun(null);
-                      setActiveMenu("request");
-                    })
-                  }
-                >
-                  시험조건 분석으로 이어가기
+                {suggested.data && suggested.data.length > 0 && (
+                  <div className="chat-suggested">
+                    <p className="section-label">AI가 소개한 장비</p>
+                    {suggested.data.map((item) => (
+                      <div className="chat-suggested__item" key={item.id}>
+                        <div>
+                          <strong>{item.name}</strong>
+                          <small>{item.institution} · {item.region ?? "지역 확인 필요"}</small>
+                          <Badge tone={availabilityTone[item.availability ?? "UNKNOWN"]} dot>
+                            {availabilityLabels[item.availability ?? "UNKNOWN"]}
+                          </Badge>
+                        </div>
+                        <Button className="button--sm" disabled={action.busy} onClick={() => handOff(item)}>이 장비로 의뢰</Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {suggested.error && <p className="small-note">{suggested.error.message}</p>}
+                <Button icon={ArrowRight} disabled={action.busy} onClick={() => handOff()}>
+                  이 조건으로 시험 맡기기
                 </Button>
-                <Button
-                  variant="secondary"
-                  onClick={() => setActiveMenu("search")}
-                >
-                  장비 검색으로 이어가기
-                </Button>
+                <p className="small-note">조건을 확인하고 추천 장비를 받아 의뢰서로 이어집니다.</p>
               </>
             ) : (
               <>

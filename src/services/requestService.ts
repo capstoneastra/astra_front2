@@ -1,6 +1,8 @@
 import { getData, mutate } from "./http";
+import { apiClient, responseData } from "../api/client";
+import { invalidateData } from "../api/cache";
 import { contractError } from "../api/errors";
-import type { NamedResource, Page, RequestDetail, RequestRevision, RequestSummary, ResourceId, TimeInterval } from "./contracts";
+import type { Attachment, NamedResource, Page, RequestDetail, Supplement, RequestRevision, RequestSummary, ResourceId, TimeInterval } from "./contracts";
 
 interface RequestHistoryEntry {
   id: number;
@@ -35,7 +37,36 @@ export const requestService = {
       signal,
     ),
   supplements: (id: ResourceId, signal?: AbortSignal) =>
-    getData(`/test-requests/${id}/supplements`, undefined, signal),
+    getData<Supplement[]>(`/test-requests/${id}/supplements`, undefined, signal),
+  /** 받는 쪽: 보완 요청(SUPPLEMENT) 또는 추가 정보 요청(ADDITIONAL_INFO) */
+  requestSupplement: (id: ResourceId, version: number, body: { kind: "SUPPLEMENT" | "ADDITIONAL_INFO"; message?: string; items?: object[]; dueDate?: string | null }, signal?: AbortSignal) =>
+    mutate("POST", `/test-requests/${id}/supplements`, { version, ...body }, signal),
+  /** 받는 쪽: 예상 이용료 (검토 중~일정 조율 중) */
+  estimatedFee: (id: ResourceId, version: number, body: { amount: number; note?: string }, signal?: AbortSignal) =>
+    mutate<RequestDetail>("PUT", `/test-requests/${id}/estimated-fee`, { version, ...body }, signal),
+  /** 받는 쪽: 시험 결과 등록·수정 (일정 확정 뒤) */
+  result: (id: ResourceId, body: { summary: string; reportNo?: string; reportUrl?: string }, signal?: AbortSignal) =>
+    mutate<RequestDetail>("PUT", `/test-requests/${id}/result`, body, signal),
+  attachments: (id: ResourceId, signal?: AbortSignal) =>
+    getData<Attachment[]>(`/test-requests/${id}/attachments`, undefined, signal),
+  async upload(id: ResourceId, file: File, category: Attachment["category"], signal?: AbortSignal) {
+    const form = new FormData();
+    form.append("file", file);
+    form.append("category", category);
+    const data = responseData<Attachment>(await apiClient.post(`/test-requests/${id}/attachments`, form, { signal }));
+    invalidateData();
+    return data;
+  },
+  /** 내려받기: 인증 헤더가 필요해서 Blob으로 받아 저장한다. */
+  async download(attachment: Pick<Attachment, "id" | "fileName">) {
+    const response = await apiClient.get(`/attachments/${attachment.id}/download`, { responseType: "blob" });
+    const url = URL.createObjectURL(response.data as Blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = attachment.fileName;
+    link.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  },
   respond: (id: ResourceId, body: object, signal?: AbortSignal) =>
     mutate("POST", `/supplements/${id}/respond`, body, signal),
   revisions: (id: ResourceId, signal?: AbortSignal) =>
