@@ -23,13 +23,10 @@ function uniqueOptions(items: RequestSummary[], key: "equipment" | "institution"
   }
   return [...options];
 }
-export default function ReservationCalendar({ requestBox, onBoxChange, ownsEquipment }: {
-  requestBox?: RequestBox;
-  onBoxChange: (box: RequestBox) => void;
-  ownsEquipment: boolean;
-}) {
+export default function ReservationCalendar() {
   const { user } = useAuth();
-  const box = user.role === "ADMIN" ? undefined : !ownsEquipment ? "SENT" : requestBox ?? (user.role === "INSTITUTION_MANAGER" ? "RECEIVED" : "SENT");
+  // 기업 = 내가 맡긴 의뢰의 일정, 기관·대학 = 받은 의뢰의 일정, 관리자 = 전체
+  const box: RequestBox | undefined = user.role === "ADMIN" ? undefined : user.role === "INSTITUTION_MANAGER" ? "RECEIVED" : "SENT";
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => { const timer = setInterval(() => setNow(Date.now()), 60000); return () => clearInterval(timer); }, []);
   const today = seoulDate(now);
@@ -63,23 +60,13 @@ export default function ReservationCalendar({ requestBox, onBoxChange, ownsEquip
   const chooseDate = (date: string, id?: number) => { setSelection({ date, id }); setMonth(monthOf(date)); };
   const openRequest = (id, date) => { setSelection(null); setRequestDetail({ id, date }); };
   const scope = !box ? "전체 시험 예약" : box === "RECEIVED" ? "소속 조직에 접수된 시험 예약" : "내가 신청한 시험 예약";
-  const changeBox = (next: RequestBox) => {
-    if (box === next) return;
-    setFilters({ test: "", equipment: "", status: "", institution: "" });
-    setSelection(null);
-    setRequestDetail(null);
-    onBoxChange(next);
-  };
   return <div className="content-page page-enter reservation-calendar">
-    <PageHeader title="일정 보기" description={scope}>
+    <PageHeader title="시험 일정" description={scope}>
       <Badge tone="cyan"><CalendarDays size={14} /> 월간 일정</Badge>
       <Button className="schedule-filter-toggle" variant="secondary" icon={SlidersHorizontal} aria-controls="schedule-filters" aria-expanded={filtersOpen} onClick={() => setFiltersOpen((value) => !value)}>필터</Button>
       <Button variant="secondary" icon={RefreshCw} disabled={query.loading || query.refreshing} onClick={query.reload}>새로고침</Button>
     </PageHeader>
-    {box && ownsEquipment && <div className="workspace-context-actions" role="group" aria-label="예약 조회 범위">
-      <Button variant={box === "SENT" ? "primary" : "secondary"} aria-pressed={box === "SENT"} onClick={() => changeBox("SENT")}>보낸 의뢰의 예약</Button>
-      <Button variant={box === "RECEIVED" ? "primary" : "secondary"} aria-pressed={box === "RECEIVED"} onClick={() => changeBox("RECEIVED")}>받은 의뢰의 예약</Button>
-    </div>}
+
     <div className="schedule-source"><Badge tone="cyan">{query.data ? "예약 정보" : "조회 대기"}</Badge><span>{query.data ? "서버 응답 기준의 시험 예약입니다." : "시험 예약 정보를 서버에서 조회합니다."} 제안 일정은 기관 확정 전까지 미확정입니다.</span></div>
     <div className="schedule-metrics" aria-label="선택한 달 예약 요약">
       {[{ icon: CalendarDays, label: "선택한 달 시험 예약", value: monthly.length, hint: "필터 적용 · 여러 날 시험은 1건", tone: "blue" },

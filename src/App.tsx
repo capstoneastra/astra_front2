@@ -15,8 +15,7 @@ import AuthGate from "./auth/AuthGate";
 import { AuthContext, useAuth } from "./auth/context";
 import { canOpenLocalWorkspace, localWorkspaceAccounts } from "./auth/localWorkspace";
 import type { LocalWorkspaceAccount } from "./auth/localWorkspace";
-import { canAccessMenu, canOpenMenu } from "./auth/permissions";
-import { useOwnsEquipment } from "./hooks/useOwnsEquipment";
+import { canAccessMenu } from "./auth/permissions";
 import { useApiQuery } from "./hooks/useApiQuery";
 import { equipmentService } from "./services/equipmentService";
 import { queryClient } from "./api/cache";
@@ -29,6 +28,7 @@ import TestInformation from "./components/TestInformation";
 import AiAssistant from "./components/assistant/AiAssistant";
 import Simulation from "./components/Simulation";
 import AdminManagement from "./components/AdminManagement";
+import DuplicateEquipment from "./components/DuplicateEquipment";
 import Notifications from "./components/Notifications";
 import ReservationCalendar from "./components/ReservationCalendar";
 import { useWorkspaceNavigation } from "./hooks/useWorkspaceNavigation";
@@ -40,8 +40,6 @@ function Workspace() {
     `${user.id}:${user.role}:${user.organization?.id ?? ""}`,
   );
   const activeMenu = workspaceNavigation.route.menu;
-  const ownership = useOwnsEquipment(user);
-  const ownsEquipment = ownership.owns;
   const [requirementId, setRequirementId] = useState<number | null>(null);
   const [chatSessionId, setChatSessionId] = useState<number | null>(null);
   const [chatPanelKey] = useState(0);
@@ -55,7 +53,6 @@ function Workspace() {
   const [selectedEquipment, setSelectedEquipment] = useState<Equipment | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const sidebar = useSidebarCollapse();
-  const [calendarBox, setCalendarBox] = useState<RequestBox>();
   const [assistantOpen, setAssistantOpen] = useState(false);
   const [assistantStarted, setAssistantStarted] = useState(false);
   const [assistantMode, setAssistantMode] = useState("chatbot");
@@ -124,8 +121,8 @@ function Workspace() {
     window.scrollTo({ top: 0, behavior: "instant" });
   };
 
-  const openCalendar = (box?: RequestBox) => {
-    setCalendarBox(box);
+  // 일정 화면은 역할에 맞는 의뢰(기업=내 의뢰, 기관=받은 의뢰)만 보여 준다.
+  const openCalendar = () => {
     navigate("calendar");
   };
 
@@ -134,14 +131,11 @@ function Workspace() {
 
 
   const renderContent = () => {
-    // 장비 보유 여부를 확인하는 동안 받은 의뢰·우리 장비 주소로 바로 들어온 경우
-    if (ownership.loading && canOpenMenu(user.role, activeMenu, true) && !canOpenMenu(user.role, activeMenu, false))
-      return <ApiState loading />;
-    if (!canOpenMenu(user.role, activeMenu, ownsEquipment))
+    if (!canAccessMenu(user.role, activeMenu))
       return (
         <ApiState
           error={
-            new ApiError("현재 계정으로는 이 기능을 이용할 수 없습니다. 받은 의뢰·우리 장비는 장비를 등록한 조직에만 보입니다.", {
+            new ApiError(user.role === "COMPANY_USER" ? "기업 계정에서는 쓰지 않는 화면입니다. 시험 맡기기·내 의뢰를 이용해주세요." : user.role === "INSTITUTION_MANAGER" ? "기관·대학 계정에서는 쓰지 않는 화면입니다. 받은 의뢰·우리 장비를 이용해주세요." : "이 계정으로는 이용할 수 없는 화면입니다.", {
               status: 403,
               code: "FORBIDDEN",
             })
@@ -150,7 +144,7 @@ function Workspace() {
       );
     switch (activeMenu) {
       case "home":
-        return <Home ownsEquipment={ownsEquipment} setActiveMenu={navigate} openRequest={openRequest}
+        return <Home setActiveMenu={navigate} openRequest={openRequest}
           openApprovals={(approvalFocus) => workspaceNavigation.go("admin", null, { approvalFocus })} onSearch={searchEquipment} />;
       case "request":
         // 다른 화면(장비 찾기·AI 상담)에서 장비·조건을 넘겨받으면 알맞은 단계로 다시 연다
@@ -171,7 +165,7 @@ function Workspace() {
         return <ReservationCheck key={`${activeMenu}:${workspaceNavigation.route.index}`} setActiveMenu={navigate} institutionView={activeMenu === "received"}
           initialStatus={workspaceNavigation.route.requestStatus} initialRequestId={workspaceNavigation.route.requestId} openCalendar={openCalendar} />;
       case "calendar":
-        return <ReservationCalendar requestBox={calendarBox} onBoxChange={setCalendarBox} ownsEquipment={ownsEquipment} />;
+        return <ReservationCalendar />;
       case "compare":
         return <EquipmentCompare setActiveMenu={navigate} />;
       case "testInfo":
@@ -179,9 +173,9 @@ function Workspace() {
       case "simulation":
         return <Simulation />;
       case "admin":
+        return <AdminManagement key={workspaceNavigation.route.index} approvalFocus={workspaceNavigation.route.approvalFocus} />;
       case "duplicates":
-        return <AdminManagement key={workspaceNavigation.route.index} approvalFocus={workspaceNavigation.route.approvalFocus}
-          initialTab={activeMenu === "duplicates" ? "duplicates" : "approvals"} setActiveMenu={navigate} />;
+        return <DuplicateEquipment setActiveMenu={navigate} />;
       case "notifications":
         return <Notifications />;
       case "equipment":
@@ -210,7 +204,6 @@ function Workspace() {
         equipmentList,
         catalogQuery,
         user,
-        ownsEquipment,
         resolveEquipment: equipmentService.detail,
         requirementId,
         setRequirementId,
@@ -250,7 +243,6 @@ function Workspace() {
           본문으로 건너뛰기
         </a>
         <Sidebar
-          ownsEquipment={ownsEquipment}
           activeMenu={activeMenu}
           setActiveMenu={navigate}
           open={menuOpen}

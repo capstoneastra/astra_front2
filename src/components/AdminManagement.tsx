@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import type { ReactNode } from "react";
 import { useAuth } from "../auth/context";
 import { Button, FormField, PageHeader, Panel } from "./ui/index";
 import { useApiQuery } from "../hooks/useApiQuery";
@@ -9,7 +8,6 @@ import { DemoNotice, Feedback } from "./workflow/Feedback";
 import { accountStatusLabels, roleLabels } from "../domain/constants";
 import ApiState from "./ui/ApiState";
 import type { ApprovalFocus } from "../hooks/useWorkspaceNavigation";
-import DuplicateEquipment from "./DuplicateEquipment";
 
 const organizationTypeLabels = {
   COMPANY: "기업",
@@ -17,25 +15,7 @@ const organizationTypeLabels = {
   UNIVERSITY: "대학",
 };
 
-export default function AdminManagement({ approvalFocus, initialTab = "approvals", setActiveMenu }: {
-  approvalFocus?: ApprovalFocus;
-  initialTab?: "approvals" | "duplicates";
-  setActiveMenu: (menu: string) => void;
-}) {
-  const [tab, setTab] = useState(initialTab);
-  const tabs = <div className="segmented" role="group" aria-label="관리 화면">
-    <button type="button" aria-pressed={tab === "approvals"} onClick={() => setTab("approvals")}>회원·기관 승인</button>
-    <button type="button" aria-pressed={tab === "duplicates"} onClick={() => setTab("duplicates")}>중복·유사 장비</button>
-  </div>;
-  if (tab === "duplicates")
-    return <div className="content-page page-enter">
-      <PageHeader title="관리">{tabs}</PageHeader>
-      <DuplicateEquipment setActiveMenu={setActiveMenu} embedded />
-    </div>;
-  return <AdminApprovals approvalFocus={approvalFocus} tabs={tabs} />;
-}
-
-function AdminApprovals({ approvalFocus, tabs }: { approvalFocus?: ApprovalFocus; tabs: ReactNode }) {
+export default function AdminManagement({ approvalFocus }: { approvalFocus?: ApprovalFocus }) {
   const { user } = useAuth(),
     [status, setStatus] = useState(approvalFocus === "members" ? "PENDING" : ""),
     [unverifiedOnly, setUnverifiedOnly] = useState(approvalFocus === "organizations"),
@@ -64,7 +44,7 @@ function AdminApprovals({ approvalFocus, tabs }: { approvalFocus?: ApprovalFocus
   }, [approvalFocus]);
   return (
     <div className="content-page page-enter">
-      <PageHeader title="관리">{tabs}</PageHeader>
+      <PageHeader title="회원·기관 승인" />
       <DemoNotice />
       <Panel className="form-panel">
         <FormField id="admin-status" label="계정 상태">

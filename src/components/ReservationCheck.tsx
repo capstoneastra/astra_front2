@@ -15,7 +15,7 @@ const quickFilters: { id: string; label: string; statuses: string[] }[] = [
   { id: "", label: "전체", statuses: [] },
   { id: "ACTIVE", label: "진행 중", statuses: ["SUBMITTED", "UNDER_REVIEW", "SUPPLEMENT_REQUESTED", "RESUBMITTED", "SCHEDULING", "CONFIRMED"] },
   { id: "REVIEW_QUEUE", label: "검토 대기", statuses: ["SUBMITTED", "RESUBMITTED"] },
-  { id: "SUPPLEMENT_REQUESTED", label: "답변 필요", statuses: ["SUPPLEMENT_REQUESTED"] },
+  { id: "MY_TURN", label: "내가 답할 차례", statuses: ["SUPPLEMENT_REQUESTED", "SCHEDULING"] },
   { id: "DRAFT", label: "작성 중", statuses: ["DRAFT"] },
   { id: "COMPLETED", label: "완료", statuses: ["COMPLETED"] },
 ];
@@ -47,7 +47,7 @@ export default function ReservationCheck({
   const received = institutionView;
   // 관리자는 받은 의뢰 화면에서 전체 의뢰를 본다.
   const box: RequestBox | undefined = admin && received ? undefined : received ? "RECEIVED" : "SENT";
-  const filters = quickFilters.filter((item) => received ? !["DRAFT", "SUPPLEMENT_REQUESTED"].includes(item.id) : item.id !== "REVIEW_QUEUE");
+  const filters = quickFilters.filter((item) => received ? !["DRAFT", "MY_TURN"].includes(item.id) : item.id !== "REVIEW_QUEUE");
   const group = quickFilters.find((item) => item.id === status);
   const query = useApiQuery(
     async (signal) => {
@@ -68,7 +68,7 @@ export default function ReservationCheck({
 
   return (
     <div className="content-page page-enter">
-      <PageHeader title={received ? "받은 의뢰" : "내 의뢰"} description={query.loading ? undefined : `${rows.length}건`}>
+      <PageHeader title={admin ? "전체 의뢰" : received ? "받은 의뢰" : "내 의뢰"} description={query.loading ? undefined : `${rows.length}건`}>
         <Button variant="secondary" icon={CalendarDays} onClick={() => openCalendar(box)}>일정 보기</Button>
         {!received && <Button icon={Send} onClick={() => { setDraftRequestId(null); setSelectedEquipment(null); setActiveMenu("request"); }}>시험 맡기기</Button>}
       </PageHeader>
@@ -90,7 +90,7 @@ export default function ReservationCheck({
             {!received && <Button variant="secondary" onClick={() => setActiveMenu("request")}>시험 맡기기</Button>}</p> :
           <div className="table-scroll"><table className="data-table">
             <thead><tr>
-              <th>의뢰</th><th>장비</th><th>{received ? "맡긴 곳" : "맡은 곳"}</th><th>상태</th><th>희망 기간</th><th>접수일</th><th><span className="sr-only">동작</span></th>
+              <th>의뢰</th><th>장비</th><th>{admin ? "맡긴 곳 → 맡은 곳" : received ? "맡긴 곳" : "맡은 곳"}</th><th>상태</th><th>희망 기간</th><th>접수일</th><th><span className="sr-only">동작</span></th>
             </tr></thead>
             <tbody>{rows.map((item) => {
               const schedule = { desiredStartDate: item.desiredStartDate ?? item.revision?.content?.schedule?.desiredStartDate,
@@ -99,7 +99,8 @@ export default function ReservationCheck({
                 <td><button type="button" className="row-title" onClick={() => setSelected(item.id)}>{item.title || item.requestNo}</button>
                   <small>{item.requestNo}</small></td>
                 <td>{item.equipment?.name ?? "—"}<small>{item.equipment?.externalId}</small></td>
-                <td>{received ? item.companyName ?? item.requester?.name ?? "—" : item.institution?.name ?? "—"}</td>
+                <td>{admin ? `${item.companyName ?? item.requester?.name ?? "—"} → ${item.institution?.name ?? "—"}`
+                  : received ? item.companyName ?? item.requester?.name ?? "—" : item.institution?.name ?? "—"}</td>
                 <td><Badge tone={tone(item.status)} dot>{requestStatusLabels[item.status] ?? item.status}</Badge></td>
                 <td>{schedule?.desiredStartDate ? `${schedule.desiredStartDate}${schedule.desiredEndDate ? ` ~ ${schedule.desiredEndDate.slice(5)}` : ""}` : "—"}</td>
                 <td>{item.submittedAt ? seoulDate(item.submittedAt) : "—"}</td>

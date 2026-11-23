@@ -1,13 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { PanelLeftClose, PanelLeftOpen, X } from "lucide-react";
-import { navigation, parentMenu } from "../data/navigation";
+import { navigationByRole, parentMenu } from "../data/navigation";
 import { useAuth } from "../auth/context";
-import { canOpenMenu } from "../auth/permissions";
 import { roleLabels } from "../domain/constants";
 import AstraBrand from "./ui/AstraBrand";
 
 export default function Sidebar({
-  ownsEquipment,
   activeMenu,
   setActiveMenu,
   open,
@@ -16,7 +14,6 @@ export default function Sidebar({
   onToggleCollapse,
   blocked = false,
 }: {
-  ownsEquipment: boolean;
   activeMenu: string;
   setActiveMenu: (menu: string) => void;
   open: boolean;
@@ -35,12 +32,9 @@ export default function Sidebar({
   const { user } = useAuth();
   const collapseLabel = collapsed ? "사이드바 펼치기" : "사이드바 접기";
   const highlighted = parentMenu[activeMenu] ?? activeMenu;
-  const visibleNavigation = navigation
-    .map((group) => ({
-      ...group,
-      items: group.items.filter((item) => canOpenMenu(user.role, item.id, ownsEquipment)),
-    }))
-    .filter((group) => group.items.length);
+  // 역할마다 메뉴가 다르다 (data/navigation.ts)
+  const roleGroup = { COMPANY_USER: "시험 맡기기", INSTITUTION_MANAGER: "시험 받기", ADMIN: "플랫폼 운영" }[user.role] ?? "메뉴";
+  const visibleNavigation = [{ label: roleGroup, items: navigationByRole[user.role] ?? [] }];
   useEffect(() => {
     if (!open) return;
     const previous = document.activeElement;

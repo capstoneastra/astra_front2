@@ -181,11 +181,11 @@ export default function EquipmentSearch({
 
   return (
     <div className="content-page page-enter equipment-search-page">
-      <PageHeader title="장비 찾기">
-        <Button variant="secondary" icon={Columns3} disabled={comparisonIds.length < 2}
+      <PageHeader title={canRequest ? "장비 찾기" : "장비 조회"}>
+        {canRequest && <Button variant="secondary" icon={Columns3} disabled={comparisonIds.length < 2}
           title="목록에서 2~5대를 체크하면 비교할 수 있습니다" onClick={() => setActiveMenu("compare")}>
           비교 {comparisonIds.length > 0 && `(${comparisonIds.length})`}
-        </Button>
+        </Button>}
       </PageHeader>
 
       <div className="finder">
@@ -293,8 +293,8 @@ export default function EquipmentSearch({
                   const scope = accessScopeOf(item);
                   const checked = comparisonIds.includes(item.id);
                   return <tr key={item.id}>
-                    <td><input type="checkbox" aria-label={`${item.name} 비교에 담기`} checked={checked}
-                      disabled={!checked && comparisonIds.length >= 5} onChange={(event) => toggleCompare(item.id, event.target.checked)} /></td>
+                    <td>{canRequest && <input type="checkbox" aria-label={`${item.name} 비교에 담기`} checked={checked}
+                      disabled={!checked && comparisonIds.length >= 5} onChange={(event) => toggleCompare(item.id, event.target.checked)} />}</td>
                     <td>
                       <button type="button" className="row-title" onClick={() => setDetailEquipment(item)}>{item.name}</button>
                       <small>{[item.model, item.externalId].filter(Boolean).join(" · ")}</small>
@@ -309,12 +309,12 @@ export default function EquipmentSearch({
                     </div></td>
                     <td className="cell-actions">
                       <Button variant="ghost" className="button--sm" onClick={() => setDetailEquipment(item)}>상세</Button>
-                      <Button className="button--sm" icon={ArrowRight}
-                        disabled={selecting !== null || ownEquipment(item) || !canRequest}
+                      {canRequest && <Button className="button--sm" icon={ArrowRight}
+                        disabled={selecting !== null || ownEquipment(item)}
                         title={ownEquipment(item) ? "우리 조직 장비에는 의뢰할 수 없습니다" : undefined}
                         onClick={() => requestEquipment(item)}>
                         {selecting === item.id ? "확인 중…" : "이 장비로 의뢰"}
-                      </Button>
+                      </Button>}
                     </td>
                   </tr>;
                 })}</tbody>

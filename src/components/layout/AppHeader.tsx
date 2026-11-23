@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { ArrowLeft, Bell, Command, Menu, Search, X } from "lucide-react";
-import { menuLabels } from "../../data/navigation";
+import { menuLabel } from "../../data/navigation";
+import { canAccessMenu } from "../../auth/permissions";
 import { Button } from "../ui";
 import { useAuth } from "../../auth/context";
 import ThemeToggle from "../ui/ThemeToggle";
@@ -25,14 +26,14 @@ export default function AppHeader({ activeMenu, menuOpen, onMenu, onSearch, onBa
 
   useEffect(() => {
     const shortcut = (event) => {
-      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k" && canAccessMenu(user.role, "search")) {
         event.preventDefault();
         if (!searchDialog.current.open) searchDialog.current.showModal();
       }
     };
     document.addEventListener("keydown", shortcut);
     return () => document.removeEventListener("keydown", shortcut);
-  }, []);
+  }, [user.role]);
 
   const submit = (event) => {
     event.preventDefault();
@@ -56,10 +57,10 @@ export default function AppHeader({ activeMenu, menuOpen, onMenu, onSearch, onBa
         </button>
         <span className="app-header__workspace">{status === "local" ? "로컬 화면" : "워크스페이스"}</span>
         <span className="breadcrumb-separator">/</span>
-        <span>{menuLabels[activeMenu]}</span>
+        <span>{menuLabel(user.role, activeMenu)}</span>
       </div>
       <div className="app-header__tools">
-        <button
+        {canAccessMenu(user.role, "search") && <button
           className="header-search"
           onClick={() => searchDialog.current.showModal()}
         >
@@ -68,7 +69,7 @@ export default function AppHeader({ activeMenu, menuOpen, onMenu, onSearch, onBa
           <kbd>
             <Command size={10} /> K
           </kbd>
-        </button>
+        </button>}
         <span className="header-date">{date}</span>
         <span className="header-divider" />
         <button

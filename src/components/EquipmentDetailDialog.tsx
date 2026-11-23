@@ -151,9 +151,9 @@ export default function EquipmentDetailDialog({
               </dd>
             </div>
           </dl>
-          <Button
+          {canAccessMenu(user.role, "request") && <Button
             icon={FilePlus2}
-            disabled={!canAccessMenu(user.role, "request") ||
+            disabled={
               (user.organization?.id != null && data.institutionId === user.organization.id)}
             onClick={() => {
               onSelect(data);
@@ -161,9 +161,9 @@ export default function EquipmentDetailDialog({
             }}
           >
             이 장비로 시험 의뢰하기
-          </Button>
+          </Button>}
           <div className="form-actions">
-            <Button
+            {canAccessMenu(user.role, "simulation") && <Button
               variant="secondary"
               disabled={!data.simulation?.presetIds?.length}
               onClick={() => {
@@ -172,8 +172,8 @@ export default function EquipmentDetailDialog({
               }}
             >
               가상 시뮬레이션 · DEMO
-            </Button>
-            <Button
+            </Button>}
+            {canAccessMenu(user.role, "testInfo") && <Button
               variant="secondary"
               disabled={!data.testTypes.length}
               onClick={() => {
@@ -182,7 +182,7 @@ export default function EquipmentDetailDialog({
               }}
             >
               시험 정보 안내
-            </Button>
+            </Button>}
           </div>
         </>
       )}

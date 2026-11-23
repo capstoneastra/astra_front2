@@ -101,7 +101,7 @@ export default function EquipmentManager(_props: { setActiveMenu: (menu: string)
 
   return (
     <div className="content-page page-enter">
-      <PageHeader title="우리 장비" description={list.data ? `${list.data.totalElements}대${needsUpdate ? ` · 갱신 필요 ${needsUpdate}대` : ""}` : undefined}>
+      <PageHeader title={admin ? "장비 데이터 관리" : "우리 장비"} description={list.data ? `${list.data.totalElements}대${needsUpdate ? ` · 갱신 필요 ${needsUpdate}대` : ""}` : undefined}>
         {admin && <select aria-label="조직 선택" value={adminInstitution} onChange={(e) => setAdminInstitution(e.target.value)}>
           <option value="">조직 선택</option>
           {institutions.data?.map((o) => <option key={o.id} value={o.id}>{o.name}</option>)}
