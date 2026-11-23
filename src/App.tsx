@@ -77,7 +77,7 @@ function Workspace() {
   const catalogQuery = useApiQuery(
     (signal) => equipmentService.catalog(signal),
     `catalog:${user.id}:${user.role}`,
-    ["request", "equipment", "simulation", "compare"].includes(activeMenu) || assistantOpen,
+    ["request", "equipment", "simulation"].includes(activeMenu) || assistantOpen,
   );
   const equipmentList = catalogQuery.data ?? [];
 

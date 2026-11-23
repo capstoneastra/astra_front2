@@ -40,3 +40,28 @@ export function valueText(value) {
   if (!value) return "확인 필요";
   return `${value.value ?? (value.min != null && value.max != null ? `${value.min}~${value.max}` : (value.valueText ?? "확인 필요"))} ${value.unit ?? ""}`.trim();
 }
+export const availabilityLabels: Record<string, string> = {
+  AVAILABLE: "예약 가능",
+  BUSY: "사용 중",
+  MAINTENANCE: "정비 중",
+  UNAVAILABLE: "사용 불가",
+  UNKNOWN: "확인 필요",
+};
+export const availabilityTone: Record<string, string> = {
+  AVAILABLE: "green",
+  BUSY: "amber",
+  MAINTENANCE: "violet",
+  UNAVAILABLE: "red",
+  UNKNOWN: "neutral",
+};
+export const accessScopeLabels: Record<string, string> = {
+  EXTERNAL_ALLOWED: "공동활용",
+  INTERNAL_ONLY: "단독활용",
+};
+export const equipmentTypeLabels: Record<string, string> = {
+  TEST: "시험",
+  MEASUREMENT: "측정",
+  MANUFACTURING: "제작·가공",
+  SOFTWARE: "소프트웨어",
+  SUPPORT: "지원",
+};

@@ -1,33 +1,43 @@
-import { useEffect, useRef, useState } from "react";
-import {
-  Activity,
-  ArrowRight,
-  Building2,
-  BookOpen,
-  Columns3,
-  Copy,
-  Info,
-  Microscope,
-  Search as SearchIcon,
-  SlidersHorizontal,
-  Sparkles,
-} from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import type { FormEvent } from "react";
+import { ArrowRight, Columns3, Search as SearchIcon, Sparkles, X } from "lucide-react";
 import { useWorkspace } from "../context/AppContext";
-import {
-  Badge,
-  Button,
-  EmptyState,
-  FormField,
-  PageHeader,
-  Panel,
-  TextLink,
-} from "./ui";
+import { Badge, Button, PageHeader, Panel } from "./ui";
 import { useApiQuery } from "../hooks/useApiQuery";
-import { equipmentService, equipmentView } from "../services/equipmentService";
+import { equipmentService, equipmentView, testTypeLabel } from "../services/equipmentService";
+import type { Equipment } from "../services/equipmentService";
 import { catalogService } from "../services/catalogService";
 import { canAccessMenu } from "../auth/permissions";
+import type { SearchView } from "../hooks/useWorkspaceNavigation";
+import {
+  accessScopeLabels,
+  availabilityLabels,
+  availabilityTone,
+  equipmentTypeLabels,
+  valueText,
+} from "../domain/constants";
 import EquipmentDetailDialog from "./EquipmentDetailDialog";
 import ApiState from "./ui/ApiState";
+
+const PAGE_SIZE = 20;
+const emptyFilters = {
+  testType: "",
+  regions: [] as string[],
+  institutionId: null as number | null,
+  equipmentType: "",
+  availability: "",
+  externalOnly: false,
+  accreditedOnly: false,
+  includeMock: true,
+  sort: "externalId",
+};
+type Filters = typeof emptyFilters;
+
+/** 목록 응답에는 accessScope가 없을 수 있다(상세·매칭 응답에만 있음). 있으면 배지로 보여 준다. */
+function accessScopeOf(item: Equipment) {
+  const raw = item.raw as Equipment["raw"] & { accessScope?: string | null };
+  return raw.usage?.accessScope ?? raw.accessScope ?? null;
+}
 
 export default function EquipmentSearch({
   setActiveMenu,
@@ -35,440 +45,290 @@ export default function EquipmentSearch({
   initialInstitutionId = null,
   initialView = null,
   onViewChange,
+}: {
+  setActiveMenu: (menu: string) => void;
+  initialSearchTerm?: string;
+  initialInstitutionId?: number | null;
+  initialView?: SearchView | null;
+  onViewChange?: (view: SearchView) => void;
 }) {
-  const {
-    testCondition,
-    setSelectedEquipment,
-    setDraftRequestId,
-    equipmentList,
-    catalogQuery,
-    user,
-    resolveEquipment,
-    comparisonIds,
-    setComparisonIds,
-    setSimulationEquipmentId,
-  } = useWorkspace();
-  const [searchTerm, setSearchTerm] = useState(initialView?.searchTerm ?? initialSearchTerm);
-  const [queryTerm, setQueryTerm] = useState((initialView?.searchTerm ?? initialSearchTerm).trim());
-  const [filterType, setFilterType] = useState(initialView?.filterType ?? "all");
-  const [institutionId, setInstitutionId] = useState(initialView?.institutionId ?? initialInstitutionId);
+  const { setSelectedEquipment, setDraftRequestId, user, resolveEquipment, comparisonIds, setComparisonIds } = useWorkspace();
+  // 문장 검색(GET /search)과 검색어 필터(GET /equipment?q=)는 따로 기억한다.
+  const [sentence, setSentence] = useState(initialView?.sentence ? initialView.searchTerm : initialView ? "" : initialSearchTerm);
+  const [sentenceInput, setSentenceInput] = useState(sentence);
+  const [keyword, setKeyword] = useState(initialView && !initialView.sentence ? initialView.searchTerm : "");
+  const [keywordQuery, setKeywordQuery] = useState(keyword.trim());
+  const [filters, setFilters] = useState<Filters>(() => ({
+    ...emptyFilters,
+    institutionId: initialView?.institutionId ?? initialInstitutionId,
+    regions: initialView?.regions ?? [],
+    testType: initialView?.testType ?? "",
+    equipmentType: initialView?.equipmentType ?? "",
+    availability: initialView?.availability ?? "",
+    externalOnly: initialView?.externalOnly ?? false,
+    accreditedOnly: initialView?.accreditedOnly ?? false,
+    includeMock: initialView?.includeMock ?? true,
+    sort: initialView?.sort ?? "externalId",
+  }));
   const [page, setPage] = useState(initialView?.page ?? 0);
-  const [region, setRegion] = useState(initialView?.region ?? ""),
-    [testType, setTestType] = useState(initialView?.testType ?? "");
-  useEffect(() => {
-    onViewChange?.({ searchTerm, filterType, institutionId, page, region, testType });
-  }, [searchTerm, filterType, institutionId, page, region, testType, onViewChange]);
-  const types = useApiQuery(
-    (signal) => catalogService.testTypes(signal),
-    "test-types",
-  );
-  const [detailEquipment, setDetailEquipment] = useState(null);
-  const [selecting, setSelecting] = useState(null);
+  const [detailEquipment, setDetailEquipment] = useState<Equipment | null>(null);
+  const [selecting, setSelecting] = useState<number | null>(null);
   const [selectionError, setSelectionError] = useState(null);
-  const selectionRequest = useRef(null);
+  const selectionRequest = useRef<AbortController | null>(null);
   useEffect(() => () => selectionRequest.current?.abort(), []);
-  const serverSearch = ["all", "natural"].includes(filterType);
-  const institutionShortcut = Boolean(institutionId && equipmentList.some((item) =>
-    item.institutionId === institutionId && item.institution === queryTerm));
+
   useEffect(() => {
-    const timer = setTimeout(() => setQueryTerm(searchTerm.trim()), 250);
+    const timer = setTimeout(() => setKeywordQuery(keyword.trim()), 250);
     return () => clearTimeout(timer);
-  }, [searchTerm]);
+  }, [keyword]);
+  useEffect(() => {
+    onViewChange?.({ searchTerm: sentence || keyword, sentence: Boolean(sentence), page, ...filters });
+  }, [sentence, keyword, page, filters, onViewChange]);
+
+  const types = useApiQuery((signal) => catalogService.testTypes(signal), "test-types");
+  const institutions = useApiQuery(
+    (signal) => catalogService.institutions(signal) as Promise<{ id: number; name: string; region?: string | null }[]>,
+    "institutions",
+  );
+  const regions = useMemo(
+    () => [...new Set((institutions.data ?? []).map((item) => item.region).filter(Boolean))].sort((a, b) => a.localeCompare(b, "ko")),
+    [institutions.data],
+  );
+
   const listQuery = useApiQuery(
     async (signal) => {
-      if (filterType === "natural") {
-        if (!queryTerm)
-          return {
-            content: [],
-            page: 0,
-            size: 20,
-            totalElements: 0,
-            totalPages: 0,
-          };
-        const result = await catalogService.search(queryTerm, signal);
-        const items = result.equipment
-          .map(equipmentView)
-          .filter(
-            (e) =>
-              (!region || e.region === region) &&
-              (!institutionId || e.institutionId === institutionId) &&
-              (!testType || e.testTypes.includes(testType)),
-          );
-        return {
-          content: items,
-          page: 0,
-          size: 20,
-          totalElements: items.length,
-          totalPages: items.length ? 1 : 0,
-          interpreted: result.interpreted,
-        };
+      if (sentence) {
+        // 문장 검색: GET /search 결과를 같은 목록에 보여 주고, 서버가 모르는 필터는 화면에서 거른다.
+        const result = await catalogService.search(sentence, signal);
+        const items = result.equipment.map(equipmentView).filter((item) =>
+          (!filters.regions.length || filters.regions.includes(item.region ?? "")) &&
+          (!filters.institutionId || item.institutionId === filters.institutionId) &&
+          (!filters.testType || item.testTypes.includes(filters.testType)) &&
+          (!filters.equipmentType || item.equipmentType === filters.equipmentType) &&
+          (!filters.availability || item.availability === filters.availability) &&
+          (filters.includeMock || !item.isMock));
+        return { content: items, totalElements: items.length, totalPages: 1, interpreted: result.interpreted };
       }
-      return equipmentService.list(
-        {
-          q: institutionShortcut ? undefined : queryTerm,
-          institutionId,
-          page,
-          region,
-          testType,
-        },
-        signal,
-      );
+      return equipmentService.list({
+        q: keywordQuery || undefined,
+        page,
+        size: PAGE_SIZE,
+        ...filters,
+        region: filters.regions,
+      }, signal);
     },
-    JSON.stringify([
-      user.id,
-      queryTerm,
-      institutionId,
-      page,
-      region,
-      testType,
-      filterType,
-      institutionShortcut,
-    ]),
-    serverSearch,
+    JSON.stringify([user.id, sentence, keywordQuery, page, filters]),
   );
-  const localResults = equipmentList.filter((item) => {
-    if (
-      (region && item.region !== region) ||
-      (institutionId && item.institutionId !== institutionId) ||
-      (testType && !item.testTypes.includes(testType))
-    )
-      return false;
-    const term = searchTerm.toLowerCase().trim();
-    if (!term) return true;
-    if (filterType === "name") return item.name.toLowerCase().includes(term);
-    if (filterType === "testItem")
-      return `${item.testItem} ${item.testTypes?.join(" ") ?? ""}`
-        .toLowerCase()
-        .includes(term);
-    if (filterType === "institution")
-      return item.institution.toLowerCase().includes(term);
-    return [item.name, item.testItem, item.institution]
-      .join(" ")
-      .toLowerCase()
-      .includes(term);
-  });
-  const filteredEquipment = serverSearch
-    ? (listQuery.data?.content ?? [])
-    : localResults.slice(page * 20, (page + 1) * 20);
-  const total = serverSearch
-    ? (listQuery.data?.totalElements ?? 0)
-    : localResults.length;
-  const totalPages = serverSearch
-    ? (listQuery.data?.totalPages ?? 0)
-    : Math.ceil(localResults.length / 20);
-  const state = serverSearch ? listQuery : catalogQuery;
-  const waiting =
-    state.loading || (serverSearch && searchTerm.trim() !== queryTerm);
-  const handleSelect = (equip) => {
+  const results = listQuery.data?.content ?? [];
+  const interpreted = (listQuery.data as { interpreted?: { testTypes?: string[]; conditions?: object[]; regions?: string[] } } | null)?.interpreted;
+  const waiting = listQuery.loading || (!sentence && keyword.trim() !== keywordQuery);
+
+  const update = <K extends keyof Filters>(key: K, value: Filters[K]) => {
+    setFilters((previous) => ({ ...previous, [key]: value }));
+    setPage(0);
+  };
+  const reset = () => {
+    setFilters(emptyFilters);
+    setKeyword("");
+    setSentence("");
+    setSentenceInput("");
+    setPage(0);
+  };
+  const submitSentence = (event: FormEvent) => {
+    event.preventDefault();
+    setSentence(sentenceInput.trim());
+    setPage(0);
+  };
+
+  const institutionName = (id: number) => institutions.data?.find((item) => item.id === id)?.name ?? `기관 #${id}`;
+  const chips: { label: string; clear: () => void }[] = [
+    sentence && { label: `문장: ${sentence}`, clear: () => { setSentence(""); setSentenceInput(""); } },
+    keyword && { label: `검색어: ${keyword}`, clear: () => setKeyword("") },
+    filters.testType && { label: testTypeLabel(filters.testType), clear: () => update("testType", "") },
+    ...filters.regions.map((region) => ({ label: region, clear: () => update("regions", filters.regions.filter((r) => r !== region)) })),
+    filters.institutionId && { label: institutionName(filters.institutionId), clear: () => update("institutionId", null) },
+    filters.equipmentType && { label: equipmentTypeLabels[filters.equipmentType], clear: () => update("equipmentType", "") },
+    filters.availability && { label: availabilityLabels[filters.availability], clear: () => update("availability", "") },
+    filters.externalOnly && { label: "공동활용만", clear: () => update("externalOnly", false) },
+    filters.accreditedOnly && { label: "공인시험 가능만", clear: () => update("accreditedOnly", false) },
+    !filters.includeMock && { label: "시연 데이터 제외", clear: () => update("includeMock", true) },
+  ].filter(Boolean);
+
+  const ownEquipment = (item: Equipment) => user.organization?.id != null && item.institutionId === user.organization.id;
+  const canRequest = canAccessMenu(user.role, "request");
+  const startRequest = (equipment: Equipment) => {
     setDraftRequestId(null);
-    setSelectedEquipment(equip);
+    setSelectedEquipment(equipment);
     setActiveMenu("request");
   };
-  const requestEquipment = async (equip) => {
+  const requestEquipment = async (item: Equipment) => {
     selectionRequest.current?.abort();
     const controller = new AbortController();
     selectionRequest.current = controller;
-    setSelecting(equip.id);
+    setSelecting(item.id);
     setSelectionError(null);
     try {
-      const detail = await resolveEquipment(equip.id, controller.signal);
-      if (!controller.signal.aborted) handleSelect(detail);
+      const detail = await resolveEquipment(item.id, controller.signal);
+      if (!controller.signal.aborted && detail) startRequest(detail);
     } catch (error) {
       if (!controller.signal.aborted) setSelectionError(error);
     } finally {
       if (!controller.signal.aborted) setSelecting(null);
     }
   };
+  const toggleCompare = (id: number, checked: boolean) =>
+    setComparisonIds((ids) => checked ? [...ids, id] : ids.filter((other) => other !== id));
 
   return (
     <div className="content-page page-enter equipment-search-page">
-      <PageHeader
-        title="시험장비 검색"
-      >
-        <Badge tone="cyan" dot>인증된 API 조회</Badge>
+      <PageHeader title="장비 찾기">
+        <Button variant="secondary" icon={Columns3} disabled={comparisonIds.length < 2}
+          title="목록에서 2~5대를 체크하면 비교할 수 있습니다" onClick={() => setActiveMenu("compare")}>
+          비교 {comparisonIds.length > 0 && `(${comparisonIds.length})`}
+        </Button>
       </PageHeader>
-      <div className="workspace-context-actions" role="group" aria-label="장비 검색 도구">
-        <Button variant="secondary" icon={Sparkles} onClick={() => setActiveMenu("request")}>
-          조건 분석·매칭
-        </Button>
-        <Button variant="secondary" icon={Columns3} onClick={() => setActiveMenu("compare")}>
-          장비 비교{comparisonIds.length > 0 && ` (${comparisonIds.length})`}
-        </Button>
-        <Button variant="secondary" icon={BookOpen} onClick={() => setActiveMenu("testInfo")}>
-          시험 정보 안내
-        </Button>
-        {!canAccessMenu(user.role, "manager") && (
-          <Button variant="secondary" icon={Copy} onClick={() => setActiveMenu("duplicates")}>
-            중복·유사 장비 조회
-          </Button>
-        )}
-        {!waiting && filteredEquipment.length === 0 && (
-          <Button variant="secondary" icon={Activity} onClick={() => {
-            setSimulationEquipmentId(null);
-            setActiveMenu("simulation");
-          }}>
-            가상 시뮬레이션
-          </Button>
-        )}
-      </div>
-      {testCondition && (
-        <div className="content-note">
-          <Info size={16} />
-          <div>
-            <strong>상담에서 정리한 시험조건</strong>
-            <p>{testCondition}</p>
-            <p className="field-hint">
-              추출된 조건은 직접 확인한 뒤 분석·매칭 화면에서 보완할 수
-              있습니다.
-            </p>
+
+      <div className="finder">
+        <Panel className="finder__filters" aria-label="장비 필터">
+          <div className="form-field">
+            <label htmlFor="eq-q">장비명·모델·시험항목</label>
+            <input id="eq-q" type="search" value={keyword} placeholder="예: 진동, EDS5000"
+              onChange={(event) => { setKeyword(event.target.value); setSentence(""); setPage(0); }} />
           </div>
-        </div>
-      )}
-      <Panel className="search-toolbar">
-        <label className="sr-only" htmlFor="equipment-filter">
-          검색 기준
-        </label>
-        <select
-          id="equipment-filter"
-          value={filterType}
-          onChange={(e) => {
-            setFilterType(e.target.value);
-            setPage(0);
-            setInstitutionId(null);
-          }}
-        >
-          <option value="all">전체 검색</option>
-          <option value="natural">자연어·시험항목 검색</option>
-          <option value="name">장비명</option>
-          <option value="testItem">시험항목</option>
-          <option value="institution">보유기관</option>
-        </select>
-        <label className="sr-only" htmlFor="equipment-query">
-          검색어
-        </label>
-        <div className="search-field">
-          <SearchIcon size={18} />
-          <input
-            id="equipment-query"
-            type="search"
-            placeholder="장비명, 시험항목, 기관을 검색하세요"
-            value={searchTerm}
-            onChange={(e) => {
-              setSearchTerm(e.target.value);
-              setPage(0);
-              setInstitutionId(null);
-            }}
-          />
-        </div>
-      </Panel>
-      <Panel className="form-panel">
-        <details>
-          <summary>지역·기관·시험유형 필터</summary>
-          <div className="form-grid">
-            <FormField id="equipment-region" label="지역">
-              <select
-                id="equipment-region"
-                value={region}
-                onChange={(e) => {
-                  setRegion(e.target.value);
-                  setPage(0);
-                }}
-              >
-                <option value="">전체 지역</option>
-                {[
-                  ...new Set(
-                    equipmentList.map((e) => e.region).filter(Boolean),
-                  ),
-                ].map((r) => (
-                  <option key={r}>{r}</option>
-                ))}
-              </select>
-            </FormField>
-            <FormField id="equipment-institution" label="보유기관">
-              <select
-                id="equipment-institution"
-                value={institutionId ?? ""}
-                onChange={(e) => {
-                  setInstitutionId(
-                    e.target.value ? Number(e.target.value) : null,
-                  );
-                  setPage(0);
-                }}
-              >
-                <option value="">전체 기관</option>
-                {[
-                  ...new Map(
-                    equipmentList
-                      .filter((e) => e.institutionId)
-                      .map((e) => [e.institutionId, e.institution]),
-                  ).entries(),
-                ].map(([id, name]) => (
-                  <option key={id} value={id}>
-                    {name}
-                  </option>
-                ))}
-              </select>
-            </FormField>
-            <FormField id="equipment-test-type" label="시험유형">
-              <select
-                id="equipment-test-type"
-                value={testType}
-                onChange={(e) => {
-                  setTestType(e.target.value);
-                  setPage(0);
-                }}
-              >
-                <option value="">전체 시험유형</option>
-                {types.data?.map((t) => (
-                  <option key={t.code} value={t.code}>
-                    {t.nameKo}
-                  </option>
-                ))}
-              </select>
-            </FormField>
+          <div className="form-field">
+            <label htmlFor="eq-test-type">시험유형</label>
+            <select id="eq-test-type" value={filters.testType} onChange={(event) => update("testType", event.target.value)}>
+              <option value="">전체</option>
+              {types.data?.map((type) => <option key={type.code} value={type.code}>
+                {type.nameKo}{type.equipmentCount != null ? ` (${type.equipmentCount})` : ""}
+              </option>)}
+            </select>
           </div>
-          {types.error && (
-            <ApiState error={types.error} onRetry={types.reload} />
-          )}
-        </details>
-      </Panel>
-      <div className="results-heading">
-        <span>
-          검색 결과<strong>{waiting || state.error ? "—" : total}</strong>건
-        </span>
-        <small>
-          <SlidersHorizontal size={12} />
-          {serverSearch
-            ? institutionId
-              ? "기관 ID 필터 적용"
-              : filterType === "natural"
-                ? "자연어 해석 · 최대 20개 후보"
-                : "장비·모델·시험유형 검색"
-            : "전체 조회 목록에서 선택 필드 필터"}{" "}
-          · 최종 이용 일정은 기관 확인
-        </small>
+          <fieldset>
+            <legend>가용 상태</legend>
+            <select aria-label="가용 상태" value={filters.availability} onChange={(event) => update("availability", event.target.value)}>
+              <option value="">전체</option>
+              {Object.entries(availabilityLabels).map(([key, label]) => <option key={key} value={key}>{label}</option>)}
+            </select>
+          </fieldset>
+          <fieldset>
+            <legend>지역 (여러 개 선택)</legend>
+            <div className="check-grid">
+              {regions.map((region) => <label className="check-row" key={region}>
+                <input type="checkbox" checked={filters.regions.includes(region)}
+                  onChange={(event) => update("regions", event.target.checked ? [...filters.regions, region] : filters.regions.filter((r) => r !== region))} />
+                {region}
+              </label>)}
+            </div>
+          </fieldset>
+          <div className="form-field">
+            <label htmlFor="eq-institution">보유 조직</label>
+            <select id="eq-institution" value={filters.institutionId ?? ""} onChange={(event) => update("institutionId", event.target.value ? Number(event.target.value) : null)}>
+              <option value="">전체</option>
+              {institutions.data?.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
+            </select>
+          </div>
+          <div className="form-field">
+            <label htmlFor="eq-type">장비 유형</label>
+            <select id="eq-type" value={filters.equipmentType} onChange={(event) => update("equipmentType", event.target.value)}>
+              <option value="">전체</option>
+              {Object.entries(equipmentTypeLabels).map(([key, label]) => <option key={key} value={key}>{label}</option>)}
+            </select>
+          </div>
+          <fieldset>
+            <legend>조건</legend>
+            <label className="check-row"><input type="checkbox" checked={filters.externalOnly} disabled={Boolean(sentence)}
+              onChange={(event) => update("externalOnly", event.target.checked)} />공동활용만</label>
+            <label className="check-row"><input type="checkbox" checked={filters.accreditedOnly} disabled={Boolean(sentence)}
+              onChange={(event) => update("accreditedOnly", event.target.checked)} />공인시험 가능만</label>
+            <label className="check-row"><input type="checkbox" checked={filters.includeMock}
+              onChange={(event) => update("includeMock", event.target.checked)} />시연 데이터 포함</label>
+          </fieldset>
+          {(types.error || institutions.error) && <ApiState error={types.error ?? institutions.error}
+            onRetry={() => { types.reload(); institutions.reload(); }} />}
+        </Panel>
+
+        <div>
+          <form className="finder__sentence" onSubmit={submitSentence} role="search">
+            <label className="sr-only" htmlFor="eq-sentence">문장으로 찾기</label>
+            <div className="search-field">
+              <Sparkles size={16} aria-hidden="true" />
+              <input id="eq-sentence" type="search" value={sentenceInput} onChange={(event) => setSentenceInput(event.target.value)}
+                placeholder="문장으로 찾기 — 예: 15kg, 20~2000Hz 진동시험" />
+            </div>
+            <Button type="submit" variant="secondary" icon={SearchIcon} disabled={!sentenceInput.trim()}>찾기</Button>
+          </form>
+
+          <div className="finder__bar" aria-live="polite">
+            <span>결과 <strong>{waiting || listQuery.error ? "—" : (listQuery.data?.totalElements ?? 0).toLocaleString("ko-KR")}</strong>대</span>
+            {chips.map((chip) => <span className="chip" key={chip.label}>{chip.label}
+              <button type="button" aria-label={`${chip.label} 필터 지우기`} onClick={chip.clear}><X size={12} /></button>
+            </span>)}
+            {chips.length > 0 && <button type="button" className="text-link" onClick={reset}>모두 지우기</button>}
+            <span className="finder__bar-end">
+              <label className="sr-only" htmlFor="eq-sort">정렬</label>
+              <select id="eq-sort" value={filters.sort} disabled={Boolean(sentence)} onChange={(event) => update("sort", event.target.value)}>
+                <option value="externalId">등록번호순</option>
+                <option value="infoUpdatedAt,desc">최근 갱신순</option>
+              </select>
+            </span>
+          </div>
+          {sentence && interpreted && <p className="content-note content-note--quiet">
+            <Sparkles size={13} aria-hidden="true" />
+            <span>해석: {[...(interpreted.testTypes ?? []).map(testTypeLabel),
+              ...(interpreted.conditions ?? []).map((condition) => valueText(condition)),
+              ...(interpreted.regions ?? [])].join(" · ") || "시험유형을 찾지 못해 장비명·모델로 검색했습니다"}</span>
+          </p>}
+
+          <Panel>
+            {waiting || listQuery.error ? <ApiState loading={waiting} error={listQuery.error} onRetry={listQuery.reload} /> :
+              results.length === 0 ? <p className="inline-empty">조건에 맞는 장비가 없습니다.
+                {chips.length > 0 && <Button variant="secondary" onClick={reset}>필터 지우기</Button>}</p> :
+              <div className="table-scroll"><table className="data-table equipment-table">
+                <thead><tr>
+                  <th><span className="sr-only">비교</span></th>
+                  <th>장비</th><th>보유 조직·지역</th><th>시험유형</th><th>상태</th><th><span className="sr-only">동작</span></th>
+                </tr></thead>
+                <tbody>{results.map((item) => {
+                  const scope = accessScopeOf(item);
+                  const checked = comparisonIds.includes(item.id);
+                  return <tr key={item.id}>
+                    <td><input type="checkbox" aria-label={`${item.name} 비교에 담기`} checked={checked}
+                      disabled={!checked && comparisonIds.length >= 5} onChange={(event) => toggleCompare(item.id, event.target.checked)} /></td>
+                    <td>
+                      <button type="button" className="row-title" onClick={() => setDetailEquipment(item)}>{item.name}</button>
+                      <small>{[item.model, item.externalId].filter(Boolean).join(" · ")}</small>
+                    </td>
+                    <td>{item.institution || "확인 필요"}<small>{item.region ?? "지역 확인 필요"}</small></td>
+                    <td><div className="badges">{item.testTypes.length ? item.testTypes.map((code) =>
+                      <Badge key={code} tone="cyan">{testTypeLabel(code)}</Badge>) : <span className="small-note">—</span>}</div></td>
+                    <td><div className="badges">
+                      <Badge tone={availabilityTone[item.availability ?? "UNKNOWN"]} dot>{availabilityLabels[item.availability ?? "UNKNOWN"] ?? item.availability}</Badge>
+                      {scope && accessScopeLabels[scope] && <Badge tone={scope === "EXTERNAL_ALLOWED" ? "blue" : "violet"}>{accessScopeLabels[scope]}</Badge>}
+                      {item.isMock && <Badge tone="amber">DEMO</Badge>}
+                    </div></td>
+                    <td className="cell-actions">
+                      <Button variant="ghost" className="button--sm" onClick={() => setDetailEquipment(item)}>상세</Button>
+                      <Button className="button--sm" icon={ArrowRight}
+                        disabled={selecting !== null || ownEquipment(item) || !canRequest}
+                        title={ownEquipment(item) ? "우리 조직 장비에는 의뢰할 수 없습니다" : undefined}
+                        onClick={() => requestEquipment(item)}>
+                        {selecting === item.id ? "확인 중…" : "이 장비로 의뢰"}
+                      </Button>
+                    </td>
+                  </tr>;
+                })}</tbody>
+              </table></div>}
+          </Panel>
+          {!sentence && !waiting && !listQuery.error && (listQuery.data?.totalPages ?? 0) > 1 && <div className="finder__bar" style={{ justifyContent: "center", marginTop: 8 }}>
+            <Button variant="secondary" className="button--sm" disabled={page === 0} onClick={() => setPage((p) => p - 1)}>이전</Button>
+            <span>{page + 1} / {listQuery.data.totalPages}</span>
+            <Button variant="secondary" className="button--sm" disabled={page + 1 >= listQuery.data.totalPages} onClick={() => setPage((p) => p + 1)}>다음</Button>
+          </div>}
+          {selectionError && <ApiState error={selectionError} />}
+        </div>
       </div>
-      {waiting || state.error ? (
-        <Panel>
-          <ApiState
-            loading={waiting}
-            error={state.error}
-            onRetry={state.reload}
-          />
-        </Panel>
-      ) : filteredEquipment.length ? (
-        <div className="equipment-grid">
-          {filteredEquipment.map((equip, index) => (
-            <Panel className="equipment-card" key={equip.id}>
-              <div className="equipment-card__visual">
-                <Badge tone="cyan">
-                  {equip.testItem || "시험항목 확인 필요"}
-                </Badge>
-                <Microscope size={56} aria-hidden="true" />
-                <span className="equipment-card__id">
-                  {equip.externalId ||
-                    `EQ-${String(index + 1).padStart(3, "0")}`}
-                  {equip.isMock && " · DEMO"}
-                </span>
-              </div>
-              <div className="equipment-card__body">
-                <h2>{equip.name}</h2>
-                <p className="equipment-card__institution">
-                  <Building2 size={14} />
-                  {equip.institution || "보유기관 확인 필요"}
-                </p>
-                <div className="equipment-description">
-                  <span>장비 활용 설명 · 등록 정보</span>
-                  <p>
-                    {equip.reason ||
-                      "상세보기에서 사양과 이용조건을 확인해주세요."}
-                  </p>
-                  <small>정보 갱신일 {equip.updateDate || "확인 필요"}</small>
-                </div>
-                <label className="equipment-card__compare">
-                  <input
-                    type="checkbox"
-                    aria-label={`${equip.name} 비교에 담기`}
-                    checked={comparisonIds.includes(equip.id)}
-                    disabled={!comparisonIds.includes(equip.id) && comparisonIds.length >= 5}
-                    onChange={(event) => {
-                      const checked = event.target.checked;
-                      setComparisonIds((ids) => checked ? [...ids, equip.id] : ids.filter((id) => id !== equip.id));
-                    }}
-                  />
-                  비교에 담기
-                </label>
-                <div className="equipment-card__footer">
-                  <TextLink onClick={() => setDetailEquipment(equip)}>
-                    상세보기
-                  </TextLink>
-                  <Button
-                    icon={ArrowRight}
-                    disabled={
-                      selecting !== null ||
-                      (user.organization?.id != null && equip.institutionId === user.organization.id) ||
-                      !canAccessMenu(user.role, "request")
-                    }
-                    onClick={() => requestEquipment(equip)}
-                  >
-                    {selecting === equip.id ? "장비 확인 중…" : "시험 의뢰하기"}
-                  </Button>
-                </div>
-              </div>
-            </Panel>
-          ))}
-        </div>
-      ) : (
-        <Panel>
-          <EmptyState
-            icon={SearchIcon}
-            title="일치하는 장비를 찾지 못했어요"
-            description="다른 검색어나 검색 기준으로 다시 찾아보세요."
-          >
-            <Button
-              variant="secondary"
-              onClick={() => {
-                setSearchTerm("");
-                setQueryTerm("");
-                setFilterType("all");
-                setInstitutionId(null);
-                setRegion("");
-                setTestType("");
-                setPage(0);
-              }}
-            >
-              전체 장비 보기
-            </Button>
-          </EmptyState>
-        </Panel>
-      )}
-      {!waiting && !state.error && totalPages > 1 && (
-        <div className="form-actions">
-          <Button
-            variant="secondary"
-            disabled={page === 0}
-            onClick={() => setPage((p) => p - 1)}
-          >
-            이전 페이지
-          </Button>
-          <span>
-            {page + 1} / {totalPages}
-          </span>
-          <Button
-            variant="secondary"
-            disabled={page + 1 >= totalPages}
-            onClick={() => setPage((p) => p + 1)}
-          >
-            다음 페이지
-          </Button>
-        </div>
-      )}
-      {selectionError && <ApiState error={selectionError} />}
-      <EquipmentDetailDialog
-        item={detailEquipment}
-        onClose={() => setDetailEquipment(null)}
-        onSelect={handleSelect}
-      />
+      <EquipmentDetailDialog item={detailEquipment} onClose={() => setDetailEquipment(null)} onSelect={startRequest} />
     </div>
   );
 }
