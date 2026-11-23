@@ -19,11 +19,6 @@
       "source": "dial"
     },
     {
-      "thing": "font",
-      "value": "\"Pretendard Variable\", Pretendard, \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif",
-      "source": "dial"
-    },
-    {
       "thing": "background-color",
       "value": "#3a3c3e",
       "source": "property",
@@ -36,6 +31,11 @@
       "source": "property",
       "on": "progress-bar-track",
       "mode": "dark"
+    },
+    {
+      "thing": "font",
+      "value": "Pretendard, \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif",
+      "source": "dial"
     }
   ],
   "lifted": [],

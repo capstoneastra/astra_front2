@@ -7,6 +7,8 @@ import { authService } from "../services/authService";
 import { roleLabels, formatDate } from "../domain/constants";
 import { Badge, Button, PageHeader, Panel } from "./ui";
 import { Feedback } from "./workflow/Feedback";
+import { TextInput } from "@astryxdesign/core/TextInput";
+import { HStack } from "@astryxdesign/core/HStack";
 
 const orgTypeLabels: Record<string, string> = { COMPANY: "기업", INSTITUTION: "기관", UNIVERSITY: "대학" };
 
@@ -48,20 +50,14 @@ export default function Profile() {
           <Badge tone={user.status === "ACTIVE" ? "green" : "amber"}>{user.status === "ACTIVE" ? "이용 중" : user.status}</Badge>
         </div>
 
-        <div className="profile-grid">
-          <div className={`form-field ${nameError || serverErrors.name ? "form-field--invalid" : ""}`}>
-            <label htmlFor="profile-name" className="label-required">이름 <b>*</b></label>
-            <input id="profile-name" autoComplete="name" value={form.name} disabled={local}
-              onChange={(e) => setForm({ ...form, name: e.target.value })} />
-            {(serverErrors.name ?? nameError) && <p className="field-error">{serverErrors.name ?? nameError}</p>}
-          </div>
-          <div className={`form-field ${serverErrors.phone ? "form-field--invalid" : ""}`}>
-            <label htmlFor="profile-phone" className="label-optional">연락처 <span>(선택)</span></label>
-            <input id="profile-phone" type="tel" autoComplete="tel" placeholder="010-0000-0000" value={form.phone} disabled={local}
-              onChange={(e) => setForm({ ...form, phone: e.target.value })} />
-            {serverErrors.phone && <p className="field-error">{serverErrors.phone}</p>}
-          </div>
-        </div>
+        <HStack gap={4} wrap="wrap" className="profile-grid">
+          <TextInput label="이름" isRequired autoComplete="name" value={form.name} isDisabled={local} width="100%"
+            onChange={(name) => setForm({ ...form, name })}
+            status={serverErrors.name ?? nameError ? { type: "error", message: serverErrors.name ?? nameError } : undefined} />
+          <TextInput label="연락처" type="tel" isOptional autoComplete="tel" placeholder="010-0000-0000" value={form.phone} isDisabled={local} width="100%"
+            onChange={(phone) => setForm({ ...form, phone })}
+            status={serverErrors.phone ? { type: "error", message: serverErrors.phone } : undefined} />
+        </HStack>
 
         <dl className="kv profile-readonly">
           <dt>이메일 (아이디)</dt><dd>{user.email || "—"}</dd>

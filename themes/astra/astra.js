@@ -92,8 +92,8 @@ export const astraTheme = {
     "--_astryx-pre-tempo-duration-slow": "700ms",
     "--_astryx-pre-tempo-duration-slow-max": "935ms",
     "--_astryx-motion-tempo": "1",
-    "--font-family-body": "\"Pretendard Variable\", Pretendard, Apple SD Gothic Neo, Malgun Gothic, sans-serif",
-    "--font-family-heading": "\"Pretendard Variable\", Pretendard, Apple SD Gothic Neo, Malgun Gothic, sans-serif",
+    "--font-family-body": "Pretendard, Apple SD Gothic Neo, Malgun Gothic, sans-serif",
+    "--font-family-heading": "Pretendard, Apple SD Gothic Neo, Malgun Gothic, sans-serif",
     "--font-family-code": "ui-monospace, \"SF Mono\", Monaco, Consolas, \"Liberation Mono\", \"Courier New\", monospace",
     "--color-syntax-keyword": "light-dark(#6b187c, #efa8ff)",
     "--color-syntax-string": "light-dark(#0b5615, #a4d6a3)",
@@ -550,12 +550,12 @@ export const astraTheme = {
         "ratio": 1.2
       },
       "body": {
-        "family": "Pretendard Variable",
-        "fallbacks": "Pretendard, Apple SD Gothic Neo, Malgun Gothic, sans-serif"
+        "family": "Pretendard",
+        "fallbacks": "Apple SD Gothic Neo, Malgun Gothic, sans-serif"
       },
       "heading": {
-        "family": "Pretendard Variable",
-        "fallbacks": "Pretendard, Apple SD Gothic Neo, Malgun Gothic, sans-serif",
+        "family": "Pretendard",
+        "fallbacks": "Apple SD Gothic Neo, Malgun Gothic, sans-serif",
         "weights": {
           "3": "bold",
           "4": "bold"

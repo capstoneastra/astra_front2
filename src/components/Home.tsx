@@ -1,6 +1,6 @@
 import { useState } from "react";
 import type { ReactNode } from "react";
-import { Activity, ArrowRight, ArrowUpRight, Database, Inbox, RefreshCw, Send, Telescope } from "lucide-react";
+import { Activity, Database, Inbox, RefreshCw, Send, Telescope } from "lucide-react";
 import { useWorkspace } from "../context/AppContext";
 import { useAuth } from "../auth/context";
 import { useApiQuery } from "../hooks/useApiQuery";
@@ -12,7 +12,11 @@ import type { RequestBox, RequestSummary } from "../services/contracts";
 import type { ApprovalFocus } from "../hooks/useWorkspaceNavigation";
 import { dateLabel, seoulDate, timeLabel } from "../domain/calendar";
 import { requestStatusLabels } from "../domain/constants";
-import { Badge, Button, PageHeader, Panel, TextLink } from "./ui";
+import { Button, PageHeader, Panel, TextLink } from "./ui";
+import { List, ListItem } from "@astryxdesign/core/List";
+import { Badge as AxBadge } from "@astryxdesign/core/Badge";
+import { Text } from "@astryxdesign/core/Text";
+import { HStack } from "@astryxdesign/core/HStack";
 import ApiState from "./ui/ApiState";
 
 interface HomeProps {
@@ -24,9 +28,9 @@ interface HomeProps {
 
 type Row = RequestSummary & { companyName?: string; requester?: { name: string }; desiredStartDate?: string | null };
 
-const statusTone = (status: string) =>
-  status === "SUPPLEMENT_REQUESTED" ? "amber" : status === "COMPLETED" ? "green" :
-    ["REJECTED", "CANCELED"].includes(status) ? "red" : "cyan";
+const statusVariant = (status: string): "warning" | "success" | "error" | "neutral" =>
+  status === "SUPPLEMENT_REQUESTED" ? "warning" : status === "COMPLETED" ? "success" :
+    ["REJECTED", "CANCELED"].includes(status) ? "error" : "neutral";
 
 /** 의뢰가 어디까지 왔는지: 제출 → 검토 → 일정 → 시험 → 결과 */
 const stages = ["제출", "검토", "일정", "시험", "결과"];
@@ -80,7 +84,7 @@ function RowList({ rows, empty, render, state }: {
 }) {
   if (state?.loading) return <ApiState loading />;
   if (state?.error) return <ApiState error={state.error as never} onRetry={state.reload} />;
-  return rows.length === 0 ? <p className="inline-empty">{empty}</p> : <ul className="work-dashboard__list">{rows.map(render)}</ul>;
+  return rows.length === 0 ? <p className="inline-empty">{empty}</p> : <List hasDividers density="compact">{rows.map(render)}</List>;
 }
 
 /* ───────── 기업: 시험을 맡기는 쪽 ───────── */
@@ -95,29 +99,26 @@ function CompanyDashboard({ setActiveMenu, openRequest }: Pick<HomeProps, "setAc
   const results = pick("COMPLETED");
   const drafts = pick("DRAFT");
   const open = (row: Row) => openRequest("SENT", row.id);
-  const row = (item: Row, side: ReactNode) => <li key={item.id}>
-    <button type="button" className="work-dashboard__row" onClick={() => open(item)}>
-      <span><strong>{item.title || item.requestNo}</strong><small>{item.equipment?.name} · {item.institution?.name}</small></span>
-      {side}
-    </button>
-  </li>;
+  const row = (item: Row, side: ReactNode) => <ListItem key={item.id} itemKey={item.id} onClick={() => open(item)}
+    label={item.title || item.requestNo} description={[item.equipment?.name, item.institution?.name].filter(Boolean).join(", ")}
+    endContent={<HStack gap={2} vAlign="center">{side}</HStack>} />;
   const tabs: Tab[] = [
-    { id: "turn", label: "내가 답할 차례", tone: "amber", count: ready ? myTurn.length : null, hint: "보완 요청·일정 확인",
+    { id: "turn", label: "내가 답할 차례", tone: "amber", count: ready ? myTurn.length : null, hint: "보완 요청과 일정 확인",
       body: <RowList rows={myTurn} state={list} empty="지금 답할 의뢰가 없습니다." render={(item) => row(item, <>
-        <span className="dash-next">{item.status === "SUPPLEMENT_REQUESTED" ? "추가 정보 입력" : "일정 확인"} <ArrowRight size={13} aria-hidden="true" /></span>
+        <Text type="supporting" color="accent">{item.status === "SUPPLEMENT_REQUESTED" ? "추가 정보 입력" : "일정 확인"}</Text>
       </>)} /> },
     { id: "active", label: "진행 중", count: ready ? active.length : null,
       more: <TextLink onClick={() => openRequest("SENT", undefined, "ACTIVE")}>목록으로</TextLink>,
       body: <RowList rows={active} state={list} empty="진행 중인 의뢰가 없습니다." render={(item) => row(item, <>
-        <StageBar status={item.status} /><Badge tone={statusTone(item.status)}>{requestStatusLabels[item.status]}</Badge>
+        <StageBar status={item.status} />
       </>)} /> },
     { id: "results", label: "결과 도착", tone: "green", count: ready ? results.length : null,
       body: <RowList rows={results} state={list} empty="아직 도착한 결과가 없습니다." render={(item) => row(item, <>
-        <span className="dash-next">결과·성적서 보기 <ArrowUpRight size={13} aria-hidden="true" /></span>
+        <Text type="supporting" color="accent">결과와 성적서 보기</Text>
       </>)} /> },
     { id: "drafts", label: "작성 중", tone: "violet", count: ready ? drafts.length : null,
       body: <RowList rows={drafts} state={list} empty="작성 중인 의뢰서가 없습니다." render={(item) => row(item, <>
-        <span className="dash-next">이어서 작성 <ArrowRight size={13} aria-hidden="true" /></span>
+        <Text type="supporting" color="accent">이어서 작성</Text>
       </>)} /> },
   ];
   return <>
@@ -157,14 +158,13 @@ function InstitutionDashboard({ setActiveMenu, openRequest }: Pick<HomeProps, "s
   const upcoming = (summary.data?.upcomingReservations ?? []).filter((item) => Date.parse(item.endAt) > now)
     .sort((a, b) => Date.parse(a.startAt) - Date.parse(b.startAt));
   const stale = (equipment.data?.content ?? []).filter((item) => item.needsUpdate);
-  const requestRows = (items: Row[], empty: string) => <RowList rows={items} state={list} empty={empty} render={(item) => <li key={item.id}>
-    <button type="button" className="work-dashboard__row" onClick={() => openRequest("RECEIVED", item.id)}>
-      <span><strong>{item.title || item.requestNo}</strong>
-        <small>{item.companyName ?? item.requester?.name} · {item.equipment?.name}{item.desiredStartDate ? ` · 희망 ${item.desiredStartDate}` : ""}</small></span>
-      <Badge tone={statusTone(item.status)}>{requestStatusLabels[item.status]}</Badge>
-      <span className="dash-next">{nextAction[item.status] ?? "보기"} <ArrowRight size={13} aria-hidden="true" /></span>
-    </button>
-  </li>} />;
+  const requestRows = (items: Row[], empty: string) => <RowList rows={items} state={list} empty={empty} render={(item) =>
+    <ListItem key={item.id} itemKey={item.id} onClick={() => openRequest("RECEIVED", item.id)} label={item.title || item.requestNo}
+      description={[item.companyName ?? item.requester?.name, item.equipment?.name, item.desiredStartDate ? `희망 ${item.desiredStartDate}` : null].filter(Boolean).join(", ")}
+      endContent={<HStack gap={2} vAlign="center">
+        <AxBadge variant={statusVariant(item.status)} label={requestStatusLabels[item.status]} />
+        <Text type="supporting" color="accent">{nextAction[item.status] ?? "보기"}</Text>
+      </HStack>} />} />;
   const review = pick("SUBMITTED", "RESUBMITTED", "UNDER_REVIEW");
   const tabs: Tab[] = [
     { id: "review", label: "검토할 의뢰", tone: "amber", count: ready ? review.length : null,
@@ -176,24 +176,18 @@ function InstitutionDashboard({ setActiveMenu, openRequest }: Pick<HomeProps, "s
     { id: "upcoming", label: "다가오는 일정", count: summary.data ? upcoming.length : null,
       more: <TextLink onClick={() => setActiveMenu("calendar")}>시험 일정</TextLink>,
       body: upcoming.length === 0 ? <p className="inline-empty">{summary.loading ? "불러오는 중…" : "확정된 시험 일정이 없습니다."}</p> :
-        <ul className="work-dashboard__list">{upcoming.map((item) => <li key={item.reservationId}>
-          <button type="button" className="work-dashboard__row" onClick={() => openRequest("RECEIVED", item.requestId)}>
-            <span><strong>{item.equipmentName}</strong>
-              <small>{dateLabel(seoulDate(item.startAt))} {timeLabel(item.startAt)}–{timeLabel(item.endAt)} · {item.requestNo}</small></span>
-            <ArrowUpRight size={15} aria-hidden="true" />
-          </button>
-        </li>)}</ul> },
+        <List hasDividers density="compact">{upcoming.map((item) => <ListItem key={item.reservationId} itemKey={item.reservationId}
+          onClick={() => openRequest("RECEIVED", item.requestId)} label={item.equipmentName}
+          description={`${dateLabel(seoulDate(item.startAt))} ${timeLabel(item.startAt)}–${timeLabel(item.endAt)}, ${item.requestNo}`} />)}</List> },
     { id: "stale", label: "갱신 필요 장비", tone: "amber", count: equipment.data ? stale.length : null,
       hint: equipment.data ? `전체 ${equipment.data.totalElements}대` : undefined,
       more: <TextLink onClick={() => setActiveMenu("equipment")}>우리 장비</TextLink>,
       body: equipment.loading ? <ApiState loading /> : equipment.error ? <ApiState error={equipment.error} onRetry={equipment.reload} /> :
         stale.length === 0 ? <p className="inline-empty">모든 장비 정보가 최신입니다.</p> :
-        <ul className="work-dashboard__list">{stale.map((item) => <li key={item.id}>
-          <button type="button" className="work-dashboard__row" onClick={() => setActiveMenu("equipment")}>
-            <span><strong>{item.name}</strong><small>{item.externalId} · {item.daysSinceUpdate ?? "—"}일 전 갱신</small></span>
-            <Badge tone="amber">갱신 필요</Badge>
-          </button>
-        </li>)}</ul> },
+        <List hasDividers density="compact">{stale.map((item) => <ListItem key={item.id} itemKey={item.id}
+          onClick={() => setActiveMenu("equipment")} label={item.name}
+          description={`${item.externalId ?? ""}, ${item.daysSinceUpdate ?? "?"}일 전 갱신`}
+          endContent={<AxBadge variant="warning" label="갱신 필요" />} />)}</List> },
   ];
   return ready ? <TabbedBoard key="institution" tabs={tabs} /> : <Panel><RowList rows={[]} state={list} empty="" render={() => null} /></Panel>;
 }

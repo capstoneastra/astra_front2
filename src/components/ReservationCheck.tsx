@@ -1,7 +1,13 @@
 import { useState } from "react";
 import { CalendarDays, Send } from "lucide-react";
 import { useWorkspace } from "../context/AppContext";
-import { Badge, Button, PageHeader, Panel } from "./ui";
+import { Button, PageHeader, Panel } from "./ui";
+import { Table, proportional, pixel } from "@astryxdesign/core/Table";
+import { Badge as AxBadge } from "@astryxdesign/core/Badge";
+import { Link } from "@astryxdesign/core/Link";
+import { Text } from "@astryxdesign/core/Text";
+import { HStack } from "@astryxdesign/core/HStack";
+import { VStack } from "@astryxdesign/core/VStack";
 import { useApiQuery } from "../hooks/useApiQuery";
 import { requestService } from "../services/requestService";
 import RequestDetailDialog from "./workflow/RequestDetailDialog";
@@ -20,9 +26,10 @@ const quickFilters: { id: string; label: string; statuses: string[] }[] = [
   { id: "COMPLETED", label: "완료", statuses: ["COMPLETED"] },
 ];
 
-const tone = (status: string) =>
-  status === "SUPPLEMENT_REQUESTED" ? "amber" : status === "COMPLETED" ? "green" : ["REJECTED", "CANCELED"].includes(status) ? "red" :
-    status === "DRAFT" ? "neutral" : "cyan";
+/** 상태 배지 색: 내가 할 일(보완 요청)은 경고색, 완료는 성공색, 반려·취소는 오류색, 나머지는 차분하게 */
+const statusVariant = (status: string): "warning" | "success" | "error" | "neutral" =>
+  status === "SUPPLEMENT_REQUESTED" ? "warning" : status === "COMPLETED" ? "success" : ["REJECTED", "CANCELED"].includes(status) ? "error" :
+    "neutral";
 
 // 목록 응답은 revision 없이 desiredStartDate·desiredEndDate를 위로 올려 준다.
 type Row = RequestSummary & { companyName?: string; requester?: { name: string }; desiredStartDate?: string | null; desiredEndDate?: string | null };
@@ -88,29 +95,39 @@ export default function ReservationCheck({
         {query.loading || query.error ? <ApiState loading={query.loading} error={query.error} onRetry={query.reload} /> :
           rows.length === 0 ? <p className="inline-empty">{received ? "받은 의뢰가 없습니다." : "의뢰가 없습니다."}
             {!received && <Button variant="secondary" onClick={() => setActiveMenu("request")}>시험 맡기기</Button>}</p> :
-          <div className="table-scroll"><table className="data-table">
-            <thead><tr>
-              <th>의뢰</th><th>장비</th><th>{admin ? "맡긴 곳 → 맡은 곳" : received ? "맡긴 곳" : "맡은 곳"}</th><th>상태</th><th>희망 기간</th><th>접수일</th><th><span className="sr-only">동작</span></th>
-            </tr></thead>
-            <tbody>{rows.map((item) => {
-              const schedule = { desiredStartDate: item.desiredStartDate ?? item.revision?.content?.schedule?.desiredStartDate,
-                desiredEndDate: item.desiredEndDate ?? item.revision?.content?.schedule?.desiredEndDate };
-              return <tr key={item.id}>
-                <td><button type="button" className="row-title" onClick={() => setSelected(item.id)}>{item.title || item.requestNo}</button>
-                  <small>{item.requestNo}</small></td>
-                <td>{item.equipment?.name ?? "—"}<small>{item.equipment?.externalId}</small></td>
-                <td>{admin ? `${item.companyName ?? item.requester?.name ?? "—"} → ${item.institution?.name ?? "—"}`
-                  : received ? item.companyName ?? item.requester?.name ?? "—" : item.institution?.name ?? "—"}</td>
-                <td><Badge tone={tone(item.status)} dot>{requestStatusLabels[item.status] ?? item.status}</Badge></td>
-                <td>{schedule?.desiredStartDate ? `${schedule.desiredStartDate}${schedule.desiredEndDate ? ` ~ ${schedule.desiredEndDate.slice(5)}` : ""}` : "—"}</td>
-                <td>{item.submittedAt ? seoulDate(item.submittedAt) : "—"}</td>
-                <td className="cell-actions">
-                  {!received && item.status === "DRAFT" && <Button variant="secondary" className="button--sm" onClick={() => continueDraft(item.id)}>이어서 작성</Button>}
-                  <Button variant="ghost" className="button--sm" onClick={() => setSelected(item.id)}>상세</Button>
-                </td>
-              </tr>;
-            })}</tbody>
-          </table></div>}
+          <Table<Row & Record<string, unknown>>
+            data={rows as (Row & Record<string, unknown>)[]}
+            idKey="id"
+            density="compact"
+            hasHover
+            columns={[
+              { key: "title", header: "의뢰", width: proportional(2, { minWidth: 200 }), renderCell: (item) => <VStack gap={0.5}>
+                <Link onClick={() => setSelected(item.id)} weight="semibold" color="primary">{item.title || item.requestNo}</Link>
+                <Text type="supporting" color="secondary">{item.requestNo}</Text>
+              </VStack> },
+              { key: "equipment", header: "장비", width: proportional(1.4), renderCell: (item) => <VStack gap={0.5}>
+                <Text>{item.equipment?.name ?? "없음"}</Text>
+                <Text type="supporting" color="secondary">{item.equipment?.externalId ?? ""}</Text>
+              </VStack> },
+              { key: "party", header: admin ? "맡긴 곳 / 맡은 곳" : received ? "맡긴 곳" : "맡은 곳", width: proportional(1.4), renderCell: (item) => admin
+                ? <VStack gap={0.5}><Text>{item.companyName ?? item.requester?.name ?? "확인 필요"}</Text>
+                  <Text type="supporting" color="secondary">{item.institution?.name ?? ""}</Text></VStack>
+                : <Text>{received ? item.companyName ?? item.requester?.name ?? "확인 필요" : item.institution?.name ?? "확인 필요"}</Text> },
+              { key: "status", header: "상태", width: pixel(110), renderCell: (item) =>
+                <AxBadge variant={statusVariant(item.status)} label={requestStatusLabels[item.status] ?? item.status} /> },
+              { key: "schedule", header: "희망 기간", width: pixel(150), renderCell: (item) => {
+                const start = item.desiredStartDate ?? item.revision?.content?.schedule?.desiredStartDate;
+                const end = item.desiredEndDate ?? item.revision?.content?.schedule?.desiredEndDate;
+                return <Text hasTabularNumbers color={start ? "primary" : "secondary"}>{start ? `${start}${end ? ` ~ ${end.slice(5)}` : ""}` : "미정"}</Text>;
+              } },
+              { key: "submittedAt", header: "접수일", width: pixel(110), renderCell: (item) =>
+                <Text hasTabularNumbers color={item.submittedAt ? "primary" : "secondary"}>{item.submittedAt ? seoulDate(item.submittedAt) : "미제출"}</Text> },
+              { key: "actions", header: <span className="sr-only">동작</span>, width: pixel(190), align: "end", renderCell: (item) => <HStack gap={1} hAlign="end">
+                {!received && item.status === "DRAFT" && <Button variant="secondary" className="button--sm" onClick={() => continueDraft(item.id)}>이어서 작성</Button>}
+                <Button variant="ghost" className="button--sm" onClick={() => setSelected(item.id)}>상세</Button>
+              </HStack> },
+            ]}
+          />}
       </Panel>
       {selected && (
         <RequestDetailDialog key={selected} requestId={selected} requestBox={box} onClose={() => setSelected(null)}

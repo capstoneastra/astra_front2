@@ -1,7 +1,13 @@
 import { useEffect, useRef, useState } from "react";
 import { CalendarClock, Pencil, Plus, Trash2, X } from "lucide-react";
 import { useWorkspace } from "../context/AppContext";
-import { Badge, Button, PageHeader, Panel } from "./ui";
+import { Button, PageHeader, Panel } from "./ui";
+import { Table, proportional, pixel } from "@astryxdesign/core/Table";
+import { Badge as AxBadge } from "@astryxdesign/core/Badge";
+import { Link } from "@astryxdesign/core/Link";
+import { Text } from "@astryxdesign/core/Text";
+import { HStack } from "@astryxdesign/core/HStack";
+import { VStack } from "@astryxdesign/core/VStack";
 import ApiState from "./ui/ApiState";
 import { useApiQuery } from "../hooks/useApiQuery";
 import { useAction } from "../hooks/useAction";
@@ -10,7 +16,7 @@ import { equipmentService, testTypeLabel } from "../services/equipmentService";
 import type { OwnedEquipment } from "../services/equipmentService";
 import EquipmentEditDialog from "./workflow/EquipmentEditDialog";
 import { Feedback } from "./workflow/Feedback";
-import { availabilityLabels, availabilityTone, equipmentTypeLabels, formatDate } from "../domain/constants";
+import { availabilityLabels, equipmentTypeLabels, formatDate } from "../domain/constants";
 
 const updateReasonLabels: Record<string, string> = {
   NOT_CONFIRMED: "조직 확인 전",
@@ -143,29 +149,34 @@ export default function EquipmentManager(_props: { setActiveMenu: (menu: string)
           list.loading || list.error ? <ApiState loading={list.loading} error={list.error} onRetry={list.reload} /> :
           rows.length === 0 ? <p className="inline-empty">등록된 장비가 없습니다.
             <Button variant="secondary" icon={Plus} onClick={() => setAdding(true)}>장비 등록</Button></p> :
-          <div className="table-scroll"><table className="data-table">
-            <thead><tr><th>장비</th><th>시험유형</th><th>상태</th><th>정보 갱신</th><th><span className="sr-only">동작</span></th></tr></thead>
-            <tbody>{rows.map((item) => <tr key={item.id}>
-              <td><button type="button" className="row-title" onClick={() => setEditing(item.id)}>{item.name}</button>
-                <small>{[item.model, item.externalId, equipmentTypeLabels[item.equipmentType ?? ""]].filter(Boolean).join(" · ")}</small></td>
-              <td><div className="badges">{item.testTypes.length ? item.testTypes.map((code) => <Badge key={code} tone="cyan">{testTypeLabel(code)}</Badge>) : "—"}</div></td>
-              <td><div className="badges">
-                <Badge tone={availabilityTone[item.availability ?? "UNKNOWN"]} dot>{availabilityLabels[item.availability ?? "UNKNOWN"]}</Badge>
-                {item.isMock && <Badge tone="amber">DEMO</Badge>}
-              </div></td>
-              <td>{item.needsUpdate
-                ? <Badge tone="amber">갱신 필요</Badge>
-                : <Badge tone="green">최신</Badge>}
-                <small>{(item.updateReasons ?? []).map((reason) => updateReasonLabels[reason] ?? reason).join(" · ")}
-                  {item.daysSinceUpdate != null ? ` · ${item.daysSinceUpdate}일 전` : ""}</small></td>
-              <td className="cell-actions">
+          <Table<OwnedEquipment & Record<string, unknown>>
+            data={rows as (OwnedEquipment & Record<string, unknown>)[]}
+            idKey="id"
+            density="compact"
+            hasHover
+            columns={[
+              { key: "name", header: "장비", width: proportional(2, { minWidth: 200 }), renderCell: (item) => <VStack gap={0.5}>
+                <Link onClick={() => setEditing(item.id)} weight="semibold" color="primary">{item.name}</Link>
+                <Text type="supporting" color="secondary">{[item.model, item.externalId, equipmentTypeLabels[item.equipmentType ?? ""]].filter(Boolean).join(", ")}</Text>
+              </VStack> },
+              { key: "testTypes", header: "시험유형", width: proportional(1.2), renderCell: (item) => <HStack gap={1} wrap="wrap">
+                {item.testTypes.length ? item.testTypes.map((code) => <AxBadge key={code} variant="neutral" label={testTypeLabel(code)} />) : <Text color="secondary">없음</Text>}
+              </HStack> },
+              { key: "availability", header: "가용 상태", width: pixel(130), renderCell: (item) => <Text>{availabilityLabels[item.availability ?? "UNKNOWN"]}</Text> },
+              { key: "update", header: "정보 갱신", width: proportional(1.3), renderCell: (item) => <VStack gap={0.5}>
+                <HStack gap={1}><AxBadge variant={item.needsUpdate ? "warning" : "success"} label={item.needsUpdate ? "갱신 필요" : "최신"} />
+                  {item.isMock && <AxBadge variant="neutral" label="시연" />}</HStack>
+                <Text type="supporting" color="secondary">{[...(item.updateReasons ?? []).map((reason) => updateReasonLabels[reason] ?? reason),
+                  item.daysSinceUpdate != null ? `${item.daysSinceUpdate}일 전 갱신` : null].filter(Boolean).join(", ")}</Text>
+              </VStack> },
+              { key: "actions", header: <span className="sr-only">동작</span>, width: pixel(230), align: "end", renderCell: (item) => <HStack gap={1} hAlign="end">
                 <Button variant="secondary" className="button--sm" icon={Pencil} disabled={action.busy} onClick={() => setEditing(item.id)}>수정</Button>
                 <Button variant="ghost" className="button--sm" icon={CalendarClock} onClick={() => setDowntime(item)}>정비 일정</Button>
                 <Button variant="ghost" className="button--sm" icon={Trash2} aria-label={`${item.name} 비활성화`} disabled={action.busy}
                   onClick={() => handleDelete(item)} />
-              </td>
-            </tr>)}</tbody>
-          </table></div>}
+              </HStack> },
+            ]}
+          />}
       </Panel>
       {editing && <EquipmentEditDialog key={editing} equipmentId={editing} onClose={() => setEditing(null)} />}
       {downtime && <DowntimeDialog key={downtime.id} equipment={downtime} onClose={() => setDowntime(null)} />}

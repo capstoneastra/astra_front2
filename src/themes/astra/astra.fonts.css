@@ -1,2 +1,5 @@
 /* Written by `astryx experimental theme editor show astra` after every build of themes/astra/; do not edit it here. Change the theme with the editor. */
-/* No font stylesheets: no installed package loads the theme's fonts. A font the system does not have shows only once its package is installed (experimental theme editor show astra names it). */
+@import "@fontsource/pretendard/400.css";
+@import "@fontsource/pretendard/500.css";
+@import "@fontsource/pretendard/600.css";
+@import "@fontsource/pretendard/700.css";
