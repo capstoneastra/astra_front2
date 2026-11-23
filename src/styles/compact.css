@@ -1233,3 +1233,35 @@ label b {
 .ac--header { width: min(600px, 48vw); }
 .account-trigger { border: 0; background: none; padding: 0; border-radius: 999px; cursor: pointer; display: inline-grid; }
 .account-trigger:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
+/* 상단 알림 종 + 안 읽은 개수 */
+.bell-trigger {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: var(--radius-element);
+  background: none;
+  color: var(--color-icon-primary);
+  cursor: pointer;
+}
+.bell-trigger:hover { background: var(--color-overlay-hover); }
+.bell-trigger:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
+.bell-trigger__count {
+  position: absolute;
+  top: 2px;
+  right: 0;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 16px;
+  text-align: center;
+}
+/* AI 상담 창이 열려 있으면 오른쪽 아래 버튼은 숨긴다 */
+.ai-launcher[hidden] { display: none !important; }

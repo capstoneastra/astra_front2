@@ -114,10 +114,12 @@ export default function AiAssistant({
 
   return (
     <>
+      {/* 열려 있을 때는 버튼을 숨기고 상담 창만 보인다. 닫으면 다시 나타난다. */}
       <button
         ref={launcher}
         type="button"
-        className={`ai-launcher ${open ? "ai-launcher--open" : ""}`}
+        hidden={open}
+        className="ai-launcher"
         aria-label={open ? "AI 어시스턴트 닫기" : "AI 어시스턴트 열기"}
         title={open ? "AI 어시스턴트 닫기" : "시험 상담과 자동 추진 열기"}
         aria-expanded={open}

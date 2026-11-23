@@ -12,7 +12,8 @@ import { useAuth } from "../../auth/context";
 import { useTheme } from "../../theme/useTheme";
 import { useApiQuery } from "../../hooks/useApiQuery";
 import { notificationService } from "../../services/notificationService";
-import { roleLabels } from "../../domain/constants";
+import { formatDate, roleLabels } from "../../domain/constants";
+import { notificationTypeLabels, useOpenNotification } from "../../domain/notifications";
 import SearchAutocomplete from "../ui/SearchAutocomplete";
 import type { SearchPick } from "../ui/SearchAutocomplete";
 
@@ -20,17 +21,21 @@ import type { SearchPick } from "../ui/SearchAutocomplete";
  * 상단 바(Astryx TopNav): 가운데 장비 검색(자동완성), 오른쪽 알림·테마·내 계정.
  * 뒤로가기는 메뉴에 없는 하위 화면(비교·내 정보 등)에서만 보인다.
  */
-export default function AppHeader({ activeMenu, onSearch, onBack, canGoBack, onNotifications, onProfile }: {
+export default function AppHeader({ activeMenu, onSearch, onBack, canGoBack, onNotifications, onProfile, onOpenRequest }: {
   activeMenu: string;
   onSearch: (query: string, options?: { institutionId?: number; testType?: string; sentence?: boolean; equipmentId?: number }) => void;
   onBack: () => void;
   canGoBack: boolean;
   onNotifications: () => void;
   onProfile: () => void;
+  onOpenRequest: (requestId: number) => void;
 }) {
   const { user, logout, status } = useAuth();
   const { theme, toggleTheme } = useTheme();
-  const { data: unreadCount } = useApiQuery(notificationService.unreadCount, `notifications-unread:${user.id}`);
+  // 안 읽은 알림 개수는 1분마다 다시 확인한다
+  const { data: unreadCount } = useApiQuery(notificationService.unreadCount, `notifications-unread:${user.id}`, true, () => 60_000);
+  const recent = useApiQuery((signal) => notificationService.list({ size: 6 }, signal), `notifications-recent:${user.id}`);
+  const openNotification = useOpenNotification(onOpenRequest);
   const showSearch = canAccessMenu(user.role, "search") && activeMenu !== "search";
   const isMenuPage = (navigationByRole[user.role] ?? []).some((item) => item.id === activeMenu);
   const role = user.organization?.orgType === "UNIVERSITY" && user.role === "INSTITUTION_MANAGER" ? "대학 담당자" : roleLabels[user.role];
@@ -53,9 +58,29 @@ export default function AppHeader({ activeMenu, onSearch, onBack, canGoBack, onN
       </HStack>}
       centerContent={showSearch ? <SearchAutocomplete autoFocusKey onPick={pick} /> : undefined}
       endContent={<HStack gap={1} vAlign="center">
-        <IconButton variant="ghost" icon={<Bell size={18} />} onClick={onNotifications} tooltip="업무 알림"
-          label={unread > 0 ? `업무 알림, 읽지 않은 알림 ${unread}건` : "업무 알림"} />
-        {unread > 0 && <Badge variant="orange" label={unread > 99 ? "99+" : String(unread)} />}
+        <DropdownMenu
+          alignment="end"
+          menuWidth={360}
+          onOpenChange={(isOpen) => { if (isOpen) recent.reload(); }}
+          renderTrigger={(props) => <button type="button" className="bell-trigger" {...props}
+            aria-label={unread > 0 ? `업무 알림, 읽지 않은 알림 ${unread}건` : "업무 알림"}>
+            <Bell size={18} aria-hidden="true" />
+            {unread > 0 && <span className="bell-trigger__count" aria-hidden="true">{unread > 99 ? "99+" : unread}</span>}
+          </button>}
+          items={[
+            ...((recent.data?.content ?? []).length
+              ? (recent.data?.content ?? []).map((item) => ({
+                id: String(item.id),
+                label: item.title,
+                description: `${notificationTypeLabels[item.type] ?? "알림"}, ${formatDate(item.createdAt)}${item.isRead ? "" : ", 새 알림"}`,
+                onClick: () => void openNotification(item),
+              }))
+              : [{ id: "empty", label: recent.loading ? "불러오는 중…" : "알림이 없습니다", isDisabled: true }]),
+            { type: "divider" as const },
+            { id: "all", label: "모든 알림 보기", onClick: onNotifications },
+            ...(unread > 0 ? [{ id: "read-all", label: "모두 읽음으로 표시", onClick: () => void notificationService.readAll() }] : []),
+          ]}
+        />
         <IconButton variant="ghost" icon={theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
           label={theme === "dark" ? "밝은 화면으로 바꾸기" : "어두운 화면으로 바꾸기"} tooltip={theme === "dark" ? "밝은 화면" : "어두운 화면"}
           onClick={toggleTheme} />

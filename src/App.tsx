@@ -114,6 +114,9 @@ function Workspace() {
     navigate("calendar");
   };
 
+  // 알림에서 의뢰 열기: 기업은 내 의뢰, 기관·대학과 관리자는 받은(전체) 의뢰에서 연다
+  const openRequestFromNotification = (requestId: number) =>
+    openRequest(user.role === "COMPANY_USER" ? "SENT" : "RECEIVED", requestId);
   const openRequest = (box: RequestBox, requestId?: number, status?: string) =>
     workspaceNavigation.go(box === "RECEIVED" ? "received" : "sent", null, { requestId, requestStatus: status });
 
@@ -165,7 +168,7 @@ function Workspace() {
       case "duplicates":
         return <DuplicateEquipment setActiveMenu={navigate} />;
       case "notifications":
-        return <Notifications />;
+        return <Notifications onOpenRequest={openRequestFromNotification} />;
       case "profile":
         return <Profile />;
       case "equipment":
@@ -232,6 +235,7 @@ function Workspace() {
           onSearch={searchEquipment}
           onNotifications={() => navigate("notifications")}
           onProfile={() => navigate("profile")}
+          onOpenRequest={openRequestFromNotification}
         />}
       >
         <div id="main-content" className="main-content" tabIndex={-1}>
@@ -245,7 +249,7 @@ function Workspace() {
             started={assistantStarted}
             mode={assistantMode}
             modal={smallScreen}
-            onOpen={() => openAssistant()}
+            onOpen={() => openAssistant("chatbot")}
             onClose={closeAssistant}
             onModeChange={setAssistantMode}
             onNavigate={(menu) => {
