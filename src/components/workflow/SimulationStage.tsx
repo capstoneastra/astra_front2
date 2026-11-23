@@ -8,7 +8,6 @@ import { createSimulationScene, disposeObject } from "./simulationScene";
 import type { SimulationSceneState } from "./simulationScene";
 import type { SimulationInput, SimulationResult } from "../../services/simulationService";
 import { simulationFrame, simulationSceneKind } from "../../domain/simulationView";
-import "../../styles/simulation.css";
 
 const sceneInfo = {
   vibration: { title: "진동 시험대", subtitle: "시료와 시험대의 진동을 입체적으로 살펴보세요.", note: "1자유도 모델의 응답비를 반영한 시연입니다. 움직임은 느리게 재생하며 변위를 과장합니다." },

@@ -6,7 +6,8 @@ import tseslint from 'typescript-eslint'
 import { defineConfig, globalIgnores } from 'eslint/config'
 
 export default defineConfig([
-  globalIgnores(['dist']),
+  // themes/, src/themes/, src/astryx-themes.ts 는 astryx CLI가 만드는 파일
+  globalIgnores(['dist', 'themes', 'src/themes', 'src/astryx-themes.ts']),
   {
     files: ['**/*.{ts,tsx}'],
     extends: [

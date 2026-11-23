@@ -1,63 +1,78 @@
-import { useState } from "react";
-import { ArrowLeft, Bell, Menu } from "lucide-react";
-import SearchAutocomplete from "../ui/SearchAutocomplete";
+import { TopNav } from "@astryxdesign/core/TopNav";
+import { IconButton } from "@astryxdesign/core/IconButton";
+import { Button } from "@astryxdesign/core/Button";
+import { Badge } from "@astryxdesign/core/Badge";
+import { HStack } from "@astryxdesign/core/HStack";
+import { Avatar } from "@astryxdesign/core/Avatar";
+import { DropdownMenu } from "@astryxdesign/core/DropdownMenu";
+import { ArrowLeft, Bell, LogOut, Moon, Sun, UserRoundPen } from "lucide-react";
 import { menuLabel, navigationByRole } from "../../data/navigation";
 import { canAccessMenu } from "../../auth/permissions";
 import { useAuth } from "../../auth/context";
-import ThemeToggle from "../ui/ThemeToggle";
+import { useTheme } from "../../theme/useTheme";
 import { useApiQuery } from "../../hooks/useApiQuery";
 import { notificationService } from "../../services/notificationService";
-import ProfileMenu from "./ProfileMenu";
+import { roleLabels } from "../../domain/constants";
+import SearchAutocomplete from "../ui/SearchAutocomplete";
+import type { SearchPick } from "../ui/SearchAutocomplete";
 
 /**
- * 상단 바: 넓은 장비 검색창 + 알림·테마·내 계정.
- * '워크스페이스 / 화면이름' 경로 표시는 없앴고, 뒤로가기는 메뉴에 없는 하위 화면(비교·내 정보 등)에서만 보인다.
+ * 상단 바(Astryx TopNav): 가운데 장비 검색(자동완성), 오른쪽 알림·테마·내 계정.
+ * 뒤로가기는 메뉴에 없는 하위 화면(비교·내 정보 등)에서만 보인다.
  */
-export default function AppHeader({ activeMenu, menuOpen, onMenu, onSearch, onBack, canGoBack, onNotifications, onProfile }) {
+export default function AppHeader({ activeMenu, onSearch, onBack, canGoBack, onNotifications, onProfile }: {
+  activeMenu: string;
+  onSearch: (query: string, options?: { institutionId?: number; testType?: string; sentence?: boolean; equipmentId?: number }) => void;
+  onBack: () => void;
+  canGoBack: boolean;
+  onNotifications: () => void;
+  onProfile: () => void;
+}) {
   const { user, logout, status } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const { data: unreadCount } = useApiQuery(notificationService.unreadCount, `notifications-unread:${user.id}`);
-  const [date] = useState(() =>
-    new Intl.DateTimeFormat("ko-KR", { timeZone: "Asia/Seoul", month: "long", day: "numeric", weekday: "short" }).format(new Date()),
-  );
-  const canSearch = canAccessMenu(user.role, "search");
-  // 장비 찾기 화면에는 큰 검색창이 따로 있으므로 상단 검색창은 숨긴다.
-  const showSearch = canSearch && activeMenu !== "search";
+  const showSearch = canAccessMenu(user.role, "search") && activeMenu !== "search";
   const isMenuPage = (navigationByRole[user.role] ?? []).some((item) => item.id === activeMenu);
-  const showBack = !isMenuPage && canGoBack;
+  const role = user.organization?.orgType === "UNIVERSITY" && user.role === "INSTITUTION_MANAGER" ? "대학 담당자" : roleLabels[user.role];
+  const pick = (choice: SearchPick) => {
+    // 목록에서 고른 장비는 이름 그대로 찾고 상세를 연다
+    if (choice.kind === "equipment") onSearch(choice.name, { sentence: false, equipmentId: choice.id });
+    else if (choice.kind === "text") onSearch(choice.text);
+    else if (choice.kind === "testType") onSearch("", { testType: choice.code });
+    else onSearch("", { institutionId: choice.id });
+  };
+  const unread = Number(unreadCount ?? 0);
 
   return (
-    <header className="app-header">
-      <div className="app-header__location">
-        <button className="icon-button mobile-menu" onClick={onMenu} aria-label="메뉴 열기"
-          aria-controls="primary-navigation" aria-expanded={menuOpen}>
-          <Menu size={21} />
-        </button>
-        {showBack && <button type="button" className="header-back" onClick={onBack} title="이전 화면으로">
-          <ArrowLeft size={16} aria-hidden="true" />
-          <span>{menuLabel(user.role, activeMenu) || "이전"}</span>
-        </button>}
-        {status === "local" && <span className="header-local">미리보기 모드</span>}
-      </div>
-      <div className="app-header__center">
-        {showSearch && <SearchAutocomplete autoFocusKey onPick={(pick) => {
-          // 목록에서 고른 장비는 이름 그대로 찾는다(문장 해석 안 함)
-          if (pick.kind === "equipment") onSearch(pick.name, { sentence: false, equipmentId: pick.id });
-          else if (pick.kind === "text") onSearch(pick.text);
-          else if (pick.kind === "testType") onSearch("", { testType: pick.code });
-          else onSearch("", { institutionId: pick.id });
-        }} />}
-      </div>
-      <div className="app-header__tools">
-        <span className="header-date">{date}</span>
-        <button type="button" className="icon-button header-notifications"
-          aria-label={unreadCount > 0 ? `업무 알림, 읽지 않은 알림 ${unreadCount}건` : "업무 알림"}
-          aria-current={activeMenu === "notifications" ? "page" : undefined} title="업무 알림" onClick={onNotifications}>
-          <Bell size={18} aria-hidden="true" />
-          {unreadCount > 0 && <span aria-hidden="true">{unreadCount > 99 ? "99+" : unreadCount}</span>}
-        </button>
-        <ThemeToggle />
-        <ProfileMenu user={user} onLogout={logout} onProfile={onProfile} />
-      </div>
-    </header>
+    <TopNav
+      label="상단 메뉴"
+      startContent={<HStack gap={2} vAlign="center">
+        {!isMenuPage && canGoBack && <Button variant="ghost" size="sm" icon={<ArrowLeft size={16} />}
+          label={menuLabel(user.role, activeMenu) || "이전"} onClick={onBack} />}
+        {status === "local" && <Badge variant="warning" label="미리보기 모드" />}
+      </HStack>}
+      centerContent={showSearch ? <SearchAutocomplete autoFocusKey onPick={pick} /> : undefined}
+      endContent={<HStack gap={1} vAlign="center">
+        <IconButton variant="ghost" icon={<Bell size={18} />} onClick={onNotifications} tooltip="업무 알림"
+          label={unread > 0 ? `업무 알림, 읽지 않은 알림 ${unread}건` : "업무 알림"} />
+        {unread > 0 && <Badge variant="orange" label={unread > 99 ? "99+" : String(unread)} />}
+        <IconButton variant="ghost" icon={theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
+          label={theme === "dark" ? "밝은 화면으로 바꾸기" : "어두운 화면으로 바꾸기"} tooltip={theme === "dark" ? "밝은 화면" : "어두운 화면"}
+          onClick={toggleTheme} />
+        <DropdownMenu
+          alignment="end"
+          menuWidth={240}
+          renderTrigger={(props) => <button type="button" className="account-trigger" aria-label="내 계정 메뉴" {...props}>
+            <Avatar name={user.name} size="sm" tooltip={false} />
+          </button>}
+          items={[
+            { label: user.name, description: `${role}, ${user.organization?.name ?? "플랫폼"}`, isDisabled: true },
+            { type: "divider" },
+            { label: "내 정보 수정", icon: <UserRoundPen size={16} />, onClick: onProfile },
+            { label: "로그아웃", icon: <LogOut size={16} />, variant: "destructive", onClick: () => void logout() },
+          ]}
+        />
+      </HStack>}
+    />
   );
 }

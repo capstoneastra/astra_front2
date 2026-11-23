@@ -2,11 +2,11 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter } from "react-router";
-import "./index.css";
-import "./styles/themes.css";
-import "./styles/assistant.css";
-import "./styles/workspace-updates.css";
-import "./styles/compact.css";
+// CSS 순서가 중요하다: 레이어 선언 → Astryx → 기존 화면 CSS
+import "./styles/layers.css";
+import "./styles/astryx.css";
+import "./styles/legacy.css";
+import ThemeRoot from "./theme/ThemeRoot";
 import App from "./App";
 import { initializeApi } from "./api/bootstrap";
 import { queryClient } from "./api/cache";
@@ -22,11 +22,13 @@ initializeApi()
   .then(() =>
     root.render(
       <StrictMode>
-        <BrowserRouter>
-          <QueryClientProvider client={queryClient}>
-            <App />
-          </QueryClientProvider>
-        </BrowserRouter>
+        <ThemeRoot>
+          <BrowserRouter>
+            <QueryClientProvider client={queryClient}>
+              <App />
+            </QueryClientProvider>
+          </BrowserRouter>
+        </ThemeRoot>
       </StrictMode>,
     ),
   )

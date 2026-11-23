@@ -3,7 +3,6 @@ import { Link, Outlet, useLocation } from "react-router";
 import ThemeToggle from "../components/ui/ThemeToggle";
 import AstraBrand from "../components/ui/AstraBrand";
 import LoginOrbit from "./LoginOrbit";
-import "./login.css";
 
 // 이용 안내는 별도 화면 대신 로그인 카드 안의 접이식 안내(LoginGuide)로 넣었다.
 export default function AuthLayout() {

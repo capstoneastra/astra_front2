@@ -1,0 +1,62 @@
+/*
+ * 기존 화면 CSS가 쓰던 색·글꼴 변수를 Astryx 테마 토큰에 연결한다.
+ * 그래서 아직 Astryx 컴포넌트로 옮기지 않은 화면도 같은 ASTRA 테마(라이트/다크)를 따른다.
+ * 화면을 모두 옮기면 이 파일과 legacy.css를 지운다.
+ */
+:root,
+:root[data-theme="light"],
+:root[data-theme="dark"] {
+  --bg: var(--color-background-body);
+  --sidebar: var(--color-background-surface);
+  --surface: var(--color-background-card);
+  --surface-raised: var(--color-background-muted);
+  --surface-sunken: var(--color-background-surface);
+  --surface-glass: var(--color-background-card);
+  --border: var(--color-border);
+  --border-strong: var(--color-border-emphasized);
+  --text: var(--color-text-primary);
+  --text-secondary: var(--color-text-secondary);
+  --text-muted: var(--color-text-secondary);
+  /* 강조색 하나(ASTRA 오렌지)만 쓴다. 상태 색은 의미가 있을 때만 */
+  --cyan: var(--color-text-accent);
+  --blue: var(--color-accent);
+  --violet: var(--color-text-purple);
+  --amber: var(--color-text-warning);
+  --green: var(--color-text-success);
+  --red: var(--color-text-error);
+  --primary-hover: color-mix(in srgb, var(--color-accent) 88%, var(--color-text-primary));
+  --primary-ink: var(--color-on-accent);
+  --panel-background: var(--color-background-card);
+  --panel-shadow: none;
+  --control-hover: var(--color-background-muted);
+  /* 강조는 버튼 하나에만: 선택·강조 배경은 은은하게 */
+  --accent-background: var(--color-background-muted);
+  --accent-border: color-mix(in srgb, var(--color-accent) 40%, transparent);
+  --blue-soft: var(--color-background-blue);
+  --blue-border: var(--color-border-blue);
+  --font: var(--font-family-body);
+  --radius: var(--radius-container);
+}
+body {
+  background: var(--color-background-body);
+  color: var(--color-text-primary);
+  font-family: var(--font-family-body);
+}
+
+/* 화면 들어올 때마다 흐려졌다 나타나는 효과는 끈다(한 번의 의도된 움직임만 남긴다) */
+.page-enter { animation: none !important; }
+/* 대시보드 시작 영역: 배경은 차분하게, 주황은 주요 버튼에만 */
+.dash-hero {
+  background: var(--color-background-card);
+  border-color: var(--color-border);
+}
+.dash-tabs .dash-stat[aria-selected="true"] {
+  background: var(--color-background-muted);
+  border-color: var(--color-border-emphasized);
+  box-shadow: inset 0 -2px 0 var(--color-accent);
+}
+.dash-stat { border-left-color: var(--color-border-emphasized); }
+.dash-stat--amber { border-left-color: var(--color-border-warning); }
+.dash-stat--green { border-left-color: var(--color-border-success); }
+.dash-next svg { display: none; }
+.work-dashboard__row > svg { display: none; }

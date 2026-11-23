@@ -1,7 +1,8 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import { useLocation, useNavigate, useNavigationType } from "react-router";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import Sidebar from "./components/Sidebar";
+import { AppShell } from "@astryxdesign/core/AppShell";
+import WorkspaceSideNav from "./components/layout/WorkspaceSideNav";
 import Home from "./components/Home";
 import EquipmentSearch from "./components/EquipmentSearch";
 import ReservationCheck from "./components/ReservationCheck";
@@ -33,7 +34,6 @@ import Notifications from "./components/Notifications";
 import Profile from "./components/Profile";
 import ReservationCalendar from "./components/ReservationCalendar";
 import { useWorkspaceNavigation } from "./hooks/useWorkspaceNavigation";
-import { useSidebarCollapse } from "./hooks/useSidebarCollapse";
 
 function Workspace() {
   const { user } = useAuth();
@@ -52,15 +52,12 @@ function Workspace() {
   const [autoRunId, setAutoRunId] = useState<number | null>(null);
   const [testCondition, setTestCondition] = useState("");
   const [selectedEquipment, setSelectedEquipment] = useState<Equipment | null>(null);
-  const [menuOpen, setMenuOpen] = useState(false);
-  const sidebar = useSidebarCollapse();
   const [assistantOpen, setAssistantOpen] = useState(false);
   const [assistantStarted, setAssistantStarted] = useState(false);
   const [assistantMode, setAssistantMode] = useState("chatbot");
   const [smallScreen, setSmallScreen] = useState(
     () => window.matchMedia("(max-width: 700px)").matches,
   );
-  const closeMenu = useCallback(() => setMenuOpen(false), []);
   const closeAssistant = useCallback(() => setAssistantOpen(false), []);
   const { key: locationKey } = useLocation();
   const navigationType = useNavigationType();
@@ -68,25 +65,15 @@ function Workspace() {
     if (navigationType !== "POP") return;
     const frame = requestAnimationFrame(() => {
       closeAssistant();
-      closeMenu();
     });
     return () => cancelAnimationFrame(frame);
-  }, [locationKey, navigationType, closeAssistant, closeMenu]);
+  }, [locationKey, navigationType, closeAssistant]);
   const catalogQuery = useApiQuery(
     (signal) => equipmentService.catalog(signal),
     `catalog:${user.id}:${user.role}`,
     ["request", "equipment", "simulation"].includes(activeMenu) || assistantOpen,
   );
   const equipmentList = catalogQuery.data ?? [];
-
-  useEffect(() => {
-    const desktop = window.matchMedia("(min-width: 1024px)");
-    const restoreDesktop = () => {
-      if (desktop.matches) closeMenu();
-    };
-    desktop.addEventListener("change", restoreDesktop);
-    return () => desktop.removeEventListener("change", restoreDesktop);
-  }, [closeMenu]);
 
   useEffect(() => {
     const media = window.matchMedia("(max-width: 700px)");
@@ -100,7 +87,6 @@ function Workspace() {
     if (mode) setAssistantMode(mode);
     setAssistantStarted(true);
     setAssistantOpen(true);
-    setMenuOpen(false);
   };
 
   const navigate = (menu: string) => {
@@ -112,7 +98,6 @@ function Workspace() {
       return;
     }
     workspaceNavigation.go(menu);
-    setMenuOpen(false);
     window.scrollTo({ top: 0, behavior: "instant" });
   };
 
@@ -121,7 +106,6 @@ function Workspace() {
       ...(options.testType ? { testType: options.testType } : {}),
       ...(options.sentence !== undefined ? { sentence: options.sentence } : {}),
       ...(options.equipmentId ? { equipmentId: options.equipmentId } : {}) });
-    setMenuOpen(false);
     window.scrollTo({ top: 0, behavior: "instant" });
   };
 
@@ -237,54 +221,23 @@ function Workspace() {
         },
       }}
     >
-      <div className="app-shell" data-sidebar-collapsed={sidebar.collapsed}>
-        <a
-          className="skip-link"
-          href="#main-content"
-          onClick={(event) => {
-            event.preventDefault();
-            document.getElementById("main-content")?.focus();
-          }}
-        >
-          본문으로 건너뛰기
-        </a>
-        <Sidebar
+      <AppShell
+        variant="section"
+        contentPadding={0}
+        sideNav={<WorkspaceSideNav activeMenu={activeMenu} onNavigate={navigate} />}
+        topNav={<AppHeader
           activeMenu={activeMenu}
-          setActiveMenu={navigate}
-          open={menuOpen}
-          onClose={closeMenu}
-          collapsed={sidebar.collapsed}
-          onToggleCollapse={sidebar.toggle}
-          blocked={assistantOpen && smallScreen}
-        />
-        <div
-          className="app-body"
-          ref={(node) => {
-            if (node) node.inert = menuOpen || (assistantOpen && smallScreen);
-          }}
-        >
-          <AppHeader
-            activeMenu={activeMenu}
-            onBack={() => { closeAssistant(); closeMenu(); workspaceNavigation.back(); }}
-            canGoBack={workspaceNavigation.canGoBack}
-            menuOpen={menuOpen}
-            onMenu={() => setMenuOpen(true)}
-            onSearch={searchEquipment}
-            onNotifications={() => navigate("notifications")}
-            onProfile={() => navigate("profile")}
-          />
-          <main id="main-content" className="main-content" tabIndex={-1}>
-            {renderContent()}
-          </main>
-          <footer className="app-footer">
-            <span>
-              ASTRA <i /> 우주항공 시험장비 공동활용 플랫폼
-            </span>
-            <span>
-              {user.name}{user.organization?.name && ` · ${user.organization.name}`}
-            </span>
-          </footer>
+          onBack={() => { closeAssistant(); workspaceNavigation.back(); }}
+          canGoBack={workspaceNavigation.canGoBack}
+          onSearch={searchEquipment}
+          onNotifications={() => navigate("notifications")}
+          onProfile={() => navigate("profile")}
+        />}
+      >
+        <div id="main-content" className="main-content" tabIndex={-1}>
+          {renderContent()}
         </div>
+      </AppShell>
         {canAccessMenu(user.role, "assistant") && (
           <AiAssistant
             chatPanelKey={chatPanelKey}
@@ -304,7 +257,6 @@ function Workspace() {
             }}
           />
         )}
-      </div>
     </AppContext.Provider>
   );
 }

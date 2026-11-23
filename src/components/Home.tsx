@@ -14,7 +14,6 @@ import { dateLabel, seoulDate, timeLabel } from "../domain/calendar";
 import { requestStatusLabels } from "../domain/constants";
 import { Badge, Button, PageHeader, Panel, TextLink } from "./ui";
 import ApiState from "./ui/ApiState";
-import "../styles/dashboard.css";
 
 interface HomeProps {
   setActiveMenu: (menu: string) => void;

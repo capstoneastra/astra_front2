@@ -1,0 +1,11 @@
+/* 아직 Astryx로 옮기지 않은 화면의 기존 CSS. 화면을 옮기면서 하나씩 지운다. */
+@import "../index.css" layer(legacy);
+@import "./themes.css" layer(legacy);
+@import "./assistant.css" layer(legacy);
+@import "./workspace-updates.css" layer(legacy);
+@import "./compact.css" layer(legacy);
+@import "./dashboard.css" layer(legacy);
+@import "./calendar.css" layer(legacy);
+@import "./simulation.css" layer(legacy);
+@import "../auth/login.css" layer(legacy);
+@import "./bridge.css" layer(legacy);

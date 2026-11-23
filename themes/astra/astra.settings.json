@@ -1,0 +1,43 @@
+{
+  "name": "astra",
+  "like": "neutral",
+  "mode": "both",
+  "settings": [
+    {
+      "thing": "accent",
+      "value": "#E8590C",
+      "source": "dial"
+    },
+    {
+      "thing": "neutral",
+      "value": "#5B6B80",
+      "source": "dial"
+    },
+    {
+      "thing": "spacing",
+      "value": "tight",
+      "source": "dial"
+    },
+    {
+      "thing": "font",
+      "value": "\"Pretendard Variable\", Pretendard, \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif",
+      "source": "dial"
+    },
+    {
+      "thing": "background-color",
+      "value": "#3a3c3e",
+      "source": "property",
+      "on": "progress-bar-track",
+      "mode": "light"
+    },
+    {
+      "thing": "background-color",
+      "value": "#343e4d",
+      "source": "property",
+      "on": "progress-bar-track",
+      "mode": "dark"
+    }
+  ],
+  "lifted": [],
+  "palette": "2722c7af39efba8fca8779d6e3ff9d4f5787da9162531a0521c48d14c235d586"
+}

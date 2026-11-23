@@ -1,8 +1,16 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ArrowRight, ChevronDown, Columns3, Sparkles, X } from "lucide-react";
+import { ChevronDown, Columns3, Sparkles, X } from "lucide-react";
 import SearchAutocomplete from "./ui/SearchAutocomplete";
+import { Table, proportional, pixel } from "@astryxdesign/core/Table";
+import { CheckboxInput } from "@astryxdesign/core/CheckboxInput";
+import { StatusDot } from "@astryxdesign/core/StatusDot";
+import { Badge as AxBadge } from "@astryxdesign/core/Badge";
+import { Link } from "@astryxdesign/core/Link";
+import { Text } from "@astryxdesign/core/Text";
+import { HStack } from "@astryxdesign/core/HStack";
+import { VStack } from "@astryxdesign/core/VStack";
 import { useWorkspace } from "../context/AppContext";
-import { Badge, Button, Panel } from "./ui";
+import { Button, Panel } from "./ui";
 import { useApiQuery } from "../hooks/useApiQuery";
 import { equipmentService, equipmentView, testTypeLabel } from "../services/equipmentService";
 import type { Equipment } from "../services/equipmentService";
@@ -12,7 +20,6 @@ import type { SearchView } from "../hooks/useWorkspaceNavigation";
 import {
   accessScopeLabels,
   availabilityLabels,
-  availabilityTone,
   equipmentTypeLabels,
   valueText,
 } from "../domain/constants";
@@ -40,6 +47,11 @@ type Filters = typeof emptyFilters;
  * - 숫자·단위가 섞인 문장("15kg, 20~2000Hz 진동시험") → GET /search?q= 로 해석
  */
 
+
+/** 장비 가용 상태 → 상태 점 색 */
+const availabilityDot: Record<string, "success" | "warning" | "error" | "accent" | "neutral"> = {
+  AVAILABLE: "success", BUSY: "warning", MAINTENANCE: "accent", UNAVAILABLE: "error", UNKNOWN: "neutral",
+};
 
 /** 목록 응답에는 accessScope가 없을 수 있다(상세·매칭 응답에만 있음). 있으면 배지로 보여 준다. */
 function accessScopeOf(item: Equipment) {
@@ -261,43 +273,53 @@ export default function EquipmentSearch({
         {waiting || listQuery.error ? <ApiState loading={waiting} error={listQuery.error} onRetry={listQuery.reload} /> :
           results.length === 0 ? <p className="inline-empty">조건에 맞는 장비가 없습니다.
             {chips.length > 0 && <Button variant="secondary" onClick={reset}>조건 지우기</Button>}</p> :
-          <div className="table-scroll"><table className="data-table equipment-table">
-            <thead><tr>
-              {canRequest && <th><span className="sr-only">비교</span></th>}
-              <th>장비</th><th>보유 조직·지역</th><th>시험유형</th><th>상태</th><th><span className="sr-only">동작</span></th>
-            </tr></thead>
-            <tbody>{results.map((item) => {
-              const scope = accessScopeOf(item);
-              const checked = comparisonIds.includes(item.id);
-              return <tr key={item.id}>
-                {canRequest && <td><input type="checkbox" aria-label={`${item.name} 비교에 담기`} checked={checked}
-                  disabled={!checked && comparisonIds.length >= 5} onChange={(event) => toggleCompare(item.id, event.target.checked)} /></td>}
-                <td>
-                  <button type="button" className="row-title" onClick={() => setDetailEquipment(item)}>{item.name}</button>
-                  <small>{[item.model, item.externalId].filter(Boolean).join(" · ")}</small>
-                </td>
-                <td>{item.institution || "확인 필요"}<small>{item.region ?? "지역 확인 필요"}</small></td>
-                <td><div className="badges">{item.testTypes.length ? item.testTypes.map((code) =>
-                  <Badge key={code} tone="cyan">{testTypeLabel(code)}</Badge>) : <span className="small-note">—</span>}</div></td>
-                <td><div className="badges">
-                  <Badge tone={availabilityTone[item.availability ?? "UNKNOWN"]} dot>{availabilityLabels[item.availability ?? "UNKNOWN"] ?? item.availability}</Badge>
-                  {scope && accessScopeLabels[scope] && <Badge tone={scope === "EXTERNAL_ALLOWED" ? "blue" : "violet"}>{accessScopeLabels[scope]}</Badge>}
-                  {item.isMock && <Badge tone="amber">DEMO</Badge>}
-                </div></td>
-                <td className="cell-actions">
-                  <Button variant="ghost" className="button--sm" onClick={() => setDetailEquipment(item)}>상세</Button>
-                  {canSimulate && item.availability !== "AVAILABLE" && <Button variant="secondary" className="button--sm"
-                    title="예약이 차 있어도 결과를 미리 가늠해 볼 수 있습니다" onClick={() => openSimulation(item.id)}>가상 시험</Button>}
-                  {canRequest && <Button className="button--sm" icon={ArrowRight}
-                    disabled={selecting !== null || ownEquipment(item)}
-                    title={ownEquipment(item) ? "우리 조직 장비에는 의뢰할 수 없습니다" : undefined}
-                    onClick={() => requestEquipment(item)}>
-                    {selecting === item.id ? "확인 중…" : "이 장비로 의뢰"}
-                  </Button>}
-                </td>
-              </tr>;
-            })}</tbody>
-          </table></div>}
+          <Table<Equipment>
+            data={results}
+            idKey="id"
+            density="compact"
+            hasHover
+            columns={[
+              ...(canRequest ? [{ key: "compare", header: <span className="sr-only">비교</span>, width: pixel(44), renderCell: (item: Equipment) => {
+                const checked = comparisonIds.includes(item.id);
+                return <CheckboxInput label={`${item.name} 비교에 담기`} isLabelHidden value={checked}
+                  isDisabled={!checked && comparisonIds.length >= 5} onChange={(next) => toggleCompare(item.id, next)} />;
+              } }] : []),
+              { key: "name", header: "장비", width: proportional(2, { minWidth: 200 }), renderCell: (item) => <VStack gap={0.5}>
+                <Link onClick={() => setDetailEquipment(item)} weight="semibold" color="primary">{item.name}</Link>
+                <Text type="supporting" color="secondary">{[item.model, item.externalId].filter(Boolean).join(", ")}</Text>
+              </VStack> },
+              { key: "institution", header: "보유 조직", width: proportional(1.5), renderCell: (item) => <VStack gap={0.5}>
+                <Text>{item.institution || "확인 필요"}</Text>
+                <Text type="supporting" color="secondary">{item.region ?? "지역 확인 필요"}</Text>
+              </VStack> },
+              { key: "testTypes", header: "시험유형", width: proportional(1), renderCell: (item) => <HStack gap={1} wrap="wrap">
+                {item.testTypes.length ? item.testTypes.map((code) => <AxBadge key={code} variant="neutral" label={testTypeLabel(code)} />) :
+                  <Text color="secondary">없음</Text>}
+              </HStack> },
+              { key: "availability", header: "상태", width: proportional(1.2), renderCell: (item) => {
+                const scope = accessScopeOf(item);
+                return <HStack gap={1} wrap="wrap">
+                  <HStack gap={1} vAlign="center">
+                    <StatusDot variant={availabilityDot[item.availability ?? "UNKNOWN"] ?? "neutral"}
+                      label={availabilityLabels[item.availability ?? "UNKNOWN"] ?? String(item.availability)} />
+                    <Text>{availabilityLabels[item.availability ?? "UNKNOWN"] ?? String(item.availability)}</Text>
+                  </HStack>
+                  {scope && accessScopeLabels[scope] && <AxBadge variant={scope === "EXTERNAL_ALLOWED" ? "blue" : "purple"} label={accessScopeLabels[scope]} />}
+                  {item.isMock && <AxBadge variant="neutral" label="시연" />}
+                </HStack>;
+              } },
+              { key: "actions", header: <span className="sr-only">동작</span>, width: pixel(canRequest ? 260 : 80), align: "end", renderCell: (item) => <HStack gap={1} hAlign="end">
+                {canSimulate && item.availability !== "AVAILABLE" && <Button variant="ghost" className="button--sm"
+                  title="예약이 차 있어도 결과를 미리 가늠해 볼 수 있습니다" onClick={() => openSimulation(item.id)}>가상 시험</Button>}
+                {canRequest ? <Button variant="secondary" className="button--sm"
+                  disabled={selecting !== null || ownEquipment(item)}
+                  title={ownEquipment(item) ? "우리 조직 장비에는 의뢰할 수 없습니다" : undefined}
+                  onClick={() => requestEquipment(item)}>
+                  {selecting === item.id ? "확인 중…" : "이 장비로 의뢰"}
+                </Button> : <Button variant="ghost" className="button--sm" onClick={() => setDetailEquipment(item)}>상세</Button>}
+              </HStack> },
+            ]}
+          />}
         {!query.sentence && !waiting && !listQuery.error && (listQuery.data?.totalPages ?? 0) > 1 && <div className="search-pager">
           <Button variant="secondary" className="button--sm" disabled={page === 0} onClick={() => setPage((p) => p - 1)}>이전</Button>
           <span>{page + 1} / {listQuery.data.totalPages}</span>

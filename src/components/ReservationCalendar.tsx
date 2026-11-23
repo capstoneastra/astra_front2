@@ -13,7 +13,6 @@ import Calendar from "./calendar/Calendar";
 import ScheduleCard from "./calendar/ScheduleCard";
 import ScheduleDetail from "./calendar/ScheduleDetail";
 import RequestDetailDialog from "./workflow/RequestDetailDialog";
-import "../styles/calendar.css";
 
 function uniqueOptions(items: RequestSummary[], key: "equipment" | "institution") {
   const options = new Map<string, string>();
