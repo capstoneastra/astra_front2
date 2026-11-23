@@ -71,7 +71,7 @@ export default function ReservationCalendar({ requestBox, onBoxChange, ownsEquip
     onBoxChange(next);
   };
   return <div className="content-page page-enter reservation-calendar">
-    <PageHeader eyebrow="ASTRA SCHEDULE CONTROL" title="시험 예약 캘린더" description={`${scope}을 한눈에 확인하고 일정을 협의하세요.`}>
+    <PageHeader title="일정 보기" description={scope}>
       <Badge tone="cyan"><CalendarDays size={14} /> 월간 일정</Badge>
       <Button className="schedule-filter-toggle" variant="secondary" icon={SlidersHorizontal} aria-controls="schedule-filters" aria-expanded={filtersOpen} onClick={() => setFiltersOpen((value) => !value)}>필터</Button>
       <Button variant="secondary" icon={RefreshCw} disabled={query.loading || query.refreshing} onClick={query.reload}>새로고침</Button>

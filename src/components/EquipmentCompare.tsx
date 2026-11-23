@@ -18,9 +18,7 @@ export default function EquipmentCompare(_props: { setActiveMenu?: (menu: string
   return (
     <div className="content-page page-enter">
       <PageHeader
-        eyebrow="EQUIPMENT COMPARISON"
         title="장비 비교"
-        description="서로 다른 장비 2~5대의 사양과 이용조건을 비교하세요."
       />
       <DemoNotice>
         REAL 사양을 우선 비교하며, 없는 사양과 이용료는 확인 필요로 표시합니다.

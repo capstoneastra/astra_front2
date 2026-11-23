@@ -75,8 +75,8 @@ export function Panel({
   );
 }
 
+// 제목 한 줄 + 주요 버튼. eyebrow(영문 라벨)는 더 이상 그리지 않는다(기존 호출 호환용으로만 받음).
 export function PageHeader({
-  eyebrow = "ASTRA WORKSPACE",
   title,
   description,
   children,
@@ -84,7 +84,6 @@ export function PageHeader({
   return (
     <div className="page-header">
       <div>
-        {eyebrow && <span className="eyebrow">{eyebrow}</span>}
         <h1>{title}</h1>
         {description && <p>{description}</p>}
       </div>

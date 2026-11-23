@@ -57,9 +57,7 @@ export default function Simulation() {
   return (
     <div className="content-page page-enter">
       <PageHeader
-        eyebrow="VIRTUAL TEST LAB"
         title="가상 시뮬레이션"
-        description="3D 시료와 시험 과정을 살펴보고, 조건에 따른 가상 결과를 확인하세요."
       >
         <Badge tone="amber">DEMO ONLY</Badge>
       </PageHeader>

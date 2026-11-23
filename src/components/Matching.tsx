@@ -38,9 +38,7 @@ export default function Matching({ setActiveMenu }) {
   return (
     <div className="content-page page-enter">
       <PageHeader
-        eyebrow="CONDITION INTELLIGENCE"
         title="AI 시험조건 분석·장비 매칭"
-        description="조건을 확인하고, 장비별 충족·불일치·미확인 근거를 비교하세요."
       >
         <Button
           variant="secondary"

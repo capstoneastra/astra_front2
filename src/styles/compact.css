@@ -1,0 +1,302 @@
+/*
+ * 공통 레이아웃·여백 (화면 구조 개편)
+ * 색·글꼴·컴포넌트 톤은 tokens.css/index.css 그대로 두고, 폭·여백·밀도만 조정한다.
+ * main.tsx에서 가장 마지막에 불러와 기존 규칙을 덮어쓴다.
+ */
+:root {
+  --page-max: 1440px;
+  --gap: 12px;
+  --gap-lg: 16px;
+  --pad: 14px;
+}
+
+/* ── 본문 폭과 바깥 여백 ── */
+.main-content {
+  max-width: none;
+  padding: 14px 24px 20px;
+}
+.content-page,
+.content-page--narrow,
+.work-dashboard {
+  max-width: var(--page-max);
+  margin-inline: auto;
+}
+.app-footer {
+  padding: 10px 24px;
+}
+
+/* ── 페이지 제목: 제목 한 줄 + 주요 버튼 같은 줄 ── */
+.page-header,
+.content-page > .page-header {
+  margin-bottom: var(--gap);
+  gap: var(--gap);
+  min-height: 40px;
+}
+.page-header > div:first-child {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  min-width: 0;
+}
+.page-header h1 {
+  font-size: 20px;
+  letter-spacing: -0.5px;
+  line-height: 1.3;
+  white-space: nowrap;
+}
+.page-header p,
+.content-page .page-header p {
+  margin: 0;
+  font-size: 12px;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.page-header__actions {
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+.eyebrow {
+  display: none;
+}
+
+/* ── 카드·섹션 ── */
+.panel__header {
+  min-height: 0;
+  padding: 10px var(--pad);
+}
+.panel__header h2 {
+  font-size: 14px;
+}
+.form-panel,
+.request-card {
+  padding: var(--pad);
+}
+.form-section-heading {
+  margin-bottom: var(--gap);
+  padding-bottom: 10px;
+}
+.form-grid {
+  column-gap: var(--gap-lg);
+  row-gap: var(--gap);
+}
+.form-field {
+  gap: 5px;
+}
+.form-actions {
+  margin-top: var(--gap);
+  padding-top: var(--gap);
+  gap: 10px;
+}
+.search-toolbar {
+  padding: 10px var(--pad);
+  margin-bottom: var(--gap);
+}
+.results-heading {
+  margin-bottom: 8px;
+}
+.equipment-grid {
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: var(--gap);
+}
+.request-list {
+  gap: var(--gap);
+}
+.workspace-context-actions {
+  margin-bottom: var(--gap);
+}
+th {
+  padding: 7px 12px;
+}
+td {
+  padding: 8px 12px;
+}
+
+/* 같은 안내 박스는 작은 글씨 한 줄로 */
+.content-note {
+  padding: 7px 12px;
+  margin-bottom: var(--gap);
+  font-size: 11px;
+  line-height: 1.6;
+}
+.content-note > svg {
+  width: 14px;
+  height: 14px;
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+.content-note.content-note--quiet {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  color: var(--text-muted);
+}
+
+/* ── 요약 숫자 카드: 높이 축소 ── */
+.metric-card {
+  padding: 10px 14px;
+}
+.metric-card__value {
+  font-size: 24px;
+  margin: 2px 0;
+}
+.metric-card__decoration {
+  display: none;
+}
+
+/* ── 빈 상태: 한 줄 안내 + 다음 행동 ── */
+.empty-state {
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  text-align: left;
+  gap: 4px 10px;
+  padding: 12px var(--pad);
+}
+.empty-state__icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+}
+.empty-state__icon svg {
+  width: 15px;
+  height: 15px;
+}
+.empty-state h3 {
+  margin: 0;
+  font-size: 13px;
+}
+.empty-state p {
+  max-width: none;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+.empty-state .button {
+  margin: 0 0 0 auto;
+  min-height: 32px;
+  padding: 6px 12px;
+}
+
+/* ── 공통 보조 요소 ── */
+.segmented {
+  display: inline-flex;
+  padding: 3px;
+  gap: 2px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: var(--surface-sunken);
+}
+.segmented > button {
+  border: 0;
+  border-radius: 7px;
+  padding: 6px 12px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+.segmented > button[aria-pressed="true"] {
+  background: var(--surface-raised);
+  color: var(--text);
+  box-shadow: inset 0 0 0 1px var(--border-strong);
+}
+.grid-2,
+.grid-3,
+.grid-4 {
+  display: grid;
+  gap: var(--gap);
+  margin-bottom: var(--gap);
+}
+.grid-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.grid-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.grid-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.inline-empty {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px var(--pad);
+  color: var(--text-muted);
+  font-size: 12px;
+}
+.inline-empty .button {
+  margin-left: auto;
+  min-height: 30px;
+  padding: 5px 11px;
+}
+.button--sm {
+  min-height: 30px;
+  padding: 5px 10px;
+  font-size: 11px;
+}
+.data-table td,
+.data-table th {
+  vertical-align: middle;
+}
+.data-table tbody tr {
+  cursor: default;
+}
+.data-table tbody tr:hover td {
+  background: color-mix(in srgb, var(--cyan) 4%, transparent);
+}
+.data-table td small {
+  display: block;
+  color: var(--text-muted);
+  font-size: 10px;
+  margin-top: 2px;
+}
+.data-table .cell-actions {
+  display: flex;
+  gap: 6px;
+  justify-content: flex-end;
+  white-space: nowrap;
+}
+.row-title {
+  color: var(--text);
+  font-weight: 600;
+  font-size: 12px;
+  border: 0;
+  background: none;
+  padding: 0;
+  text-align: left;
+  cursor: pointer;
+}
+.row-title:hover {
+  text-decoration: underline;
+}
+.badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.section-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+  margin: 0 0 8px;
+}
+.small-note {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+.field-error {
+  color: var(--red);
+  font-size: 11px;
+  margin: 0;
+}
+.form-field--invalid > input,
+.form-field--invalid > select,
+.form-field--invalid > textarea {
+  border-color: var(--red);
+}
+
+@media (max-width: 1100px) {
+  .grid-4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .grid-3 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 767px) {
+  .main-content { padding: 12px 14px 18px; }
+  .grid-2, .grid-3, .grid-4 { grid-template-columns: minmax(0, 1fr); }
+  .page-header > div:first-child { flex-direction: column; align-items: flex-start; gap: 2px; }
+  .page-header h1 { white-space: normal; }
+}

@@ -20,17 +20,9 @@ export function Feedback({ action, onRetry }: {
 }
 export function DemoNotice({ children }: { children?: ReactNode }) {
   return (
-    <div className="content-note">
-      <Info size={16} />
-      <span>
-        실제 API 모드 · 최종 시험 가능 여부와 일정은 기관이 확인합니다.
-        {children && (
-          <>
-            <br />
-            {children}
-          </>
-        )}
-      </span>
-    </div>
+    <p className="content-note content-note--quiet">
+      <Info size={13} aria-hidden="true" />
+      <span>최종 시험 가능 여부와 일정은 장비 보유 조직이 확인합니다.{children && <> {children}</>}</span>
+    </p>
   );
 }

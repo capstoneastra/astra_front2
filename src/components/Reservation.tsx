@@ -81,9 +81,7 @@ export default function Reservation({ setActiveMenu }) {
   return (
     <div className="content-page content-page--narrow page-enter">
       <PageHeader
-        eyebrow="TEST REQUEST"
         title="시험 의뢰하기"
-        description="필요한 장비와 시험조건을 정리해 의뢰를 준비하세요."
       >
         <Badge tone="cyan">
           시험 의뢰 ·{" "}

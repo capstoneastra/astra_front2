@@ -19,9 +19,7 @@ export default function TestInformation({ setActiveMenu }) {
   return (
     <div className="content-page page-enter">
       <PageHeader
-        eyebrow="TEST INFORMATION"
         title="시험 정보 안내"
-        description="시험에 필요한 조건과 수행기관을 확인하세요."
       />
       <DemoNotice />
       <Panel className="form-panel">

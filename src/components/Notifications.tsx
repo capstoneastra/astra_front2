@@ -14,9 +14,7 @@ export default function Notifications() {
   return (
     <div className="content-page page-enter">
       <PageHeader
-        eyebrow="WORKSPACE INBOX"
         title="업무 알림"
-        description="의뢰 접수·보완 요청·예약 확정 알림을 확인하세요."
       >
         <Button
           variant="secondary"

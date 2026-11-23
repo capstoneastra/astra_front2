@@ -76,9 +76,7 @@ export default function EquipmentManager(_props: { setActiveMenu: (menu: string)
   return (
     <div className="content-page page-enter">
       <PageHeader
-        eyebrow="INFRASTRUCTURE DATA"
         title="보유 장비 관리"
-        description="공동활용 장비의 정보를 등록하고 목록을 관리하세요."
       >
         <Badge tone="cyan">
           현재 {catalogQuery.status === "ready" ? managedEquipment.length : "—"}

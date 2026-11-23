@@ -9,7 +9,7 @@ export interface ApiStateProps {
 
 export default function ApiState({ loading = false, error, onRetry }: ApiStateProps) {
   if (error?.code === "LOCAL_WORKSPACE")
-    return <EmptyState title="백엔드 연결 전" description="화면을 둘러볼 수 있습니다. 데이터 조회와 업무 처리는 서버 연결 후 이용할 수 있습니다." />;
+    return <EmptyState title="미리보기 모드" description="데이터 조회·업무 처리는 서버 연결 후 이용할 수 있습니다." />;
 
   const title = loading
     ? "데이터를 불러오고 있습니다"

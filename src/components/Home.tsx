@@ -153,7 +153,7 @@ export default function Home({ ownsEquipment, setActiveMenu, onSearch, openReque
   </Button>;
 
   return <div className="work-dashboard page-enter">
-    <PageHeader eyebrow={null} title={title} description={orgName}>
+    <PageHeader title={title} description={orgName}>
       {!canSwitchView && refreshButton}
       {requester && <Button icon={Plus} onClick={startRequest}>새 시험 의뢰</Button>}
       {university && <Button icon={CalendarDays} onClick={() => openCalendar("RECEIVED")}>예약 캘린더</Button>}

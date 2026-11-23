@@ -45,9 +45,7 @@ export default function ReservationCheck({
   return (
     <div className="content-page page-enter">
       <PageHeader
-        eyebrow="MY TEST REQUESTS"
         title="시험 의뢰 관리"
-        description={admin ? "전체 시험 의뢰와 진행 상태를 확인하세요." : received ? "소속 조직의 장비로 접수된 의뢰를 검토하세요." : "신청한 시험 의뢰와 진행 상태를 확인하세요."}
       >
         <Button variant="secondary" icon={CalendarDays} onClick={() => openCalendar(box)}>예약 캘린더</Button>
         {canAccessMenu(user.role, "request") && (

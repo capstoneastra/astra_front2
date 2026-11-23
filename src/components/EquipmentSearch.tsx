@@ -183,9 +183,7 @@ export default function EquipmentSearch({
   return (
     <div className="content-page page-enter equipment-search-page">
       <PageHeader
-        eyebrow="EQUIPMENT EXPLORER"
         title="시험장비 검색"
-        description="기관의 경계를 넘어, 필요한 시험 인프라를 찾아보세요."
       >
         <Badge tone="cyan" dot>인증된 API 조회</Badge>
       </PageHeader>

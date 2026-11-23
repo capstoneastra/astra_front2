@@ -84,9 +84,7 @@ export default function Chatbot({ setActiveMenu }) {
   return (
     <div className="content-page page-enter">
       <PageHeader
-        eyebrow="ASTRA AI ASSISTANT"
         title="AI 시험 상담"
-        description="시험 목적에서 장비 탐색까지, 필요한 조건을 함께 정리해 보세요."
       />
       <div className="content-note">
         <Info size={16} />
