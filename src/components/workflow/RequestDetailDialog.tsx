@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import { CalendarDays, Download, FileUp, X } from "lucide-react";
 import { useAuth } from "../../auth/context";
+import { useWorkspace } from "../../context/AppContext";
+import { canAccessMenu } from "../../auth/permissions";
 import { ownsOrganization } from "../../auth/permissions";
 import { useApiQuery } from "../../hooks/useApiQuery";
 import { useAction } from "../../hooks/useAction";
@@ -197,6 +199,7 @@ export default function RequestDetailDialog({ requestId, onClose, initialReserva
 }) {
   const dialog = useRef<HTMLDialogElement>(null);
   const { user } = useAuth();
+  const { openSimulation } = useWorkspace();
   const cancel = useAction();
   const query = useApiQuery((signal) => requestService.get(requestId, signal), `request:${requestId}`);
   const r = query.data;
@@ -280,6 +283,14 @@ export default function RequestDetailDialog({ requestId, onClose, initialReserva
               <Button variant="secondary" className="button--sm" icon={Download} onClick={() => download(item)}>내려받기</Button>
             </div>)}
           </Section>}
+
+          {canAccessMenu(user.role, "simulation") && r.equipment?.id &&
+            ["SUBMITTED", "UNDER_REVIEW", "SUPPLEMENT_REQUESTED", "RESUBMITTED", "SCHEDULING", "CONFIRMED"].includes(r.status) &&
+            <Section title="결과가 급하다면">
+              <p className="small-note">실제 시험 전이라도 이 장비의 가상 시험으로 결과를 대략 가늠해 볼 수 있습니다(참고용).</p>
+              <div className="form-actions"><Button variant="secondary"
+                onClick={() => { dialog.current?.close(); openSimulation(r.equipment.id); }}>가상 시험 돌려보기</Button></div>
+            </Section>}
 
           {requester && r.status === "DRAFT" && <Section title="작성 중">
             <p className="small-note">아직 제출하지 않은 의뢰서입니다.</p>

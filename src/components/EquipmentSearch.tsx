@@ -59,7 +59,8 @@ export default function EquipmentSearch({
   initialView?: SearchView | null;
   onViewChange?: (view: SearchView) => void;
 }) {
-  const { setSelectedEquipment, setDraftRequestId, user, resolveEquipment, comparisonIds, setComparisonIds } = useWorkspace();
+  const { setSelectedEquipment, setDraftRequestId, user, resolveEquipment, comparisonIds, setComparisonIds, openSimulation } = useWorkspace();
+  const canSimulate = canAccessMenu(user.role, "simulation");
   const startTerm = initialView?.searchTerm ?? initialSearchTerm;
   const [input, setInput] = useState(startTerm);
   // 실제로 검색한 내용. sentence=true면 문장 해석 검색
@@ -290,6 +291,8 @@ export default function EquipmentSearch({
                 </div></td>
                 <td className="cell-actions">
                   <Button variant="ghost" className="button--sm" onClick={() => setDetailEquipment(item)}>상세</Button>
+                  {canSimulate && item.availability !== "AVAILABLE" && <Button variant="secondary" className="button--sm"
+                    title="예약이 차 있어도 결과를 미리 가늠해 볼 수 있습니다" onClick={() => openSimulation(item.id)}>가상 시험</Button>}
                   {canRequest && <Button className="button--sm" icon={ArrowRight}
                     disabled={selecting !== null || ownEquipment(item)}
                     title={ownEquipment(item) ? "우리 조직 장비에는 의뢰할 수 없습니다" : undefined}

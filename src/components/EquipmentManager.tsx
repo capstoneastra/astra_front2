@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Activity, CalendarClock, Pencil, Plus, Trash2, X } from "lucide-react";
+import { CalendarClock, Pencil, Plus, Trash2, X } from "lucide-react";
 import { useWorkspace } from "../context/AppContext";
 import { Badge, Button, PageHeader, Panel } from "./ui";
 import ApiState from "./ui/ApiState";
@@ -63,7 +63,7 @@ function DowntimeDialog({ equipment, onClose }: { equipment: OwnedEquipment; onC
 }
 
 export default function EquipmentManager(_props: { setActiveMenu: (menu: string) => void }) {
-  const { user, openSimulation } = useWorkspace();
+  const { user } = useWorkspace();
   const admin = user.role === "ADMIN";
   const [adminInstitution, setAdminInstitution] = useState("");
   const [adding, setAdding] = useState(false);
@@ -161,7 +161,6 @@ export default function EquipmentManager(_props: { setActiveMenu: (menu: string)
               <td className="cell-actions">
                 <Button variant="secondary" className="button--sm" icon={Pencil} disabled={action.busy} onClick={() => setEditing(item.id)}>수정</Button>
                 <Button variant="ghost" className="button--sm" icon={CalendarClock} onClick={() => setDowntime(item)}>정비 일정</Button>
-                <Button variant="ghost" className="button--sm" icon={Activity} onClick={() => openSimulation(item.id)}>시뮬레이션</Button>
                 <Button variant="ghost" className="button--sm" icon={Trash2} aria-label={`${item.name} 비활성화`} disabled={action.busy}
                   onClick={() => handleDelete(item)} />
               </td>

@@ -120,7 +120,7 @@ function MatchStep({ matchRun, onChoose, setActiveMenu }: {
   onChoose: (draftId: number) => void;
   setActiveMenu: (menu: string) => void;
 }) {
-  const { comparisonIds, setComparisonIds, setSelectedEquipment, resolveEquipment } = useWorkspace();
+  const { comparisonIds, setComparisonIds, setSelectedEquipment, resolveEquipment, openSimulation } = useWorkspace();
   const [open, setOpen] = useState<number | null>(matchRun.results[0]?.id ?? null);
   const action = useAction();
   const choose = (result: MatchRun["results"][number]) => action.run(async (signal) => {
@@ -156,7 +156,10 @@ function MatchStep({ matchRun, onChoose, setActiveMenu }: {
               {result.usedMockData && <Badge tone="amber">DEMO</Badge>}
             </div></td>
             <td className="match-reason">{result.reason}</td>
-            <td className="cell-actions"><Button className="button--sm" icon={ArrowRight} disabled={action.busy || result.verdict === "UNSUITABLE"}
+            <td className="cell-actions">
+              {equipment.availability !== "AVAILABLE" && <Button variant="secondary" className="button--sm"
+                title="예약이 차 있어도 결과를 미리 가늠해 볼 수 있습니다" onClick={() => openSimulation(equipment.id)}>가상 시험</Button>}
+              <Button className="button--sm" icon={ArrowRight} disabled={action.busy || result.verdict === "UNSUITABLE"}
               title={result.verdict === "UNSUITABLE" ? "조건이 맞지 않는 장비입니다" : undefined}
               onClick={() => choose(result)}>이 장비로 의뢰</Button></td>
           </tr>, open === result.id && <tr key={`${result.id}-checks`} className="match-checks"><td />

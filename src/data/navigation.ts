@@ -1,4 +1,5 @@
 import {
+  Activity,
   CalendarDays,
   ClipboardList,
   Copy,
@@ -29,6 +30,7 @@ export const navigationByRole: Record<string, NavigationItem[]> = {
     { id: "home", label: "대시보드", icon: LayoutDashboard },
     { id: "request", label: "시험 맡기기", icon: Send },
     { id: "search", label: "장비 찾기", icon: Telescope },
+    { id: "simulation", label: "가상 시험", icon: Activity },
     { id: "sent", label: "내 의뢰", icon: ClipboardList },
   ],
   INSTITUTION_MANAGER: [
@@ -50,7 +52,7 @@ export const navigationByRole: Record<string, NavigationItem[]> = {
 const commonLabels: Record<string, string> = {
   compare: "장비 비교",
   testInfo: "시험 정보 안내",
-  simulation: "가상 시뮬레이션",
+  simulation: "가상 시험",
   calendar: "시험 일정",
   notifications: "업무 알림",
   profile: "내 정보",
@@ -65,7 +67,6 @@ export function menuLabel(role: string, menu: string) {
 export const parentMenu: Record<string, string> = {
   compare: "search",
   testInfo: "request",
-  simulation: "equipment",
 };
 
 // 예전 해시 주소(#/reservationCheck 등)를 새 화면으로 넘긴다. 북마크가 깨지지 않게 하기 위함.

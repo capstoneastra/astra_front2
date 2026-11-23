@@ -18,6 +18,8 @@ export const menuPermissions: Record<string, string[]> = {
   sent: company,
   testInfo: company,
   compare: company,
+  // 가상 시험: 예약이 차 있어도 기업이 결과를 미리 가늠해 보는 용도
+  simulation: [...company, ...admin],
   chatbot: company,
   assistant: company,
   autopilot: company,
@@ -26,7 +28,7 @@ export const menuPermissions: Record<string, string[]> = {
   // 받는 쪽 (기관·대학) + 관리자는 전체
   received: [...institution, ...admin],
   equipment: [...institution, ...admin],
-  simulation: [...institution, ...admin],
+
   // 일정: 기업은 내 의뢰의 일정, 기관은 받은 의뢰의 일정
   calendar: everyone,
   // 관리자

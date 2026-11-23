@@ -171,7 +171,7 @@ export default function EquipmentDetailDialog({
                 openSimulation(data.id);
               }}
             >
-              가상 시뮬레이션 · DEMO
+              가상 시험 돌려보기 · DEMO
             </Button>}
             {canAccessMenu(user.role, "testInfo") && <Button
               variant="secondary"

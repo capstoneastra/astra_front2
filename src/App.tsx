@@ -172,7 +172,7 @@ function Workspace() {
       case "testInfo":
         return <TestInformation setActiveMenu={navigate} />;
       case "simulation":
-        return <Simulation />;
+        return <Simulation setActiveMenu={navigate} />;
       case "admin":
         return <AdminManagement key={workspaceNavigation.route.index} approvalFocus={workspaceNavigation.route.approvalFocus} />;
       case "duplicates":

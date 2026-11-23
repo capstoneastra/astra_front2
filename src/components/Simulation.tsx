@@ -1,4 +1,7 @@
 import { lazy, Suspense, useState } from "react";
+import { ArrowRight, Info } from "lucide-react";
+import { canAccessMenu } from "../auth/permissions";
+import { availabilityLabels, availabilityTone } from "../domain/constants";
 import { useWorkspace } from "../context/AppContext";
 import { Badge, Button, FormField, PageHeader, Panel } from "./ui/index";
 import { useApiQuery } from "../hooks/useApiQuery";
@@ -23,12 +26,19 @@ const labels = {
   holdMin: "유지 시간 (분)",
   targetHumidityPct: "목표 습도 (%)",
 };
-export default function Simulation() {
+/**
+ * 가상 시험: 장비 예약이 차 있거나 일정이 멀어도, 기업이 결과를 대략 가늠해 볼 수 있게 한다.
+ * 실제 시험이 아니므로 DEMO 표시를 유지하고, 정확한 결과는 의뢰로 이어지게 한다.
+ */
+export default function Simulation({ setActiveMenu }: { setActiveMenu?: (menu: string) => void }) {
   const {
       equipmentList,
       simulationEquipmentId,
       setSimulationEquipmentId,
       requirementId,
+      user,
+      setSelectedEquipment,
+      setDraftRequestId,
     } = useWorkspace(),
     [chosen, setChosen] = useState(""),
     [edited, setEdited] = useState<{ presetId: string; values: SimulationInput } | null>(null),
@@ -47,6 +57,7 @@ export default function Simulation() {
     (signal) => simulationService.history(signal),
     "simulation-history",
   );
+  const selected = equipmentList.find((item) => item.id === simulationEquipmentId) ?? null;
   const preset =
       presets.data?.find((p) => p.presetId === chosen) ?? presets.data?.[0],
     model = models.data?.find((m) => m.modelType === preset?.modelType),
@@ -56,13 +67,21 @@ export default function Simulation() {
         : (preset?.inputParameters ?? {});
   return (
     <div className="content-page page-enter">
-      <PageHeader
-        title="가상 시뮬레이션"
-      >
-        <Badge tone="amber">DEMO ONLY</Badge>
+      <PageHeader title="가상 시험" description="예약이 차 있어도 결과를 먼저 가늠해 보세요">
+        <Badge tone="amber">DEMO · 참고용</Badge>
+        {selected && canAccessMenu(user.role, "request") && setActiveMenu &&
+          <Button icon={ArrowRight} disabled={selected.institutionId === user.organization?.id}
+            onClick={() => { setDraftRequestId(null); setSelectedEquipment(selected); setActiveMenu("request"); }}>
+            이 장비로 실제 시험 의뢰
+          </Button>}
       </PageHeader>
+      {selected && selected.availability !== "AVAILABLE" && <p className="content-note">
+        <Info size={14} aria-hidden="true" />
+        <span><strong>{selected.name}</strong>은(는) 지금 <Badge tone={availabilityTone[selected.availability ?? "UNKNOWN"]}>
+          {availabilityLabels[selected.availability ?? "UNKNOWN"]}</Badge> 상태입니다. 실제 시험을 기다리는 동안 아래 가상 시험으로 결과를 미리 확인할 수 있습니다.</span>
+      </p>}
       <DemoNotice>
-        가상 모델이며 실제 장비 성능·시험 적합성·안전성을 의미하지 않습니다.
+        계산 모델로 만든 참고값이며 실제 장비 성능·시험 적합성·성적서를 대신하지 않습니다.
       </DemoNotice>
       <Panel className="form-panel">
         <div className="form-grid">
@@ -115,8 +134,11 @@ export default function Simulation() {
         />
       )}
       {presets.data?.length === 0 && (
-        <Panel className="form-panel">
-          <p>이 장비에 등록된 시연 프리셋이 없습니다.</p>
+        <Panel>
+          <p className="inline-empty">
+            {selected?.name ?? "이 장비"}에는 아직 가상 시험 모델이 없습니다. 같은 시험을 하는 다른 장비로 돌려 보세요.
+            {setActiveMenu && <Button variant="secondary" onClick={() => setActiveMenu("search")}>다른 장비 찾기</Button>}
+          </p>
         </Panel>
       )}
       {model && preset && (

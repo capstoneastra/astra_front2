@@ -1,136 +1,82 @@
 import { useEffect, useRef, useState } from "react";
-import { ArrowLeft, Bell, Command, Menu, Search, X } from "lucide-react";
-import { menuLabel } from "../../data/navigation";
+import type { FormEvent } from "react";
+import { ArrowLeft, Bell, Menu, Search } from "lucide-react";
+import { menuLabel, navigationByRole } from "../../data/navigation";
 import { canAccessMenu } from "../../auth/permissions";
-import { Button } from "../ui";
 import { useAuth } from "../../auth/context";
 import ThemeToggle from "../ui/ThemeToggle";
 import { useApiQuery } from "../../hooks/useApiQuery";
 import { notificationService } from "../../services/notificationService";
 import ProfileMenu from "./ProfileMenu";
 
+/**
+ * 상단 바: 넓은 장비 검색창 + 알림·테마·내 계정.
+ * '워크스페이스 / 화면이름' 경로 표시는 없앴고, 뒤로가기는 메뉴에 없는 하위 화면(비교·내 정보 등)에서만 보인다.
+ */
 export default function AppHeader({ activeMenu, menuOpen, onMenu, onSearch, onBack, canGoBack, onNotifications, onProfile }) {
   const { user, logout, status } = useAuth();
   const { data: unreadCount } = useApiQuery(notificationService.unreadCount, `notifications-unread:${user.id}`);
-  const searchDialog = useRef(null);
+  const searchInput = useRef<HTMLInputElement>(null);
   const [query, setQuery] = useState("");
   const [date] = useState(() =>
-    new Intl.DateTimeFormat("ko-KR", {
-      timeZone: "Asia/Seoul",
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-      weekday: "short",
-    }).format(new Date()),
+    new Intl.DateTimeFormat("ko-KR", { timeZone: "Asia/Seoul", month: "long", day: "numeric", weekday: "short" }).format(new Date()),
   );
+  const canSearch = canAccessMenu(user.role, "search");
+  // 장비 찾기 화면에는 큰 검색창이 따로 있으므로 상단 검색창은 숨긴다.
+  const showSearch = canSearch && activeMenu !== "search";
+  const isMenuPage = (navigationByRole[user.role] ?? []).some((item) => item.id === activeMenu);
+  const showBack = !isMenuPage && canGoBack;
 
   useEffect(() => {
-    const shortcut = (event) => {
-      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k" && canAccessMenu(user.role, "search")) {
+    const shortcut = (event: KeyboardEvent) => {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k" && searchInput.current) {
         event.preventDefault();
-        if (!searchDialog.current.open) searchDialog.current.showModal();
+        searchInput.current.focus();
       }
     };
     document.addEventListener("keydown", shortcut);
     return () => document.removeEventListener("keydown", shortcut);
-  }, [user.role]);
+  }, []);
 
-  const submit = (event) => {
+  const submit = (event: FormEvent) => {
     event.preventDefault();
-    searchDialog.current.close();
     onSearch(query.trim());
     setQuery("");
+    searchInput.current?.blur();
   };
 
   return (
     <header className="app-header">
       <div className="app-header__location">
-        <button type="button" className="icon-button workspace-back" aria-label="이전 화면으로" title="이전 화면으로" disabled={!canGoBack} onClick={onBack}><ArrowLeft size={19} /></button>
-        <button
-          className="icon-button mobile-menu"
-          onClick={onMenu}
-          aria-label="메뉴 열기"
-          aria-controls="primary-navigation"
-          aria-expanded={menuOpen}
-        >
+        <button className="icon-button mobile-menu" onClick={onMenu} aria-label="메뉴 열기"
+          aria-controls="primary-navigation" aria-expanded={menuOpen}>
           <Menu size={21} />
         </button>
-        <span className="app-header__workspace">{status === "local" ? "로컬 화면" : "워크스페이스"}</span>
-        <span className="breadcrumb-separator">/</span>
-        <span>{menuLabel(user.role, activeMenu)}</span>
-      </div>
-      <div className="app-header__tools">
-        {canAccessMenu(user.role, "search") && <button
-          className="header-search"
-          onClick={() => searchDialog.current.showModal()}
-        >
-          <Search size={15} />
-          <span>장비 검색</span>
-          <kbd>
-            <Command size={10} /> K
-          </kbd>
+        {showBack && <button type="button" className="header-back" onClick={onBack} title="이전 화면으로">
+          <ArrowLeft size={16} aria-hidden="true" />
+          <span>{menuLabel(user.role, activeMenu) || "이전"}</span>
         </button>}
+        {status === "local" && <span className="header-local">미리보기 모드</span>}
+      </div>
+      {showSearch && <form className="header-searchbar" role="search" onSubmit={submit}>
+        <Search size={17} aria-hidden="true" />
+        <label className="sr-only" htmlFor="global-equipment-query">장비 검색</label>
+        <input id="global-equipment-query" ref={searchInput} type="text" enterKeyHint="search" autoComplete="off"
+          value={query} onChange={(event) => setQuery(event.target.value)}
+          placeholder="장비명·시험항목 또는 '15kg 진동시험'처럼 문장으로 검색" />
+        <kbd aria-hidden="true">Ctrl K</kbd>
+      </form>}
+      <div className="app-header__tools">
         <span className="header-date">{date}</span>
-        <span className="header-divider" />
-        <button
-          type="button"
-          className="icon-button header-notifications"
+        <button type="button" className="icon-button header-notifications"
           aria-label={unreadCount > 0 ? `업무 알림, 읽지 않은 알림 ${unreadCount}건` : "업무 알림"}
-          aria-current={activeMenu === "notifications" ? "page" : undefined}
-          title="업무 알림"
-          onClick={onNotifications}
-        >
+          aria-current={activeMenu === "notifications" ? "page" : undefined} title="업무 알림" onClick={onNotifications}>
           <Bell size={18} aria-hidden="true" />
           {unreadCount > 0 && <span aria-hidden="true">{unreadCount > 99 ? "99+" : unreadCount}</span>}
         </button>
         <ThemeToggle />
         <ProfileMenu user={user} onLogout={logout} onProfile={onProfile} />
       </div>
-      <dialog
-        className="dialog search-dialog"
-        ref={searchDialog}
-        onClick={(event) => {
-          if (event.target === searchDialog.current)
-            searchDialog.current.close();
-        }}
-        aria-labelledby="search-dialog-title"
-      >
-        <div className="dialog__heading">
-          <div>
-            <span className="eyebrow">QUICK SEARCH</span>
-            <h2 id="search-dialog-title">어떤 장비를 찾고 계신가요?</h2>
-          </div>
-          <button
-            className="icon-button"
-            aria-label="검색 닫기"
-            onClick={() => searchDialog.current.close()}
-          >
-            <X size={20} />
-          </button>
-        </div>
-        <form onSubmit={submit}>
-          <label className="sr-only" htmlFor="global-equipment-query">
-            장비명, 시험항목 또는 보유기관
-          </label>
-          <div className="search-field">
-            <Search size={19} />
-            <input
-              id="global-equipment-query"
-              autoFocus
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="장비명, 시험항목, 보유기관을 입력하세요"
-            />
-          </div>
-          <p className="field-hint">
-            장비명·모델·시험항목은 서버 q 검색, 기관은 목록에서 선택하거나 검색
-            화면의 기관 필터를 사용합니다.
-          </p>
-          <Button type="submit" icon={Search}>
-            장비 검색하기
-          </Button>
-        </form>
-      </dialog>
     </header>
   );
 }

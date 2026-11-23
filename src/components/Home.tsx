@@ -1,6 +1,6 @@
 import { useState } from "react";
 import type { ReactNode } from "react";
-import { ArrowRight, ArrowUpRight, Database, Inbox, RefreshCw, Send, Telescope } from "lucide-react";
+import { Activity, ArrowRight, ArrowUpRight, Database, Inbox, RefreshCw, Send, Telescope } from "lucide-react";
 import { useWorkspace } from "../context/AppContext";
 import { useAuth } from "../auth/context";
 import { useApiQuery } from "../hooks/useApiQuery";
@@ -129,6 +129,8 @@ function CompanyDashboard({ setActiveMenu, openRequest }: Pick<HomeProps, "setAc
       </div>
       <Button icon={Send} onClick={() => setActiveMenu("request")}>시험 맡기기</Button>
       <Button variant="secondary" icon={Telescope} onClick={() => setActiveMenu("search")}>장비 직접 찾기</Button>
+      <Button variant="secondary" icon={Activity} title="예약이 차 있어도 결과를 미리 가늠해 볼 수 있습니다"
+        onClick={() => setActiveMenu("simulation")}>가상 시험</Button>
     </div>
     {ready && <TabbedBoard key="company" tabs={tabs} initial={myTurn.length ? "turn" : "active"} />}
     {!ready && <Panel><RowList rows={[]} state={list} empty="" render={() => null} /></Panel>}
