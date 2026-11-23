@@ -46,7 +46,7 @@ export function dayTimeLabel(event: TimeInterval, date: string) {
   const start = Date.parse(event.startAt), end = Date.parse(event.endAt);
   const from = dayStart(date), to = dayStart(addDays(date, 1));
   if (start <= from && end >= to) return "종일 · 여러 날 시험";
-  return `${start < from ? "이전 날짜부터" : timeLabel(event.startAt)} – ${end > to ? "24:00 · 계속" : end === to ? "24:00" : timeLabel(event.endAt)}`;
+  return `${start < from ? "이전 날짜부터" : timeLabel(event.startAt)} – ${end > to ? "24:00, 다음 날 계속" : end === to ? "24:00" : timeLabel(event.endAt)}`;
 }
 
 export function schedulesFromRequests(requests: RequestDetail[]) {

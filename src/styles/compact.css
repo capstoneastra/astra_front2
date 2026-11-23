@@ -1319,3 +1319,22 @@ label b {
 .chat-handoff__conditions strong { color: var(--color-text-primary); font-weight: 600; }
 .chat-handoff__conditions .is-missing strong { color: var(--color-text-warning); }
 .chat-handoff .chat-suggested { width: 100%; margin: 0; }
+
+/* 읽기 어려운 10px 글자를 11px 이상으로 */
+.field-hint,
+.dash-stat small,
+.search-hero__chips button small,
+.small-note { font-size: 11px; }
+:where(table:not([class*="astryx"])) th { font-size: 11px; }
+/* 대시보드 숫자 칸 보조 글자, 기존 표 안 보조 글자(9~10px)를 읽을 수 있게 */
+.dash-tabs .dash-stat small { font-size: 11px; }
+:where(table:not([class*="astryx"])) td small { font-size: 11px; }
+/* 좁은 화면에서 큰 검색창·자주 찾는 시험 칩이 화면 밖으로 나가지 않게 */
+.search-hero { grid-template-columns: minmax(0, 1fr); width: 100%; }
+.search-hero__chips { max-width: 100%; }
+.ac--hero { max-width: 100%; }
+@media (max-width: 700px) {
+  .ac--hero .ac__box { flex-wrap: wrap; border-radius: 14px; padding: 8px; }
+  .ac--hero .ac__box input { flex: 1 1 200px; }
+  .ac--hero .ac__submit { width: 100%; }
+}

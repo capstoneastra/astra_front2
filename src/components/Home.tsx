@@ -205,7 +205,7 @@ function AdminDashboard({ onSearch, openApprovals, setActiveMenu, openRequest }:
   if (query.loading || query.error) return <Panel><ApiState loading={query.loading} error={query.error} onRetry={query.reload} /></Panel>;
   const tabs: Tab[] = [
     { id: "approvals", label: "승인 대기", tone: "amber", count: (summary?.pendingUsers ?? 0) + (summary?.pendingInstitutions ?? 0),
-      hint: `회원 ${summary?.pendingUsers ?? 0} · 기관 ${summary?.pendingInstitutions ?? 0}`,
+      hint: `회원 ${summary?.pendingUsers ?? 0}건, 기관 ${summary?.pendingInstitutions ?? 0}건`,
       body: <div className="dash-actions">
         <Button onClick={() => openApprovals("members")}>회원 승인 {summary?.pendingUsers ?? 0}건 처리</Button>
         <Button variant="secondary" onClick={() => openApprovals("organizations")}>기관·대학 승인 {summary?.pendingInstitutions ?? 0}건 처리</Button>

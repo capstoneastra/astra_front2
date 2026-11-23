@@ -61,7 +61,7 @@ export default function EquipmentDetailDialog({
       }}
     >
       <div className="dialog__heading">
-        <Badge tone="cyan">장비 정보{data?.isMock ? " · DEMO 포함" : ""}</Badge>
+        <Badge tone="cyan">장비 정보{data?.isMock ? ", 시연 값 포함" : ""}</Badge>
         <button
           className="icon-button"
           aria-label="장비 상세 닫기"
@@ -139,7 +139,7 @@ export default function EquipmentDetailDialog({
                       <p key={`${spec.key}:${spec.sourceType}:${index}`}>
                         {spec.label || spec.key}: {specValue(spec)}{" "}
                         {spec.sourceType === "MOCK" ? (
-                          <Badge tone="amber">DEMO · 미검증</Badge>
+                          <Badge tone="amber">시연 값, 미검증</Badge>
                         ) : (
                           <Badge>
                             {spec.verificationStatus || "검증 확인 필요"}
@@ -171,7 +171,7 @@ export default function EquipmentDetailDialog({
                 openSimulation(data.id);
               }}
             >
-              가상 시험 돌려보기 · DEMO
+              가상 시험 돌려보기
             </Button>}
             {canAccessMenu(user.role, "testInfo") && <Button
               variant="secondary"

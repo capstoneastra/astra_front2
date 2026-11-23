@@ -37,7 +37,7 @@ function TestTypeHelp({ code, openTestInfo }: { code: string; openTestInfo: (cod
   return <div className="request-help">
     <p><strong>{data.nameKo}</strong> {data.description}</p>
     <ul>
-      <li>가능 조직 {data.institutions.length}곳 · 장비 {data.institutions.reduce((sum, item) => sum + item.equipmentCount, 0)}대</li>
+      <li>가능 조직 {data.institutions.length}곳, 장비 {data.institutions.reduce((sum, item) => sum + item.equipmentCount, 0)}대</li>
       <li>예상 비용 {costs.length ? `${Math.min(...costs).toLocaleString("ko-KR")}원부터` : "조직 확인 필요"}
         {days.length ? ` · 최소 ${Math.min(...days)}일` : ""}</li>
       <li>입력할 조건: {data.conditionRules.map((rule) => `${rule.label}${rule.isRequired ? "*" : ""}`).join(", ")}</li>

@@ -61,7 +61,7 @@ export default function SimulationChart({ chart }: { chart: SimulationChartData 
         {chart.xLabel}
       </text>
       <text x="65" y="23" fill="var(--text-secondary)" fontSize="12">
-        {chart.yLabel} · DEMO
+        {chart.yLabel} (참고용)
       </text>
     </svg>
   );

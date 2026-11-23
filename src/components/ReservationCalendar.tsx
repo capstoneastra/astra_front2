@@ -68,7 +68,7 @@ export default function ReservationCalendar() {
 
     <div className="schedule-source"><Badge tone="cyan">{query.data ? "예약 정보" : "조회 대기"}</Badge><span>{query.data ? "서버 응답 기준의 시험 예약입니다." : "시험 예약 정보를 서버에서 조회합니다."} 제안 일정은 기관 확정 전까지 미확정입니다.</span></div>
     <div className="schedule-metrics" aria-label="선택한 달 예약 요약">
-      {[{ icon: CalendarDays, label: "선택한 달 시험 예약", value: monthly.length, hint: "필터 적용 · 여러 날 시험은 1건", tone: "blue" },
+      {[{ icon: CalendarDays, label: "선택한 달 시험 예약", value: monthly.length, hint: "필터 기준, 여러 날 시험은 1건", tone: "blue" },
         { icon: CheckCheck, label: "예약 확정", value: confirmed, hint: "기관 확인이 완료된 일정", tone: "cyan" },
         { icon: Clock3, label: "일정 협의 중", value: pending, hint: "예약 제안 및 대안 일정", tone: "amber" }].map(({ icon: Icon, ...item }) =>
         <section className={`panel schedule-metric schedule-metric--${item.tone}`} key={item.label}><span className="schedule-metric__icon"><Icon size={21} /></span><div><span>{item.label}</span><strong>{query.loading || query.error ? "—" : item.value}<small>건</small></strong><p>{item.hint}</p></div></section>)}
@@ -85,7 +85,7 @@ export default function ReservationCalendar() {
     {query.loading || query.error ? (
       <Panel><ApiState loading={query.loading} error={query.error} onRetry={query.reload} /></Panel>
     ) : <>
-      <div className="schedule-legend" aria-label="예약 상태 범례">{Object.entries(reservationStatuses).map(([key, item]) => <span key={key} className={`schedule-status schedule-status--${item.tone}`}>{item.label}</span>)}<span className="schedule-legend__note" role="status">{query.refreshing ? "최신 예약 상태 확인 중…" : "조회한 의뢰 기준 · 한국 표준시"}</span></div>
+      <div className="schedule-legend" aria-label="예약 상태 범례">{Object.entries(reservationStatuses).map(([key, item]) => <span key={key} className={`schedule-status schedule-status--${item.tone}`}>{item.label}</span>)}<span className="schedule-legend__note" role="status">{query.refreshing ? "최신 예약 상태 확인 중…" : "조회한 의뢰 기준, 한국 시간"}</span></div>
       <div className="schedule-workspace">
         <div className="schedule-workspace__main"><Calendar month={month} today={today} selected={selection?.date ?? today} events={filtered} busy={anonymousBusy} testName={testName} onMonth={setMonth} onToday={() => { setMonth(monthOf(today)); setSelection(null); }} onDaySelect={(date) => chooseDate(date)} onEventSelect={(event, date) => chooseDate(date, event.id)} />
           {monthly.length === 0 && <div className="schedule-month-empty"><CalendarDays size={18} /><span>선택한 달과 필터에 해당하는 일정이 없습니다. 날짜를 선택하면 일정 협의가 가능한 의뢰를 확인할 수 있습니다.</span></div>}

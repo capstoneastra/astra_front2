@@ -1,9 +1,11 @@
 import { lazy, Suspense, useState } from "react";
 import { ArrowRight, Info } from "lucide-react";
 import { canAccessMenu } from "../auth/permissions";
-import { availabilityLabels, availabilityTone } from "../domain/constants";
+import { availabilityLabels, availabilityTone, formatDate } from "../domain/constants";
 import { useWorkspace } from "../context/AppContext";
 import { catalogService } from "../services/catalogService";
+import { Table, proportional, pixel } from "@astryxdesign/core/Table";
+import { Text } from "@astryxdesign/core/Text";
 import { Badge, Button, FormField, PageHeader, Panel } from "./ui/index";
 import { useApiQuery } from "../hooks/useApiQuery";
 import { useAction } from "../hooks/useAction";
@@ -14,6 +16,12 @@ import SimulationChart from "./workflow/SimulationChart";
 import ApiState from "./ui/ApiState";
 import SimulationExports from "./workflow/SimulationExports";
 const SimulationStage = lazy(() => import("./workflow/SimulationStage"));
+/** 계산 방식 코드 → 화면 이름 */
+const capabilityLabels: Record<string, string> = {
+  CALCULATED_DEMO: "계산 모델(참고용)",
+  RULE_BASED_DEMO: "규칙 기반(참고용)",
+  VISUAL_DEMO: "개념 시각화(참고용)",
+};
 const labels = {
   massKg: "시료 질량 (kg)",
   fixtureMassKg: "고정구 질량 (kg)",
@@ -176,7 +184,7 @@ export default function Simulation({ setActiveMenu }: { setActiveMenu?: (menu: s
         <Panel
           className="form-panel"
           title={model.description}
-          action={<Badge tone="amber">{model.capability} · DEMO</Badge>}
+          action={<Badge tone="amber">{capabilityLabels[model.capability] ?? "참고용 계산"}</Badge>}
         >
           <p className="content-note">{model.limitation}</p>
           <p className="field-hint">
@@ -251,7 +259,7 @@ export default function Simulation({ setActiveMenu }: { setActiveMenu?: (menu: s
         <Panel
           className="form-panel"
           title="가상 시험 결과"
-          action={<Badge tone="amber">{result.capability} · DEMO</Badge>}
+          action={<Badge tone="amber">{capabilityLabels[result.capability] ?? "참고용 계산"}</Badge>}
         >
           <SimulationExports key={result.id} result={result} equipment={equipmentList.find((item) => item.id === result.equipmentId)} />
           <p className="content-note">{result.warning}</p>
@@ -324,50 +332,34 @@ export default function Simulation({ setActiveMenu }: { setActiveMenu?: (menu: s
           </div>}
         </Panel>
       )}
-      <Panel className="form-panel" title="내 시뮬레이션 실행 이력">
+      <Panel title="지난 가상 시험">
         {history.loading || history.error ? (
-          <ApiState
-            loading={history.loading}
-            error={history.error}
-            onRetry={history.reload}
-          />
+          <ApiState loading={history.loading} error={history.error} onRetry={history.reload} />
         ) : history.data?.content.length ? (
-          <div className="table-scroll">
-            <table>
-              <thead>
-                <tr>
-                  <th>실행</th>
-                  <th>모델</th>
-                  <th>결과</th>
-                </tr>
-              </thead>
-              <tbody>
-                {history.data.content.map((r) => (
-                  <tr key={r.id}>
-                    <td>{r.presetId}</td>
-                    <td>{r.modelType}</td>
-                    <td>
-                      <Button
-                        variant="secondary"
-                        onClick={() =>
-                          action.run(async (signal) => {
-                            const saved = await simulationService.result(r.id, signal);
-                            setSimulationEquipmentId(saved.equipmentId);
-                            setEdited({ presetId: saved.presetId, values: saved.inputParameters });
-                            setResult(saved);
-                          })
-                        }
-                      >
-                        결과 보기 · DEMO
-                      </Button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <Table<SimulationResult & Record<string, unknown>>
+            data={history.data.content as (SimulationResult & Record<string, unknown>)[]}
+            idKey="id"
+            density="compact"
+            hasHover
+            columns={[
+              { key: "equipment", header: "장비", width: proportional(1.5), renderCell: (r) =>
+                <Text>{equipmentList.find((item) => item.id === r.equipmentId)?.name ?? `장비 ${r.equipmentId}`}</Text> },
+              { key: "model", header: "계산 내용", width: proportional(2), renderCell: (r) =>
+                <Text color="secondary">{models.data?.find((m) => m.modelType === r.modelType)?.description ?? "가상 시험"}</Text> },
+              { key: "createdAt", header: "실행 시각", width: pixel(180), renderCell: (r) =>
+                <Text hasTabularNumbers color="secondary">{r.createdAt ? formatDate(r.createdAt) : "기록 없음"}</Text> },
+              { key: "open", header: <span className="sr-only">동작</span>, width: pixel(110), align: "end", renderCell: (r) =>
+                <Button variant="ghost" className="button--sm" onClick={() =>
+                  action.run(async (signal) => {
+                    const saved = await simulationService.result(r.id, signal);
+                    setSimulationEquipmentId(saved.equipmentId);
+                    setEdited({ presetId: saved.presetId, values: saved.inputParameters });
+                    setResult(saved);
+                  })}>결과 보기</Button> },
+            ]}
+          />
         ) : (
-          <p>아직 실행한 가상 시뮬레이션이 없습니다.</p>
+          <p className="inline-empty">아직 실행한 가상 시험이 없습니다.</p>
         )}
       </Panel>
     </div>

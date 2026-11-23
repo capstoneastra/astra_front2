@@ -71,8 +71,8 @@ export default function DuplicateEquipment({ setActiveMenu, embedded = false }) 
         <Panel
           className="form-panel"
           key={`${group.region}:${group.testType.code}`}
-          title={`${group.region} · ${group.testType.nameKo}`}
-          description={`${group.equipmentCount}대 · ${group.institutionCount}개 기관`}
+          title={`${group.region} ${group.testType.nameKo}`}
+          description={`${group.institutionCount}개 기관에 ${group.equipmentCount}대`}
           action={
             <Button
               variant="secondary"

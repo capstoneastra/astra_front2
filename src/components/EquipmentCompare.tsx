@@ -71,7 +71,7 @@ export default function EquipmentCompare({ setActiveMenu }: { setActiveMenu: (me
                     {row.values.map((cell, i) => (
                       <td key={data.equipment[i]?.id ?? i}>
                         {valueText(cell)}
-                        {cell?.sourceType === "MOCK" && <small>DEMO · 미검증</small>}
+                        {cell?.sourceType === "MOCK" && <small>시연 값, 미검증</small>}
                       </td>
                     ))}
                   </tr>

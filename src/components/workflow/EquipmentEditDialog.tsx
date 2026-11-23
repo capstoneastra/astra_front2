@@ -266,7 +266,7 @@ export default function EquipmentEditDialog({ equipmentId, onClose }) {
             .filter((s) => s.sourceType === "MOCK")
             .map((s, i) => (
               <p className="field-hint" key={`${s.key}:${i}`}>
-                DEMO · {s.label} (수정하지 않음)
+                시연 값: {s.label} (수정하지 않음)
               </p>
             ))}
         </>

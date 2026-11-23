@@ -20,7 +20,7 @@ export default function Calendar({ month, today, selected, events, busy = [], te
       <header className="calendar__toolbar">
         <div><span className="eyebrow">TEST SCHEDULE</span><h2 aria-live="polite">{Number(month.slice(0, 4))}년 <strong>{Number(month.slice(5))}월</strong></h2></div>
         <div className="calendar__navigation">
-          <span className="calendar__timezone">Asia/Seoul · KST</span>
+          <span className="calendar__timezone">한국 시간</span>
           <Button variant="secondary" onClick={onToday}>오늘</Button>
           <button type="button" className="icon-button" aria-label="이전 달" onClick={() => onMonth(moveMonth(month, -1))}><ChevronLeft size={19} /></button>
           <button type="button" className="icon-button" aria-label="다음 달" onClick={() => onMonth(moveMonth(month, 1))}><ChevronRight size={19} /></button>
@@ -44,7 +44,7 @@ export default function Calendar({ month, today, selected, events, busy = [], te
           );
         })}
       </div>
-      <footer className="calendar__footer"><span>날짜를 선택해 일정 확인 · 방향키로 날짜 이동</span><span>여러 날 시험은 날짜별로 이어서 표시됩니다.</span></footer>
+      <footer className="calendar__footer"><span>날짜를 누르면 그날 일정이 보입니다. 방향키로 날짜를 옮길 수 있습니다.</span><span>여러 날 시험은 날짜별로 이어서 표시됩니다.</span></footer>
     </section>
   );
 }
