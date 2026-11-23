@@ -498,6 +498,24 @@ export const astraTheme = {
           "backgroundColor": "#343e4d"
         }
       }
+    },
+    "side-nav-item": {
+      "base": {
+        "fontSize": "15px",
+        "minHeight": "42px",
+        "paddingInline": "12px",
+        "gap": "10px"
+      }
+    },
+    "side-nav-section": {
+      "base": {
+        "--text-supporting-size": "0.875rem"
+      }
+    },
+    "side-nav-heading": {
+      "base": {
+        "--text-large-size": "1.25rem"
+      }
     }
   },
   __onDark: {

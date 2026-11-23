@@ -21,11 +21,11 @@ export default function WorkspaceSideNav({ activeMenu, onNavigate }: {
     <SideNav
       collapsible={{ hasButton: true, buttonLabel: "메뉴 접기" }}
       header={<SideNavHeading heading="ASTRA" subheading={user.organization?.name ?? "플랫폼 관리자"}
-        icon={<Satellite size={20} aria-hidden="true" />} />}
+        icon={<Satellite size={22} aria-hidden="true" />} />}
     >
       <SideNavSection title={roleSection[user.role] ?? "메뉴"}>
         {items.map(({ id, label, icon: Icon }) => (
-          <SideNavItem key={id} label={label} icon={<Icon size={18} aria-hidden="true" />}
+          <SideNavItem key={id} label={label} icon={<Icon size={20} aria-hidden="true" />}
             isSelected={highlighted === id} onClick={() => onNavigate(id)} />
         ))}
       </SideNavSection>

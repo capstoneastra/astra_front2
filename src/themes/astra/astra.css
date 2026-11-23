@@ -665,6 +665,21 @@
   }
   }
 
+  .astryx-side-nav-item {
+    font-size: 15px;
+    min-height: 42px;
+    padding-inline: 12px;
+    gap: 10px;
+  }
+
+  .astryx-side-nav-section {
+    --text-supporting-size: 0.875rem;
+  }
+
+  .astryx-side-nav-heading {
+    --text-large-size: 1.25rem;
+  }
+
   .astryx-text[data-color="primary"] { color: var(--color-text-primary); }
 
   .astryx-heading[data-color="primary"] { color: var(--color-text-primary); }
