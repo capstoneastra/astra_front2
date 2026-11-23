@@ -601,3 +601,122 @@
     transition: none;
   }
 }
+
+/* ── 회원가입: 단계 표시 + 필수/선택 강약 ── */
+.signup-steps {
+  display: flex;
+  gap: 6px;
+  list-style: none;
+  margin: 10px 0 14px;
+  padding: 0;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+.signup-steps li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+  padding-bottom: 6px;
+  border-bottom: 2px solid var(--border);
+}
+.signup-steps li span {
+  display: inline-grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--surface-raised);
+  font-size: 11px;
+}
+.signup-steps li[aria-current="step"] {
+  color: var(--text);
+  font-weight: 600;
+  border-color: var(--cyan);
+}
+.signup-steps li[aria-current="step"] span,
+.signup-steps li.is-done span {
+  background: var(--cyan);
+  color: var(--primary-ink);
+}
+.signup-section {
+  display: grid;
+  gap: 12px;
+}
+.signup-subtitle {
+  margin: 4px 0 -4px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+}
+.signup-subtitle--optional {
+  color: var(--text-muted);
+  font-weight: 500;
+}
+.signup-field--short { max-width: 140px; }
+.signup-field--medium { max-width: 260px; }
+.signup-inline {
+  display: flex;
+  gap: 8px;
+}
+.signup-inline > input { flex: 1; min-width: 0; }
+.signup-inline--short > input { max-width: 140px; letter-spacing: 3px; }
+.signup-row {
+  display: grid;
+  grid-template-columns: 140px minmax(0, 1fr);
+  gap: 12px;
+}
+.signup-password {
+  position: relative;
+}
+.signup-password > input {
+  width: 100%;
+  padding-right: 40px;
+}
+.signup-password > .icon-button {
+  position: absolute;
+  right: 4px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 32px;
+  height: 32px;
+}
+.signup-strength {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.signup-strength__bar {
+  display: inline-flex;
+  gap: 2px;
+}
+.signup-strength__bar i {
+  width: 18px;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--border-strong);
+}
+.signup-strength__bar--1 i:nth-child(-n + 1) { background: var(--red); }
+.signup-strength__bar--2 i:nth-child(-n + 2) { background: var(--amber); }
+.signup-strength__bar--3 i { background: var(--green); }
+.signup-role { align-self: start; }
+.signup-footnote { margin: 8px 0 0; text-align: right; }
+.signup-done {
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+  text-align: center;
+  padding: 12px 0 4px;
+  color: var(--green);
+}
+.signup-done h1 { color: var(--text); margin: 0; }
+.signup-done__notice {
+  color: var(--text);
+  font-size: 15px;
+  margin: 0;
+}
+@media (max-width: 520px) {
+  .signup-row { grid-template-columns: minmax(0, 1fr); }
+  .signup-field--medium, .signup-field--short { max-width: none; }
+}
