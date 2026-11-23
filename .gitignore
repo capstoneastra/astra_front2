@@ -22,3 +22,8 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Astryx 테마 편집기가 만드는 미리보기(앱에서 쓰지 않음, `npm run astryx -- experimental theme editor show astra`로 다시 생성)
+themes/*/*.html
+themes/*/*.png
+themes/*/*.pictures.json
