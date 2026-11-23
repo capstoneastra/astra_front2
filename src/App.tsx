@@ -44,7 +44,7 @@ function Workspace() {
   const ownsEquipment = ownership.owns;
   const [requirementId, setRequirementId] = useState<number | null>(null);
   const [chatSessionId, setChatSessionId] = useState<number | null>(null);
-  const [chatPanelKey, setChatPanelKey] = useState(0);
+  const [chatPanelKey] = useState(0);
   const [matchRun, setMatchRun] = useState<MatchRun | null>(null);
   const [draftRequestId, setDraftRequestId] = useState<number | null>(null);
   const [comparisonIds, setComparisonIds] = useState<number[]>([]);
@@ -132,16 +132,6 @@ function Workspace() {
   const openRequest = (box: RequestBox, requestId?: number, status?: string) =>
     workspaceNavigation.go(box === "RECEIVED" ? "received" : "sent", null, { requestId, requestStatus: status });
 
-  const openChat = (id: number) => {
-    if (chatSessionId !== id) {
-      setChatSessionId(id);
-      setChatPanelKey((key) => key + 1);
-      setTestCondition("");
-      setRequirementId(null);
-      setMatchRun(null);
-    }
-    openAssistant("chatbot");
-  };
 
   const renderContent = () => {
     // 장비 보유 여부를 확인하는 동안 받은 의뢰·우리 장비 주소로 바로 들어온 경우
@@ -161,7 +151,7 @@ function Workspace() {
     switch (activeMenu) {
       case "home":
         return <Home ownsEquipment={ownsEquipment} setActiveMenu={navigate} openRequest={openRequest}
-          openApprovals={(approvalFocus) => workspaceNavigation.go("admin", null, { approvalFocus })} onSearch={searchEquipment} openChat={openChat} />;
+          openApprovals={(approvalFocus) => workspaceNavigation.go("admin", null, { approvalFocus })} onSearch={searchEquipment} />;
       case "request":
         return <RequestFlow key={draftRequestId ?? "new"} setActiveMenu={navigate} openRequest={openRequest} />;
       case "search":
