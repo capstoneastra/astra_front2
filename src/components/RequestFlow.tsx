@@ -53,7 +53,8 @@ function ConditionStep({ setActiveMenu, onMatched }: { setActiveMenu: (menu: str
   const requirement = useApiQuery((signal) => requirementService.get(requirementId, signal), `requirement:${requirementId}`, Boolean(requirementId));
   const action = useAction();
   const helpCode = requirement.data?.testTypeCode ?? form.testTypeCode;
-  return <div className="request-step">
+  // 한 덩어리 안에 왼쪽 입력, 오른쪽 도움말
+  return <Panel className="request-sheet request-step">
     <div>
       {requirementId ? <>
         <RequirementWorkbench key={requirementId} requirementId={requirementId} onMatched={onMatched} />
@@ -111,7 +112,7 @@ function ConditionStep({ setActiveMenu, onMatched }: { setActiveMenu: (menu: str
         <TestTypeHelp code={helpCode} openTestInfo={openTestInfo} />
       </Panel>
     </aside>
-  </div>;
+  </Panel>;
 }
 
 function MatchStep({ matchRun, onChoose, setActiveMenu }: {

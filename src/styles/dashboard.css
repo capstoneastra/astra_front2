@@ -183,3 +183,24 @@
 @media (max-width: 700px) {
   .dash-hero { flex-wrap: wrap; }
 }
+
+/* 숫자 칸 = 탭, 내용은 같은 패널 안 */
+.dash-board { padding: 0; }
+.dash-tabs {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 8px;
+  padding: 12px;
+  border-bottom: 1px solid var(--border);
+}
+.dash-tabs .dash-stat { cursor: pointer; }
+.dash-tabs .dash-stat[aria-selected="true"] {
+  background: var(--accent-background);
+  border-color: var(--accent-border);
+  box-shadow: inset 0 -2px 0 var(--cyan);
+}
+.dash-board__body { position: relative; padding: 6px 4px 8px; min-height: 120px; }
+.dash-board__more { position: absolute; right: 14px; top: -2px; transform: translateY(-100%); display: none; }
+.dash-board__body > .dash-board__more { position: static; transform: none; display: flex; justify-content: flex-end; padding: 2px 12px 0; }
+.dash-actions { display: flex; flex-wrap: wrap; gap: 8px; padding: 12px; }
+.dash-board .status-counts { padding: 8px 12px; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }

@@ -13,6 +13,9 @@ export interface User {
   name: string;
   email: string;
   phone?: string | null;
+  researcherNo?: string | null;
+  lastLoginAt?: string | null;
+  createdAt?: string | null;
   organization?: { id: number; name: string; isVerified?: boolean; orgType?: "COMPANY" | InstitutionType } | null;
 }
 
@@ -103,6 +106,12 @@ export const authService = {
     ))
       throw contractError("가입용 기관·대학 목록의 응답 형식이 명세와 다릅니다.");
     return data;
+  },
+  /** PATCH /users/me: 이름·연락처만 바꿀 수 있다(보낸 값만 수정) */
+  async updateMe(body: { name?: string; phone?: string }, signal?: AbortSignal) {
+    return validateUser(
+      responseData<User>(await apiClient.patch("/users/me", body, { signal })),
+    );
   },
   async me(signal?: AbortSignal) {
     return validateUser(

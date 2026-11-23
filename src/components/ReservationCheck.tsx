@@ -72,7 +72,8 @@ export default function ReservationCheck({
         <Button variant="secondary" icon={CalendarDays} onClick={() => openCalendar(box)}>일정 보기</Button>
         {!received && <Button icon={Send} onClick={() => { setDraftRequestId(null); setSelectedEquipment(null); setActiveMenu("request"); }}>시험 맡기기</Button>}
       </PageHeader>
-      <div className="finder__bar">
+      <Panel className="search-results">
+      <div className="search-summary list-toolbar">
         <div className="segmented" role="group" aria-label="진행 상태">
           {filters.map((item) => <button key={item.id} type="button" aria-pressed={status === item.id} onClick={() => setStatus(item.id)}>{item.label}</button>)}
         </div>
@@ -84,7 +85,6 @@ export default function ReservationCheck({
           </select>
         </span>
       </div>
-      <Panel>
         {query.loading || query.error ? <ApiState loading={query.loading} error={query.error} onRetry={query.reload} /> :
           rows.length === 0 ? <p className="inline-empty">{received ? "받은 의뢰가 없습니다." : "의뢰가 없습니다."}
             {!received && <Button variant="secondary" onClick={() => setActiveMenu("request")}>시험 맡기기</Button>}</p> :

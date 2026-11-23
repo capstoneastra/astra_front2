@@ -720,3 +720,17 @@
   .signup-row { grid-template-columns: minmax(0, 1fr); }
   .signup-field--medium, .signup-field--short { max-width: none; }
 }
+
+/* 이용 안내를 카드 안으로: 화면 넘김(track) 없이 한 화면 */
+.login-viewport > .login-screen--single { width: 100%; }
+.login-howto {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--login-line, var(--border));
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+.login-howto summary { cursor: pointer; color: var(--text); font-weight: 500; }
+.login-howto ol { margin: 8px 0 6px; padding-left: 18px; display: grid; gap: 4px; }
+.login-howto strong { color: var(--text); margin-right: 4px; }
+.login-howto p { margin: 0; color: var(--text-muted); font-size: 11px; }

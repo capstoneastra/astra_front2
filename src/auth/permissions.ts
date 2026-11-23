@@ -12,6 +12,7 @@ const everyone = [...company, ...institution, ...admin];
 export const menuPermissions: Record<string, string[]> = {
   home: everyone,
   notifications: everyone,
+  profile: everyone,
   // 맡기는 쪽 (기업)
   request: company,
   sent: company,

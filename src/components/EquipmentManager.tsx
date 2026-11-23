@@ -109,8 +109,10 @@ export default function EquipmentManager(_props: { setActiveMenu: (menu: string)
         <Button icon={Plus} disabled={admin && !adminInstitution} onClick={() => setAdding((value) => !value)}>장비 등록</Button>
       </PageHeader>
 
-      {adding && <Panel title="새 장비" action={<Button variant="ghost" className="button--sm" onClick={() => setAdding(false)}>닫기</Button>}>
-        <form className="request-form__body" onSubmit={(e) => { e.preventDefault(); handleAdd(); }}>
+      <Panel>
+      {adding && <section className="form-group">
+        <header><h3>새 장비 등록</h3><Button variant="ghost" className="button--sm" onClick={() => setAdding(false)}>닫기</Button></header>
+        <form onSubmit={(e) => { e.preventDefault(); handleAdd(); }}>
           <div className="grid-4" style={{ marginBottom: 0 }}>
             <div className="form-field"><label htmlFor="new-equipment-name">장비명 <b>*</b></label>
               <input id="new-equipment-name" value={newEquip.name} placeholder="예: 진동시험기" onChange={(e) => setNewEquip({ ...newEquip, name: e.target.value })} /></div>
@@ -135,10 +137,8 @@ export default function EquipmentManager(_props: { setActiveMenu: (menu: string)
               (["TEST", "MEASUREMENT"].includes(newEquip.equipmentType) && !newEquip.testType)}>등록</Button>
           </div>
         </form>
-      </Panel>}
+      </section>}
       <Feedback action={action} />
-
-      <Panel>
         {admin && !adminInstitution ? <p className="inline-empty">관리할 조직을 위에서 선택해주세요.</p> :
           list.loading || list.error ? <ApiState loading={list.loading} error={list.error} onRetry={list.reload} /> :
           rows.length === 0 ? <p className="inline-empty">등록된 장비가 없습니다.

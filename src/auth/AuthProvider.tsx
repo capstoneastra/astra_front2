@@ -133,7 +133,8 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
   return (
-    <AuthContext.Provider value={{ ...state, login, logout, checkSession }}>
+    <AuthContext.Provider value={{ ...state, login, logout, checkSession,
+      updateUser: (user) => setState((previous) => previous.status === "authenticated" ? { ...previous, user } : previous) }}>
       {children}
     </AuthContext.Provider>
   );

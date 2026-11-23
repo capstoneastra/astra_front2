@@ -9,7 +9,7 @@ import { useApiQuery } from "../../hooks/useApiQuery";
 import { notificationService } from "../../services/notificationService";
 import ProfileMenu from "./ProfileMenu";
 
-export default function AppHeader({ activeMenu, menuOpen, onMenu, onSearch, onBack, canGoBack, onNotifications }) {
+export default function AppHeader({ activeMenu, menuOpen, onMenu, onSearch, onBack, canGoBack, onNotifications, onProfile }) {
   const { user, logout, status } = useAuth();
   const { data: unreadCount } = useApiQuery(notificationService.unreadCount, `notifications-unread:${user.id}`);
   const searchDialog = useRef(null);
@@ -84,7 +84,7 @@ export default function AppHeader({ activeMenu, menuOpen, onMenu, onSearch, onBa
           {unreadCount > 0 && <span aria-hidden="true">{unreadCount > 99 ? "99+" : unreadCount}</span>}
         </button>
         <ThemeToggle />
-        <ProfileMenu user={user} onLogout={logout} />
+        <ProfileMenu user={user} onLogout={logout} onProfile={onProfile} />
       </div>
       <dialog
         className="dialog search-dialog"

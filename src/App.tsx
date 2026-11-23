@@ -30,6 +30,7 @@ import Simulation from "./components/Simulation";
 import AdminManagement from "./components/AdminManagement";
 import DuplicateEquipment from "./components/DuplicateEquipment";
 import Notifications from "./components/Notifications";
+import Profile from "./components/Profile";
 import ReservationCalendar from "./components/ReservationCalendar";
 import { useWorkspaceNavigation } from "./hooks/useWorkspaceNavigation";
 import { useSidebarCollapse } from "./hooks/useSidebarCollapse";
@@ -178,6 +179,8 @@ function Workspace() {
         return <DuplicateEquipment setActiveMenu={navigate} />;
       case "notifications":
         return <Notifications />;
+      case "profile":
+        return <Profile />;
       case "equipment":
         return <EquipmentManager setActiveMenu={navigate} />;
       default:
@@ -265,6 +268,7 @@ function Workspace() {
             onMenu={() => setMenuOpen(true)}
             onSearch={searchEquipment}
             onNotifications={() => navigate("notifications")}
+            onProfile={() => navigate("profile")}
           />
           <main id="main-content" className="main-content" tabIndex={-1}>
             {renderContent()}

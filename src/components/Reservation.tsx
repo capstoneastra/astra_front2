@@ -47,6 +47,14 @@ function errorsFromServer(error: ApiError | null): Errors {
   return errors;
 }
 
+/** 한 장의 의뢰서 안의 묶음 (별도 카드로 나누지 않는다) */
+function FormGroup({ title, action, children }: { title: string; action?: ReactNode; children: ReactNode }) {
+  return <section className="form-group">
+    <header><h3>{title}</h3>{action}</header>
+    {children}
+  </section>;
+}
+
 function Field({ id, label, required, error, hint, children, wide }: {
   id: string;
   label: string;
@@ -177,9 +185,10 @@ export default function Reservation({ setActiveMenu, openRequest, onChangeEquipm
         </Button>
       </span>
     </div>
+    <Panel className="request-sheet">
     <fieldset disabled={!editable || busy} className="request-form">
       <div className="request-form__main">
-        <Panel title="시험" action={<span className="small-note">{testTypeCode ? testTypeLabel(testTypeCode) : "시험유형 확인 필요"}</span>}>
+        <FormGroup title="시험" action={<span className="small-note">{testTypeCode ? testTypeLabel(testTypeCode) : "시험유형 확인 필요"}</span>}>
           <div className="form-grid request-form__body">
             <Field id="req-test-purpose" label="시험 목적" required error={errors["test.purpose"]} wide>
               <textarea id="req-test-purpose" rows={2} value={text("test", "purpose")} onChange={(e) => change("test", "purpose", e.target.value)} />
@@ -194,17 +203,17 @@ export default function Reservation({ setActiveMenu, openRequest, onChangeEquipm
               <textarea id="req-notes" rows={2} value={content.notes ?? ""} onChange={(e) => setEditor({ ...content, notes: e.target.value })} />
             </Field>
           </div>
-        </Panel>
-        <Panel title="시험 조건" action={<span className="small-note">앞 단계에서 정리한 값이 들어 있습니다</span>}>
+        </FormGroup>
+        <FormGroup title="시험 조건" action={<span className="small-note">앞 단계에서 정리한 값이 들어 있습니다</span>}>
           <div className="request-form__body">
             {rules.data ? <ConditionEditor rules={rules.data.conditionRules} conditions={content.conditions ?? []} disabled={!editable || busy}
               onChange={(conditions) => setEditor({ ...content, conditions })} /> :
               <ApiState loading={rules.loading} error={rules.error} onRetry={rules.reload} />}
           </div>
-        </Panel>
+        </FormGroup>
       </div>
       <div className="request-form__side">
-        <Panel title="이용 희망 기간">
+        <FormGroup title="이용 희망 기간">
           <div className="form-grid request-form__body">
             <Field id="req-schedule-desiredStartDate" label="시작일" required error={errors["schedule.desiredStartDate"]}>
               {input("schedule", "desiredStartDate", { type: "date" })}</Field>
@@ -212,22 +221,22 @@ export default function Reservation({ setActiveMenu, openRequest, onChangeEquipm
               {input("schedule", "desiredEndDate", { type: "date" })}</Field>
           </div>
           <p className="small-note request-form__body">희망일이며 실제 일정은 장비 보유 조직과 조율합니다.</p>
-        </Panel>
-        <Panel title="실사용자" action={<Button variant="ghost" className="button--sm" icon={Copy} onClick={copyApplicant}>신청자와 같음</Button>}>
+        </FormGroup>
+        <FormGroup title="실사용자" action={<Button variant="ghost" className="button--sm" icon={Copy} onClick={copyApplicant}>신청자와 같음</Button>}>
           <div className="form-grid request-form__body">
             <Field id="req-actualUser-name" label="이름" required error={errors["actualUser.name"]}>{input("actualUser", "name")}</Field>
             <Field id="req-actualUser-phone" label="전화" error={errors["actualUser.contact"]}>{input("actualUser", "phone", { type: "tel" })}</Field>
             <Field id="req-actualUser-email" label="이메일" wide hint="전화 또는 이메일 중 하나는 필수입니다.">{input("actualUser", "email", { type: "email" })}</Field>
           </div>
-        </Panel>
-        <Panel title="회계 담당자">
+        </FormGroup>
+        <FormGroup title="회계 담당자">
           <div className="form-grid request-form__body">
             <Field id="req-accounting-name" label="이름" required error={errors["accounting.name"]}>{input("accounting", "name")}</Field>
             <Field id="req-accounting-phone" label="전화" error={errors["accounting.contact"]}>{input("accounting", "phone", { type: "tel" })}</Field>
             <Field id="req-accounting-email" label="이메일" wide hint="전화 또는 이메일 중 하나는 필수입니다.">{input("accounting", "email", { type: "email" })}</Field>
           </div>
-        </Panel>
-        <details className="panel request-form__body">
+        </FormGroup>
+        <details className="form-group form-group--fold">
           <summary className="small-note">신청자 정보 (계정 정보로 채워짐)</summary>
           <div className="form-grid" style={{ marginTop: 8 }}>
             <Field id="req-applicant-companyName" label="기업·기관명">{input("applicant", "companyName")}</Field>
@@ -238,6 +247,7 @@ export default function Reservation({ setActiveMenu, openRequest, onChangeEquipm
         </details>
       </div>
     </fieldset>
+    </Panel>
     <div className="request-form__actions">
       <Feedback action={action} onRetry={query.reload} />
       <span className="small-note"><b>*</b> 필수 · 제출하면 장비 보유 조직이 검토합니다.</span>

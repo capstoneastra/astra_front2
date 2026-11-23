@@ -53,6 +53,7 @@ const commonLabels: Record<string, string> = {
   simulation: "가상 시뮬레이션",
   calendar: "시험 일정",
   notifications: "업무 알림",
+  profile: "내 정보",
 };
 
 /** 화면 이름 (헤더 위치 표시용). 같은 화면도 역할에 따라 이름이 다르다. */
