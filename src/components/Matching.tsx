@@ -257,7 +257,7 @@ export default function Matching({ setActiveMenu }) {
                           ),
                         );
                         setDraftRequestId(draft.requestId);
-                        setActiveMenu("reservation");
+                        setActiveMenu("request");
                       })
                     }
                   >

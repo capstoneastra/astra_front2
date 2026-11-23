@@ -162,7 +162,7 @@ export default function EquipmentSearch({
   const handleSelect = (equip) => {
     setDraftRequestId(null);
     setSelectedEquipment(equip);
-    setActiveMenu("reservation");
+    setActiveMenu("request");
   };
   const requestEquipment = async (equip) => {
     selectionRequest.current?.abort();
@@ -190,7 +190,7 @@ export default function EquipmentSearch({
         <Badge tone="cyan" dot>인증된 API 조회</Badge>
       </PageHeader>
       <div className="workspace-context-actions" role="group" aria-label="장비 검색 도구">
-        <Button variant="secondary" icon={Sparkles} onClick={() => setActiveMenu("matching")}>
+        <Button variant="secondary" icon={Sparkles} onClick={() => setActiveMenu("request")}>
           조건 분석·매칭
         </Button>
         <Button variant="secondary" icon={Columns3} onClick={() => setActiveMenu("compare")}>
@@ -409,7 +409,7 @@ export default function EquipmentSearch({
                     disabled={
                       selecting !== null ||
                       (user.organization?.id != null && equip.institutionId === user.organization.id) ||
-                      !canAccessMenu(user.role, "reservation")
+                      !canAccessMenu(user.role, "request")
                     }
                     onClick={() => requestEquipment(equip)}
                   >

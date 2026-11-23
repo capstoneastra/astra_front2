@@ -2,11 +2,12 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { PanelLeftClose, PanelLeftOpen, X } from "lucide-react";
 import { navigation, parentMenu } from "../data/navigation";
 import { useAuth } from "../auth/context";
-import { canAccessMenu } from "../auth/permissions";
+import { canOpenMenu } from "../auth/permissions";
 import { roleLabels } from "../domain/constants";
 import AstraBrand from "./ui/AstraBrand";
 
 export default function Sidebar({
+  ownsEquipment,
   activeMenu,
   setActiveMenu,
   open,
@@ -15,6 +16,7 @@ export default function Sidebar({
   onToggleCollapse,
   blocked = false,
 }: {
+  ownsEquipment: boolean;
   activeMenu: string;
   setActiveMenu: (menu: string) => void;
   open: boolean;
@@ -36,7 +38,7 @@ export default function Sidebar({
   const visibleNavigation = navigation
     .map((group) => ({
       ...group,
-      items: group.items.filter((item) => canAccessMenu(user.role, item.id)),
+      items: group.items.filter((item) => canOpenMenu(user.role, item.id, ownsEquipment)),
     }))
     .filter((group) => group.items.length);
   useEffect(() => {

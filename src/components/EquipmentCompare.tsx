@@ -6,7 +6,7 @@ import { catalogService } from "../services/catalogService";
 import ApiState from "./ui/ApiState";
 import { DemoNotice } from "./workflow/Feedback";
 import { valueText } from "../domain/constants";
-export default function EquipmentCompare() {
+export default function EquipmentCompare(_props: { setActiveMenu?: (menu: string) => void }) {
   const { equipmentList, comparisonIds, setComparisonIds, catalogQuery } =
       useWorkspace(),
     [candidate, setCandidate] = useState("");

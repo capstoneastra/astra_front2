@@ -3,7 +3,6 @@ import type { ReactNode } from "react";
 import { ArrowUpRight, Building2, CalendarDays, ClipboardCheck, ClipboardList, Database, MessageSquareText, Plus, RefreshCw, Search, Users } from "lucide-react";
 import { useWorkspace } from "../context/AppContext";
 import { useAuth } from "../auth/context";
-import { canAccessMenu } from "../auth/permissions";
 import { useApiQuery } from "../hooks/useApiQuery";
 import { dashboardService } from "../services/dashboardService";
 import type { DashboardRequest, DashboardView, RequestStatus } from "../services/dashboardService";
@@ -19,12 +18,10 @@ import RequestDetailDialog from "./workflow/RequestDetailDialog";
 import "../styles/dashboard.css";
 
 interface HomeProps {
-  view: DashboardView;
-  onViewChange: (view: DashboardView) => void;
+  ownsEquipment: boolean;
   setActiveMenu: (menu: string) => void;
   onSearch: (query: string, options?: { institutionId: number }) => void;
-  openRequests: (box?: RequestBox, status?: RequestStatus | "REVIEW_QUEUE") => void;
-  openCalendar: (box?: RequestBox) => void;
+  openRequest: (box: RequestBox, requestId?: number, status?: string) => void;
   openApprovals: (focus: ApprovalFocus) => void;
   openChat: (id: number) => void;
 }
@@ -58,6 +55,11 @@ function DashboardRow({ title, detail, onClick, status, tone }: {
   </button></li>;
 }
 
+function defaultView(role: string, ownsEquipment: boolean): DashboardView {
+  if (role === "ADMIN") return "ADMIN";
+  return ownsEquipment ? "PROVIDER" : "REQUESTER";
+}
+
 function readTime(value?: string | null) {
   return value ? Date.parse(value) : NaN;
 }
@@ -80,7 +82,11 @@ function scheduleLabel(startAt: string, endAt: string) {
   return startDate === endDate ? `${start}–${timeLabel(endAt)}` : `${start} – ${dateLabel(endDate)} ${timeLabel(endAt)}`;
 }
 
-export default function Home({ view, onViewChange, setActiveMenu, onSearch, openRequests, openCalendar, openApprovals, openChat }: HomeProps) {
+export default function Home({ ownsEquipment, setActiveMenu, onSearch, openRequest, openApprovals, openChat }: HomeProps) {
+  const { user: owner } = useWorkspace();
+  const [view, onViewChange] = useState<DashboardView>(() => defaultView(owner.role, ownsEquipment));
+  const openRequests = (box?: RequestBox, status?: string) => openRequest(box ?? "SENT", undefined, status);
+  const openCalendar = (_box?: RequestBox) => setActiveMenu("calendar");
   const { user, setDraftRequestId, setSelectedEquipment, setRequirementId, setTestCondition } = useWorkspace();
   const localWorkspace = useAuth().status === "local";
   const [searchTerm, setSearchTerm] = useState("");
@@ -113,7 +119,7 @@ export default function Home({ view, onViewChange, setActiveMenu, onSearch, open
     .sort((a, b) => (b.equipmentCount - b.verifiedCount) - (a.equipmentCount - a.verifiedCount)).slice(0, 5);
   const updates = summary?.equipmentNeedsUpdate;
   const count = (...statuses: RequestStatus[]) => requestsReady ? statuses.reduce((sum, status) => sum + summary.requestCounts[status], 0) : "—";
-  const managerAccess = canAccessMenu(user.role, "manager");
+  const managerAccess = ownsEquipment;
   const orgName = user.organization?.name ?? summary?.institution?.name;
   const title = admin ? "플랫폼 운영 대시보드" : university ? "대학 장비 운영 대시보드" : provider ? "장비 운영 대시보드" : "시험 의뢰 대시보드";
 
@@ -131,7 +137,7 @@ export default function Home({ view, onViewChange, setActiveMenu, onSearch, open
     setSelectedEquipment(null);
     setRequirementId(null);
     setTestCondition("");
-    setActiveMenu("reservation");
+    setActiveMenu("request");
   };
 
   const changeView = (next: DashboardView) => {
@@ -175,7 +181,7 @@ export default function Home({ view, onViewChange, setActiveMenu, onSearch, open
         <MetricCard label="일정 협의 중" value={count("SCHEDULING")} unit="건" description="일정을 조율할 의뢰" icon={CalendarDays} tone="blue" onClick={() => openRequests("RECEIVED", "SCHEDULING")} />
         <MetricCard label="갱신 필요 장비" value={updates?.total ?? "—"} unit="대" icon={Database} tone="violet"
           description={updates ? `기관 확인 전 ${updates.notConfirmed}대 · 정보 오래됨 ${updates.outdated}대` : "사양·가용 정보 상태 확인"}
-          onClick={managerAccess ? () => setActiveMenu("manager") : undefined} />
+          onClick={managerAccess ? () => setActiveMenu("equipment") : undefined} />
       </>}
       {admin && <>
         <MetricCard label="회원 승인 대기" value={summary?.pendingUsers ?? "—"} unit="건" description="가입 신청 검토" icon={Users} tone="amber" onClick={() => openApprovals("members")} />
@@ -208,7 +214,7 @@ export default function Home({ view, onViewChange, setActiveMenu, onSearch, open
             <input id="dashboard-search" value={searchTerm} onChange={(event) => setSearchTerm(event.target.value)} placeholder="장비명 또는 시험유형" />
             <Button type="submit" variant="secondary" icon={Search}>검색</Button>
           </form>
-          <Button variant="secondary" icon={MessageSquareText} onClick={() => setActiveMenu("matching")}>조건 분석·장비 매칭</Button>
+          <Button variant="secondary" icon={MessageSquareText} onClick={() => setActiveMenu("request")}>조건 분석·장비 매칭</Button>
         </Panel>
       </>}
     </div>}

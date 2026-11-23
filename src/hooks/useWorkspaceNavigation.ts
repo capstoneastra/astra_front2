@@ -1,14 +1,21 @@
 import { useCallback, useEffect, useMemo } from "react";
 import { useLocation, useNavigate } from "react-router";
 import { menuPermissions } from "../auth/permissions";
+import { legacyMenus } from "../data/navigation";
 
-interface SearchView {
+export interface SearchView {
   searchTerm: string;
   institutionId: number | null;
-  filterType?: string;
+  sentence?: boolean;
   page?: number;
-  region?: string;
+  regions?: string[];
   testType?: string;
+  equipmentType?: string;
+  availability?: string;
+  externalOnly?: boolean;
+  accreditedOnly?: boolean;
+  includeMock?: boolean;
+  sort?: string;
 }
 
 export type ApprovalFocus = "members" | "organizations";
@@ -16,6 +23,7 @@ export type ApprovalFocus = "members" | "organizations";
 interface WorkspaceDestination {
   requestStatus?: string;
   approvalFocus?: ApprovalFocus;
+  requestId?: number;
 }
 
 interface WorkspaceRoute extends WorkspaceDestination {
@@ -34,7 +42,9 @@ export function useWorkspaceNavigation(scope: string) {
   const navigate = useNavigate();
   const saved: WorkspaceRoute | undefined = state?.astraWorkspace;
   const sameAccount = saved?.scope === scope;
-  const hashMenu = hash.startsWith("#/") && isPage(hash.slice(2)) ? hash.slice(2) : "home";
+  const hashName = hash.startsWith("#/") ? hash.slice(2) : "";
+  const resolved = legacyMenus[hashName] ?? hashName;
+  const hashMenu = isPage(resolved) ? resolved : "home";
   const menu = saved && !sameAccount ? "home" : hashMenu;
   const restore = sameAccount && saved.menu === menu;
   const route = useMemo<WorkspaceRoute>(
@@ -51,10 +61,12 @@ export function useWorkspaceNavigation(scope: string) {
       persist(route, true);
   }, [hash, menu, restore, route, persist]);
 
-  const go = useCallback((nextMenu: string, search: SearchView | null = null, destination: WorkspaceDestination = {}) => {
+  const go = useCallback((target: string, search: SearchView | null = null, destination: WorkspaceDestination = {}) => {
+    const nextMenu = legacyMenus[target] ?? target;
     if (!isPage(nextMenu)) return;
     if (route.menu === nextMenu && JSON.stringify(route.search) === JSON.stringify(search) &&
-      route.requestStatus === destination.requestStatus && route.approvalFocus === destination.approvalFocus) return;
+      route.requestStatus === destination.requestStatus && route.approvalFocus === destination.approvalFocus &&
+      route.requestId === destination.requestId) return;
     persist({ scope, menu: nextMenu, search, index: route.index + 1, ...destination }, false);
     window.scrollTo({ top: 0, behavior: "instant" });
   }, [persist, route, scope]);

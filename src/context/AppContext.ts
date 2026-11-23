@@ -15,6 +15,8 @@ interface WorkspaceContext {
   equipmentList: Equipment[];
   catalogQuery: ReturnType<typeof useApiQuery<Equipment[]>>;
   user: User;
+  /** 우리 조직이 장비를 1대 이상 가졌는지 (관리자는 항상 true) */
+  ownsEquipment: boolean;
   resolveEquipment: (id: ResourceId, signal?: AbortSignal) => Promise<Equipment | undefined>;
   requirementId: number | null;
   setRequirementId: Setter<number | null>;

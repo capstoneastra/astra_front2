@@ -23,12 +23,13 @@ function uniqueOptions(items: RequestSummary[], key: "equipment" | "institution"
   }
   return [...options];
 }
-export default function ReservationCalendar({ requestBox, onBoxChange }: {
+export default function ReservationCalendar({ requestBox, onBoxChange, ownsEquipment }: {
   requestBox?: RequestBox;
   onBoxChange: (box: RequestBox) => void;
+  ownsEquipment: boolean;
 }) {
   const { user } = useAuth();
-  const box = user.role === "ADMIN" ? undefined : requestBox ?? (user.role === "INSTITUTION_MANAGER" ? "RECEIVED" : "SENT");
+  const box = user.role === "ADMIN" ? undefined : !ownsEquipment ? "SENT" : requestBox ?? (user.role === "INSTITUTION_MANAGER" ? "RECEIVED" : "SENT");
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => { const timer = setInterval(() => setNow(Date.now()), 60000); return () => clearInterval(timer); }, []);
   const today = seoulDate(now);
@@ -75,7 +76,7 @@ export default function ReservationCalendar({ requestBox, onBoxChange }: {
       <Button className="schedule-filter-toggle" variant="secondary" icon={SlidersHorizontal} aria-controls="schedule-filters" aria-expanded={filtersOpen} onClick={() => setFiltersOpen((value) => !value)}>필터</Button>
       <Button variant="secondary" icon={RefreshCw} disabled={query.loading || query.refreshing} onClick={query.reload}>새로고침</Button>
     </PageHeader>
-    {box && <div className="workspace-context-actions" role="group" aria-label="예약 조회 범위">
+    {box && ownsEquipment && <div className="workspace-context-actions" role="group" aria-label="예약 조회 범위">
       <Button variant={box === "SENT" ? "primary" : "secondary"} aria-pressed={box === "SENT"} onClick={() => changeBox("SENT")}>보낸 의뢰의 예약</Button>
       <Button variant={box === "RECEIVED" ? "primary" : "secondary"} aria-pressed={box === "RECEIVED"} onClick={() => changeBox("RECEIVED")}>받은 의뢰의 예약</Button>
     </div>}

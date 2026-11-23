@@ -5,7 +5,7 @@ import { useApiQuery } from "../hooks/useApiQuery";
 import { catalogService } from "../services/catalogService";
 import ApiState from "./ui/ApiState";
 import { DemoNotice } from "./workflow/Feedback";
-export default function DuplicateEquipment({ setActiveMenu }) {
+export default function DuplicateEquipment({ setActiveMenu, embedded = false }) {
   const { equipmentList, setComparisonIds } = useWorkspace(),
     [region, setRegion] = useState(""),
     [testType, setType] = useState("");
@@ -23,11 +23,7 @@ export default function DuplicateEquipment({ setActiveMenu }) {
   );
   return (
     <div className="content-page page-enter">
-      <PageHeader
-        eyebrow="INFRASTRUCTURE REVIEW"
-        title="중복·유사 장비 조회"
-        description="동일 지역의 시험유형별 장비를 비교해 신규 구축 검토에 활용하세요."
-      />
+      {!embedded && <PageHeader title="중복·유사 장비 조회" />}
       <DemoNotice>
         같은 그룹에 속한다는 사실만으로 중복 투자나 대체 가능 장비로 확정하지
         않습니다.

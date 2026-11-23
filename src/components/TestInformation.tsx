@@ -85,7 +85,7 @@ export default function TestInformation({ setActiveMenu }) {
               </table>
             </div>
             <div className="form-actions">
-              <Button onClick={() => setActiveMenu("matching")}>
+              <Button onClick={() => setActiveMenu("request")}>
                 조건 분석으로 이어가기
               </Button>
             </div>

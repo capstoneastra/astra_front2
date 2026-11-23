@@ -4,7 +4,6 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import Sidebar from "./components/Sidebar";
 import Home from "./components/Home";
 import EquipmentSearch from "./components/EquipmentSearch";
-import Reservation from "./components/Reservation";
 import ReservationCheck from "./components/ReservationCheck";
 import EquipmentManager from "./components/EquipmentManager";
 import AppHeader from "./components/layout/AppHeader";
@@ -16,18 +15,17 @@ import AuthGate from "./auth/AuthGate";
 import { AuthContext, useAuth } from "./auth/context";
 import { canOpenLocalWorkspace, localWorkspaceAccounts } from "./auth/localWorkspace";
 import type { LocalWorkspaceAccount } from "./auth/localWorkspace";
-import { canAccessMenu } from "./auth/permissions";
+import { canAccessMenu, canOpenMenu } from "./auth/permissions";
+import { useOwnsEquipment } from "./hooks/useOwnsEquipment";
 import { useApiQuery } from "./hooks/useApiQuery";
 import { equipmentService } from "./services/equipmentService";
-import { defaultDashboardView } from "./services/dashboardService";
 import { queryClient } from "./api/cache";
 import { blockLocalWorkspaceRequests } from "./api/client";
 import { ApiError } from "./api/errors";
 import ApiState from "./components/ui/ApiState";
-import Matching from "./components/Matching";
+import RequestFlow from "./components/RequestFlow";
 import EquipmentCompare from "./components/EquipmentCompare";
 import TestInformation from "./components/TestInformation";
-import DuplicateEquipment from "./components/DuplicateEquipment";
 import AiAssistant from "./components/assistant/AiAssistant";
 import Simulation from "./components/Simulation";
 import AdminManagement from "./components/AdminManagement";
@@ -42,6 +40,8 @@ function Workspace() {
     `${user.id}:${user.role}:${user.organization?.id ?? ""}`,
   );
   const activeMenu = workspaceNavigation.route.menu;
+  const ownership = useOwnsEquipment(user);
+  const ownsEquipment = ownership.owns;
   const [requirementId, setRequirementId] = useState<number | null>(null);
   const [chatSessionId, setChatSessionId] = useState<number | null>(null);
   const [chatPanelKey, setChatPanelKey] = useState(0);
@@ -56,7 +56,6 @@ function Workspace() {
   const [menuOpen, setMenuOpen] = useState(false);
   const sidebar = useSidebarCollapse();
   const [calendarBox, setCalendarBox] = useState<RequestBox>();
-  const [dashboardView, setDashboardView] = useState(() => defaultDashboardView(user.role));
   const [assistantOpen, setAssistantOpen] = useState(false);
   const [assistantStarted, setAssistantStarted] = useState(false);
   const [assistantMode, setAssistantMode] = useState("chatbot");
@@ -78,7 +77,7 @@ function Workspace() {
   const catalogQuery = useApiQuery(
     (signal) => equipmentService.catalog(signal),
     `catalog:${user.id}:${user.role}`,
-    activeMenu !== "home" || assistantOpen,
+    ["request", "equipment", "simulation", "compare"].includes(activeMenu) || assistantOpen,
   );
   const equipmentList = catalogQuery.data ?? [];
 
@@ -130,6 +129,9 @@ function Workspace() {
     navigate("calendar");
   };
 
+  const openRequest = (box: RequestBox, requestId?: number, status?: string) =>
+    workspaceNavigation.go(box === "RECEIVED" ? "received" : "sent", null, { requestId, requestStatus: status });
+
   const openChat = (id: number) => {
     if (chatSessionId !== id) {
       setChatSessionId(id);
@@ -142,11 +144,14 @@ function Workspace() {
   };
 
   const renderContent = () => {
-    if (!canAccessMenu(user.role, activeMenu))
+    // 장비 보유 여부를 확인하는 동안 받은 의뢰·우리 장비 주소로 바로 들어온 경우
+    if (ownership.loading && canOpenMenu(user.role, activeMenu, true) && !canOpenMenu(user.role, activeMenu, false))
+      return <ApiState loading />;
+    if (!canOpenMenu(user.role, activeMenu, ownsEquipment))
       return (
         <ApiState
           error={
-            new ApiError("현재 계정의 역할로는 이 기능을 이용할 수 없습니다.", {
+            new ApiError("현재 계정으로는 이 기능을 이용할 수 없습니다. 받은 의뢰·우리 장비는 장비를 등록한 조직에만 보입니다.", {
               status: 403,
               code: "FORBIDDEN",
             })
@@ -155,10 +160,10 @@ function Workspace() {
       );
     switch (activeMenu) {
       case "home":
-        return <Home view={dashboardView} onViewChange={setDashboardView} setActiveMenu={navigate} onSearch={searchEquipment}
-          openRequests={(box, status) => workspaceNavigation.go(box === "RECEIVED" ? "review" : "reservationCheck", null, { requestStatus: status })}
-          openCalendar={openCalendar} openChat={openChat}
-          openApprovals={(approvalFocus) => workspaceNavigation.go("admin", null, { approvalFocus })} />;
+        return <Home ownsEquipment={ownsEquipment} setActiveMenu={navigate} openRequest={openRequest}
+          openApprovals={(approvalFocus) => workspaceNavigation.go("admin", null, { approvalFocus })} onSearch={searchEquipment} openChat={openChat} />;
+      case "request":
+        return <RequestFlow key={draftRequestId ?? "new"} setActiveMenu={navigate} openRequest={openRequest} />;
       case "search":
         return (
           <EquipmentSearch
@@ -170,31 +175,25 @@ function Workspace() {
             setActiveMenu={navigate}
           />
         );
-      case "reservation":
-        return (
-          <Reservation key={draftRequestId ?? "new"} setActiveMenu={navigate} />
-        );
-      case "reservationCheck":
-      case "review":
-        return <ReservationCheck key={`${activeMenu}:${workspaceNavigation.route.index}`} setActiveMenu={navigate} institutionView={activeMenu === "review"}
-          initialStatus={workspaceNavigation.route.requestStatus} openCalendar={openCalendar} />;
+      case "sent":
+      case "received":
+        return <ReservationCheck key={`${activeMenu}:${workspaceNavigation.route.index}`} setActiveMenu={navigate} institutionView={activeMenu === "received"}
+          initialStatus={workspaceNavigation.route.requestStatus} initialRequestId={workspaceNavigation.route.requestId} openCalendar={openCalendar} />;
       case "calendar":
-        return <ReservationCalendar requestBox={calendarBox} onBoxChange={setCalendarBox} />;
-      case "matching":
-        return <Matching setActiveMenu={navigate} />;
+        return <ReservationCalendar requestBox={calendarBox} onBoxChange={setCalendarBox} ownsEquipment={ownsEquipment} />;
       case "compare":
-        return <EquipmentCompare />;
+        return <EquipmentCompare setActiveMenu={navigate} />;
       case "testInfo":
         return <TestInformation setActiveMenu={navigate} />;
-      case "duplicates":
-        return <DuplicateEquipment setActiveMenu={navigate} />;
       case "simulation":
         return <Simulation />;
       case "admin":
-        return <AdminManagement key={workspaceNavigation.route.index} approvalFocus={workspaceNavigation.route.approvalFocus} />;
+      case "duplicates":
+        return <AdminManagement key={workspaceNavigation.route.index} approvalFocus={workspaceNavigation.route.approvalFocus}
+          initialTab={activeMenu === "duplicates" ? "duplicates" : "approvals"} setActiveMenu={navigate} />;
       case "notifications":
         return <Notifications />;
-      case "manager":
+      case "equipment":
         return <EquipmentManager setActiveMenu={navigate} />;
       default:
         return (
@@ -220,6 +219,7 @@ function Workspace() {
         equipmentList,
         catalogQuery,
         user,
+        ownsEquipment,
         resolveEquipment: equipmentService.detail,
         requirementId,
         setRequirementId,
@@ -259,6 +259,7 @@ function Workspace() {
           본문으로 건너뛰기
         </a>
         <Sidebar
+          ownsEquipment={ownsEquipment}
           activeMenu={activeMenu}
           setActiveMenu={navigate}
           open={menuOpen}

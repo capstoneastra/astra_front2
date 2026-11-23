@@ -3,17 +3,34 @@ import { contractError } from "../api/errors";
 import { apiConfig } from "../api/config";
 import type { EquipmentDto, Page, ResourceId } from "./contracts";
 
+export interface OwnedEquipment {
+  id: number;
+  externalId?: string | null;
+  name: string;
+  model?: string | null;
+  equipmentType?: string | null;
+  testTypes: string[];
+  availability?: string | null;
+  verificationStatus?: string | null;
+  isMock?: boolean;
+  infoUpdatedAt?: string | null;
+  daysSinceUpdate?: number | null;
+  needsUpdate?: boolean;
+  updateReasons?: string[];
+}
+
 interface EquipmentFilters {
   q?: string;
   page?: number;
   size?: number;
   sort?: string;
   institutionId?: number | null;
-  region?: string;
+  region?: string | string[];
   testType?: string;
   availability?: string;
   equipmentType?: string;
   externalOnly?: boolean;
+  accreditedOnly?: boolean;
   includeMock?: boolean;
 }
 
@@ -122,6 +139,7 @@ export const equipmentService = {
       availability,
       equipmentType,
       externalOnly,
+      accreditedOnly,
       includeMock = apiConfig.includeMock,
     }: EquipmentFilters = {},
     signal?: AbortSignal,
@@ -137,12 +155,15 @@ export const equipmentService = {
             sort,
             includeMock,
             ...(institutionId ? { institutionId } : {}),
-            ...(region ? { region } : {}),
+            ...(region?.length ? { region } : {}),
             ...(testType ? { testType } : {}),
             ...(availability ? { availability } : {}),
             ...(equipmentType ? { equipmentType } : {}),
             ...(externalOnly ? { externalOnly } : {}),
+            ...(accreditedOnly ? { accreditedOnly } : {}),
           },
+          // region=대전&region=진주 처럼 같은 이름으로 여러 번 보낸다
+          paramsSerializer: { indexes: null },
         }),
       ),
     );
@@ -167,6 +188,15 @@ export const equipmentService = {
         "장비 페이지의 전체 건수와 항목이 일치하지 않습니다. 다시 조회해주세요.",
       );
     return items;
+  },
+  // 우리 조직 장비. 1대 이상이면 "장비를 가진 조직"으로 본다.
+  async mine(params: { page?: number; size?: number } = {}, signal?: AbortSignal) {
+    const data = responseData<Page<OwnedEquipment>>(
+      await apiClient.get("/institutions/me/equipment", { signal, params: { size: 100, ...params } }),
+    );
+    if (!data || !Array.isArray(data.content) || !Number.isSafeInteger(data.totalElements))
+      throw contractError("우리 조직 장비 목록 응답이 명세와 다릅니다.");
+    return data;
   },
   async detail(id: ResourceId, signal?: AbortSignal) {
     if (!Number.isSafeInteger(Number(id)) || Number(id) <= 0)

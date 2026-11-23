@@ -74,7 +74,7 @@ export default function Reservation({ setActiveMenu }) {
       setDraftRequestId(null);
       setSelectedEquipment(null);
       setTestCondition("");
-      setActiveMenu("reservationCheck");
+      setActiveMenu("sent");
     });
   };
 

@@ -14,11 +14,18 @@ export default function ReservationCheck({
   setActiveMenu,
   openCalendar,
   initialStatus = "",
+  initialRequestId = undefined,
   institutionView = false,
+}: {
+  setActiveMenu: (menu: string) => void;
+  openCalendar: (box?: RequestBox) => void;
+  initialStatus?: string;
+  initialRequestId?: number;
+  institutionView?: boolean;
 }) {
   const { user, setDraftRequestId, setSelectedEquipment, equipmentList } =
     useWorkspace();
-  const [selected, setSelected] = useState(null),
+  const [selected, setSelected] = useState<number | null>(initialRequestId ?? null),
     [status, setStatus] = useState(initialStatus);
   const admin = user.role === "ADMIN";
   const received = institutionView && !admin;
@@ -43,11 +50,11 @@ export default function ReservationCheck({
         description={admin ? "전체 시험 의뢰와 진행 상태를 확인하세요." : received ? "소속 조직의 장비로 접수된 의뢰를 검토하세요." : "신청한 시험 의뢰와 진행 상태를 확인하세요."}
       >
         <Button variant="secondary" icon={CalendarDays} onClick={() => openCalendar(box)}>예약 캘린더</Button>
-        {canAccessMenu(user.role, "reservation") && (
+        {canAccessMenu(user.role, "request") && (
           <Button icon={Plus} onClick={() => {
             setDraftRequestId(null);
             setSelectedEquipment(null);
-            setActiveMenu("reservation");
+            setActiveMenu("request");
           }}>새 시험 의뢰</Button>
         )}
         <Badge tone="cyan">
@@ -62,14 +69,7 @@ export default function ReservationCheck({
         </span>
       </div>
       <Panel className="search-toolbar">
-        {!admin && <div className="request-box-switch" role="group" aria-label="의뢰함 선택">
-          <Button variant={received ? "secondary" : "primary"} aria-pressed={!received} onClick={() => setActiveMenu("reservationCheck")}>
-            보낸 의뢰
-          </Button>
-          <Button variant={received ? "primary" : "secondary"} aria-pressed={received} onClick={() => setActiveMenu("review")}>
-            받은 의뢰
-          </Button>
-        </div>}
+
         <label htmlFor="requests-status">진행 상태</label>
         <select
           id="requests-status"
@@ -154,7 +154,7 @@ export default function ReservationCheck({
                         equipmentList.find((e) => e.id === item.equipment?.id) ??
                           null,
                       );
-                      setActiveMenu("reservation");
+                      setActiveMenu("request");
                     }}
                   >
                     초안 이어서 작성

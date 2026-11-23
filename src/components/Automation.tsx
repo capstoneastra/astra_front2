@@ -146,7 +146,7 @@ export default function Automation({ setActiveMenu, embedded = false }) {
               onClick={() => {
                 setRequirementId(run.requirementId);
                 setDraftRequestId(run.draftRequestId);
-                setActiveMenu("reservation");
+                setActiveMenu("request");
               }}
             >
               초안 검토하기 · 아직 제출되지 않음

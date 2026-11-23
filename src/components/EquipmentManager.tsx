@@ -9,7 +9,7 @@ import { catalogService } from "../services/catalogService";
 import EquipmentEditDialog from "./workflow/EquipmentEditDialog";
 import { Feedback } from "./workflow/Feedback";
 
-export default function EquipmentManager({ setActiveMenu }: { setActiveMenu: (menu: string) => void }) {
+export default function EquipmentManager(_props: { setActiveMenu: (menu: string) => void }) {
   const { equipmentList, user, catalogQuery } = useWorkspace();
   const managedEquipment =
     user.role === "INSTITUTION_MANAGER"
@@ -80,7 +80,6 @@ export default function EquipmentManager({ setActiveMenu }: { setActiveMenu: (me
         title="보유 장비 관리"
         description="공동활용 장비의 정보를 등록하고 목록을 관리하세요."
       >
-        <Button variant="secondary" onClick={() => setActiveMenu("duplicates")}>중복·유사 장비 조회</Button>
         <Badge tone="cyan">
           현재 {catalogQuery.status === "ready" ? managedEquipment.length : "—"}
           대

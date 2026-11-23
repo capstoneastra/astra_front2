@@ -216,7 +216,7 @@ export default function Chatbot({ setActiveMenu }) {
                       );
                       setRequirementId(requirement.id);
                       setMatchRun(null);
-                      setActiveMenu("matching");
+                      setActiveMenu("request");
                     })
                   }
                 >
