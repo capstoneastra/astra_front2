@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
-import { ArrowRight, Check, Info, Orbit, Send, Sparkles } from "lucide-react";
+import { ArrowRight, Check, Send, Sparkles } from "lucide-react";
 import { useWorkspace } from "../context/AppContext";
-import { Badge, Button, PageHeader, Panel } from "./ui";
+import { Badge, Button, Panel } from "./ui";
 import { useApiQuery } from "../hooks/useApiQuery";
 import { useAction } from "../hooks/useAction";
 import { chatService } from "../services/chatService";
@@ -103,27 +103,8 @@ export default function Chatbot({ setActiveMenu }) {
 
   return (
     <div className="content-page page-enter">
-      <PageHeader
-        title="AI 시험 상담"
-      />
-      <div className="content-note">
-        <Info size={16} />
-        <span>
-          상담 API의 응답입니다. 추출된 시험조건을 직접 확인한 뒤 진행해주세요.
-        </span>
-      </div>
       <div className="chat-layout">
         <Panel className="chat-panel">
-          <div className="chat-panel__heading">
-            <span className="chat-avatar">
-              <Orbit size={21} />
-            </span>
-            <div>
-              <h2>ASTRA AI 어시스턴트</h2>
-              <small>시험 준비를 위한 대화형 워크스페이스</small>
-            </div>
-            <Badge tone="violet">API</Badge>
-          </div>
           <div
             className="chat-messages"
             role="log"
@@ -139,7 +120,7 @@ export default function Chatbot({ setActiveMenu }) {
                   </span>
                 )}
                 <div className="message__body">
-                  <span>{msg.sender === "ai" ? "ASTRA AI" : "나"}</span>
+                  <span>{msg.sender === "ai" ? "상담 AI" : "나"}</span>
                   <div className="message__bubble">{msg.text}</div>
                 </div>
               </div>

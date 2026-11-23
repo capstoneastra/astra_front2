@@ -1265,3 +1265,24 @@ label b {
 }
 /* AI 상담 창이 열려 있으면 오른쪽 아래 버튼은 숨긴다 */
 .ai-launcher[hidden] { display: none !important; }
+/* AI 상담 창 맨 위: 기능 선택 탭 + 닫기 */
+.ai-assistant__topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+}
+.ai-assistant__modes button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+}
+.ai-assistant__modes button[aria-selected="true"] {
+  color: var(--color-text-primary);
+  box-shadow: inset 0 -2px 0 var(--color-accent);
+}
+/* 열면 아래 버튼이 사라지므로 창을 아래까지 늘린다 */
+.ai-assistant { bottom: 20px; }

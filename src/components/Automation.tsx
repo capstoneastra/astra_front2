@@ -30,9 +30,7 @@ export default function Automation({ setActiveMenu, embedded = false }) {
   const running = run && ["RUNNING", "PENDING"].includes(run.status);
   return (
     <div className="content-page page-enter">
-      <PageHeader
-        title="AI 자동 추진"
-      />
+      {!embedded && <PageHeader title="AI 자동 추진" />}
       <DemoNotice>
         최종 결과는 DRAFT 초안입니다. 사용자 승인 없이 의뢰를 제출하거나 예약을
         확정하지 않습니다.

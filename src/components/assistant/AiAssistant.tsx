@@ -141,31 +141,10 @@ export default function AiAssistant({
         aria-modal={modal && open ? true : undefined}
         aria-labelledby="ai-assistant-title"
       >
-        <header className="ai-assistant__header">
-          <span className="ai-assistant__mark">
-            <BotMessageSquare size={23} aria-hidden="true" />
-          </span>
-          <div>
-            <h2 id="ai-assistant-title">ASTRA AI</h2>
-            <p>시험 준비를 함께하는 어시스턴트</p>
-          </div>
-          <span className="ai-assistant__environment">AI</span>
-          <button
-            type="button"
-            className="icon-button"
-            aria-label="AI 패널 닫기"
-            title="닫아도 입력과 진행 상태가 유지됩니다"
-            onClick={onClose}
-          >
-            <X size={20} aria-hidden="true" />
-          </button>
-        </header>
-        <div className="ai-assistant__navigation">
-          <div
-            className="ai-assistant__tabs"
-            role="tablist"
-            aria-label="AI 지원 기능"
-          >
+        {/* 맨 위는 기능 고르기(시험 상담 / 자동 추진)와 닫기만. 'ASTRA AI' 제목은 두지 않는다 */}
+        <header className="ai-assistant__topbar">
+          <h2 id="ai-assistant-title" className="sr-only">AI 상담</h2>
+          <div className="segmented ai-assistant__modes" role="tablist" aria-label="AI 기능 선택">
             {modes.map(({ id, label, icon: Icon }) => (
               <button
                 key={id}
@@ -176,18 +155,28 @@ export default function AiAssistant({
                   tabs.current[id] = node;
                 }}
                 aria-selected={mode === id}
+                aria-pressed={mode === id}
                 aria-controls={`ai-pane-${id}`}
                 tabIndex={mode === id ? 0 : -1}
+                title={modes.find((item) => item.id === id)?.description}
                 onKeyDown={changeTabWithKeys}
                 onClick={() => onModeChange(id)}
               >
-                <Icon size={17} aria-hidden="true" />
+                <Icon size={15} aria-hidden="true" />
                 {label}
               </button>
             ))}
           </div>
-          <p>{modes.find((item) => item.id === mode)?.description}</p>
-        </div>
+          <button
+            type="button"
+            className="icon-button"
+            aria-label="AI 패널 닫기"
+            title="닫아도 입력과 진행 상태가 유지됩니다"
+            onClick={onClose}
+          >
+            <X size={20} aria-hidden="true" />
+          </button>
+        </header>
         <div className="ai-assistant__body">
           {started &&
             modes.map(({ id }) => (
@@ -210,9 +199,6 @@ export default function AiAssistant({
               </section>
             ))}
         </div>
-        <footer className="ai-assistant__footer">
-          상담과 자동 추진의 입력·진행 상태는 각각 유지됩니다.
-        </footer>
       </aside>
     </>
   );
