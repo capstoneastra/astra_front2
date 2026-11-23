@@ -190,7 +190,7 @@ export const equipmentService = {
     return items;
   },
   // 우리 조직 장비. 1대 이상이면 "장비를 가진 조직"으로 본다.
-  async mine(params: { page?: number; size?: number } = {}, signal?: AbortSignal) {
+  async mine(params: { page?: number; size?: number; institutionId?: number } = {}, signal?: AbortSignal) {
     const data = responseData<Page<OwnedEquipment>>(
       await apiClient.get("/institutions/me/equipment", { signal, params: { size: 100, ...params } }),
     );

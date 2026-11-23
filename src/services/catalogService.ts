@@ -49,4 +49,11 @@ export const catalogService = {
     mutate("POST", `/equipment/${id}/confirm`, {}, signal),
   deleteEquipment: (id: ResourceId, signal?: AbortSignal) =>
     mutate("DELETE", `/equipment/${id}`, undefined, signal),
+  /** 정비·운휴 일정 (장비 보유 조직·관리자) */
+  downtimes: (id: ResourceId, signal?: AbortSignal) =>
+    getData<{ id: number; startAt: string; endAt: string; reason?: string | null }[]>(`/equipment/${id}/downtimes`, undefined, signal),
+  addDowntime: (id: ResourceId, body: { startAt: string; endAt: string; reason: string }, signal?: AbortSignal) =>
+    mutate<{ id: number }>("POST", `/equipment/${id}/downtimes`, body, signal),
+  deleteDowntime: (id: ResourceId, downtimeId: number, signal?: AbortSignal) =>
+    mutate("DELETE", `/equipment/${id}/downtimes/${downtimeId}`, undefined, signal),
 };
