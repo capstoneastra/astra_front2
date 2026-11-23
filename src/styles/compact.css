@@ -106,10 +106,11 @@
 .workspace-context-actions {
   margin-bottom: var(--gap);
 }
-th {
+/* 아직 옮기지 않은 화면의 표(.data-table)만. Astryx Table은 자체 여백을 쓴다 */
+.data-table th {
   padding: 7px 12px;
 }
-td {
+.data-table td {
   padding: 8px 12px;
 }
 

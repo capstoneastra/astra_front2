@@ -1,11 +1,13 @@
-/* 아직 Astryx로 옮기지 않은 화면의 기존 CSS. 화면을 옮기면서 하나씩 지운다. */
+/* 아직 Astryx로 다 옮기지 않은 화면의 기존 CSS. 화면을 옮기면서 하나씩 지운다. */
+/* 전역 요소 규칙이 있는 파일: Astryx 아래(legacy) */
 @import "../index.css" layer(legacy);
 @import "./themes.css" layer(legacy);
-@import "./assistant.css" layer(legacy);
-@import "./workspace-updates.css" layer(legacy);
-@import "./compact.css" layer(legacy);
-@import "./dashboard.css" layer(legacy);
-@import "./calendar.css" layer(legacy);
-@import "./simulation.css" layer(legacy);
 @import "../auth/login.css" layer(legacy);
-@import "./bridge.css" layer(legacy);
+/* 화면 배치용 클래스 규칙: Astryx 위(app) */
+@import "./assistant.css" layer(app);
+@import "./workspace-updates.css" layer(app);
+@import "./compact.css" layer(app);
+@import "./dashboard.css" layer(app);
+@import "./calendar.css" layer(app);
+@import "./simulation.css" layer(app);
+@import "./bridge.css" layer(app);

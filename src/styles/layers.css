@@ -1,6 +1,8 @@
 /*
  * 캐스케이드 레이어 순서 (가장 먼저 불러온다).
- * reset < theme < base < legacy(기존 화면 CSS) < astryx-base < astryx-theme < components < utilities
- * 기존 CSS를 legacy 레이어에 넣어, Astryx 컴포넌트 스타일이 기존 전역 규칙(button, input, td …)에 덮이지 않게 한다.
+ * reset < theme < base < legacy < astryx-base < astryx-theme < app < components < utilities
+ * - legacy: 기존 전역 CSS(button, input, td 같은 요소 규칙 포함). Astryx 컴포넌트를 덮지 않도록 Astryx 아래.
+ * - app: 화면 배치용 클래스 규칙(.form-panel 여백, 의뢰서 격자 등). Astryx 카드 위에 얹혀야 하므로 Astryx 위.
+ *   요소 선택자(button, td …)는 app 레이어에 두지 않는다.
  */
-@layer reset, theme, base, legacy, astryx-base, astryx-theme, components, utilities;
+@layer reset, theme, base, legacy, astryx-base, astryx-theme, app, components, utilities;
