@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { FormEvent } from "react";
-import { ArrowRight, ChevronDown, Columns3, Search as SearchIcon, Sparkles, X } from "lucide-react";
+import { ArrowRight, ChevronDown, Columns3, Sparkles, X } from "lucide-react";
+import SearchAutocomplete from "./ui/SearchAutocomplete";
 import { useWorkspace } from "../context/AppContext";
 import { Badge, Button, Panel } from "./ui";
 import { useApiQuery } from "../hooks/useApiQuery";
@@ -17,6 +17,7 @@ import {
   valueText,
 } from "../domain/constants";
 import EquipmentDetailDialog from "./EquipmentDetailDialog";
+import { looksLikeSentence } from "../domain/search";
 import ApiState from "./ui/ApiState";
 
 const PAGE_SIZE = 20;
@@ -38,7 +39,7 @@ type Filters = typeof emptyFilters;
  * - 짧은 검색어(장비명·모델·시험항목) → GET /equipment?q=
  * - 숫자·단위가 섞인 문장("15kg, 20~2000Hz 진동시험") → GET /search?q= 로 해석
  */
-const looksLikeSentence = (text: string) => /\d/.test(text) || text.trim().split(/\s+/).length >= 3;
+
 
 /** 목록 응답에는 accessScope가 없을 수 있다(상세·매칭 응답에만 있음). 있으면 배지로 보여 준다. */
 function accessScopeOf(item: Equipment) {
@@ -62,7 +63,6 @@ export default function EquipmentSearch({
   const { setSelectedEquipment, setDraftRequestId, user, resolveEquipment, comparisonIds, setComparisonIds, openSimulation } = useWorkspace();
   const canSimulate = canAccessMenu(user.role, "simulation");
   const startTerm = initialView?.searchTerm ?? initialSearchTerm;
-  const [input, setInput] = useState(startTerm);
   // 실제로 검색한 내용. sentence=true면 문장 해석 검색
   const [query, setQuery] = useState({ text: startTerm.trim(), sentence: initialView?.sentence ?? looksLikeSentence(startTerm) });
   const [filters, setFilters] = useState<Filters>(() => ({
@@ -78,14 +78,16 @@ export default function EquipmentSearch({
     sort: initialView?.sort ?? "externalId",
   }));
   const [page, setPage] = useState(initialView?.page ?? 0);
-  const [detailEquipment, setDetailEquipment] = useState<Equipment | null>(null);
+  // 자동완성에서 고른 장비는 상세를 바로 연다 (상세 창이 id로 다시 불러온다)
+  const [detailEquipment, setDetailEquipment] = useState<Equipment | null>(() =>
+    initialView?.equipmentId ? ({ id: initialView.equipmentId, name: initialView.searchTerm } as Equipment) : null);
   const [selecting, setSelecting] = useState<number | null>(null);
   const [selectionError, setSelectionError] = useState(null);
   const selectionRequest = useRef<AbortController | null>(null);
   useEffect(() => () => selectionRequest.current?.abort(), []);
   useEffect(() => {
-    onViewChange?.({ searchTerm: query.text, sentence: query.sentence, page, ...filters });
-  }, [query, page, filters, onViewChange]);
+    onViewChange?.({ searchTerm: query.text, sentence: query.sentence, page, ...filters, equipmentId: detailEquipment?.id });
+  }, [query, page, filters, onViewChange, detailEquipment?.id]);
 
   const types = useApiQuery((signal) => catalogService.testTypes(signal), "test-types");
   const institutions = useApiQuery(
@@ -129,13 +131,8 @@ export default function EquipmentSearch({
     setPage(0);
   };
   const runSearch = (text: string, sentence = looksLikeSentence(text)) => {
-    setInput(text);
     setQuery({ text: text.trim(), sentence: Boolean(text.trim()) && sentence });
     setPage(0);
-  };
-  const submit = (event: FormEvent) => {
-    event.preventDefault();
-    runSearch(input);
   };
   const reset = () => {
     setFilters(emptyFilters);
@@ -183,16 +180,14 @@ export default function EquipmentSearch({
 
   return (
     <div className="content-page page-enter equipment-search-page">
-      <form className="search-hero" onSubmit={submit} role="search">
+      <div className="search-hero">
         <h1>{canRequest ? "어떤 장비가 필요하세요?" : "장비 조회"}</h1>
-        <div className="search-hero__box">
-          <SearchIcon size={22} aria-hidden="true" />
-          <label className="sr-only" htmlFor="eq-search">장비 검색</label>
-          <input id="eq-search" type="text" enterKeyHint="search" autoComplete="off" value={input} onChange={(event) => setInput(event.target.value)}
-            placeholder="장비명·시험항목 또는 '15kg, 20~2000Hz 진동시험'처럼 문장으로 검색" />
-          {input && <button type="button" className="search-hero__clear" aria-label="검색어 지우기" onClick={() => runSearch("")}><X size={18} /></button>}
-          <Button type="submit" icon={SearchIcon}>검색</Button>
-        </div>
+        <SearchAutocomplete key={`hero:${query.text}`} variant="hero" initialText={query.text} onPick={(pick) => {
+          if (pick.kind === "text") runSearch(pick.text);
+          else if (pick.kind === "equipment") { runSearch(pick.name, false); setDetailEquipment({ id: pick.id, name: pick.name } as Equipment); }
+          else if (pick.kind === "testType") { runSearch(""); update("testType", pick.code); }
+          else { runSearch(""); update("institutionId", pick.id); }
+        }} />
         {popularTypes.length > 0 && <div className="search-hero__chips" aria-label="자주 찾는 시험">
           <span>자주 찾는 시험</span>
           {popularTypes.map((type) => <button key={type.code} type="button" aria-pressed={filters.testType === type.code}
@@ -200,7 +195,7 @@ export default function EquipmentSearch({
             {type.nameKo}<small>{type.equipmentCount}</small>
           </button>)}
         </div>}
-      </form>
+      </div>
 
       <Panel className="search-results">
         <div className="search-filters" aria-label="필터">

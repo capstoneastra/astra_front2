@@ -16,6 +16,8 @@ export interface SearchView {
   accreditedOnly?: boolean;
   includeMock?: boolean;
   sort?: string;
+  /** 자동완성에서 장비를 고르면 그 장비 상세를 바로 연다 */
+  equipmentId?: number;
 }
 
 export type ApprovalFocus = "members" | "organizations";

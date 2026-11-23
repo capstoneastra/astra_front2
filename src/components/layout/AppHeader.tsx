@@ -1,6 +1,6 @@
-import { useEffect, useRef, useState } from "react";
-import type { FormEvent } from "react";
-import { ArrowLeft, Bell, Menu, Search } from "lucide-react";
+import { useState } from "react";
+import { ArrowLeft, Bell, Menu } from "lucide-react";
+import SearchAutocomplete from "../ui/SearchAutocomplete";
 import { menuLabel, navigationByRole } from "../../data/navigation";
 import { canAccessMenu } from "../../auth/permissions";
 import { useAuth } from "../../auth/context";
@@ -16,8 +16,6 @@ import ProfileMenu from "./ProfileMenu";
 export default function AppHeader({ activeMenu, menuOpen, onMenu, onSearch, onBack, canGoBack, onNotifications, onProfile }) {
   const { user, logout, status } = useAuth();
   const { data: unreadCount } = useApiQuery(notificationService.unreadCount, `notifications-unread:${user.id}`);
-  const searchInput = useRef<HTMLInputElement>(null);
-  const [query, setQuery] = useState("");
   const [date] = useState(() =>
     new Intl.DateTimeFormat("ko-KR", { timeZone: "Asia/Seoul", month: "long", day: "numeric", weekday: "short" }).format(new Date()),
   );
@@ -26,24 +24,6 @@ export default function AppHeader({ activeMenu, menuOpen, onMenu, onSearch, onBa
   const showSearch = canSearch && activeMenu !== "search";
   const isMenuPage = (navigationByRole[user.role] ?? []).some((item) => item.id === activeMenu);
   const showBack = !isMenuPage && canGoBack;
-
-  useEffect(() => {
-    const shortcut = (event: KeyboardEvent) => {
-      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k" && searchInput.current) {
-        event.preventDefault();
-        searchInput.current.focus();
-      }
-    };
-    document.addEventListener("keydown", shortcut);
-    return () => document.removeEventListener("keydown", shortcut);
-  }, []);
-
-  const submit = (event: FormEvent) => {
-    event.preventDefault();
-    onSearch(query.trim());
-    setQuery("");
-    searchInput.current?.blur();
-  };
 
   return (
     <header className="app-header">
@@ -58,14 +38,15 @@ export default function AppHeader({ activeMenu, menuOpen, onMenu, onSearch, onBa
         </button>}
         {status === "local" && <span className="header-local">미리보기 모드</span>}
       </div>
-      {showSearch && <form className="header-searchbar" role="search" onSubmit={submit}>
-        <Search size={17} aria-hidden="true" />
-        <label className="sr-only" htmlFor="global-equipment-query">장비 검색</label>
-        <input id="global-equipment-query" ref={searchInput} type="text" enterKeyHint="search" autoComplete="off"
-          value={query} onChange={(event) => setQuery(event.target.value)}
-          placeholder="장비명·시험항목 또는 '15kg 진동시험'처럼 문장으로 검색" />
-        <kbd aria-hidden="true">Ctrl K</kbd>
-      </form>}
+      <div className="app-header__center">
+        {showSearch && <SearchAutocomplete autoFocusKey onPick={(pick) => {
+          // 목록에서 고른 장비는 이름 그대로 찾는다(문장 해석 안 함)
+          if (pick.kind === "equipment") onSearch(pick.name, { sentence: false, equipmentId: pick.id });
+          else if (pick.kind === "text") onSearch(pick.text);
+          else if (pick.kind === "testType") onSearch("", { testType: pick.code });
+          else onSearch("", { institutionId: pick.id });
+        }} />}
+      </div>
       <div className="app-header__tools">
         <span className="header-date">{date}</span>
         <button type="button" className="icon-button header-notifications"

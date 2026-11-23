@@ -116,8 +116,11 @@ function Workspace() {
     window.scrollTo({ top: 0, behavior: "instant" });
   };
 
-  const searchEquipment = (query: string, options: { institutionId?: number | null } = {}) => {
-    workspaceNavigation.go("search", { searchTerm: query, institutionId: options.institutionId ?? null });
+  const searchEquipment = (query: string, options: { institutionId?: number | null; testType?: string; sentence?: boolean; equipmentId?: number } = {}) => {
+    workspaceNavigation.go("search", { searchTerm: query, institutionId: options.institutionId ?? null,
+      ...(options.testType ? { testType: options.testType } : {}),
+      ...(options.sentence !== undefined ? { sentence: options.sentence } : {}),
+      ...(options.equipmentId ? { equipmentId: options.equipmentId } : {}) });
     setMenuOpen(false);
     window.scrollTo({ top: 0, behavior: "instant" });
   };

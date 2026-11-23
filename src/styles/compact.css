@@ -1086,3 +1086,145 @@ label b {
   .header-searchbar { display: none; }
   .search-hero__box input { height: 46px; font-size: 16px; }
 }
+
+/* ── 검색창 가운데 정렬 + 자동완성 ── */
+.app-header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 640px) minmax(0, 1fr);
+  align-items: center;
+}
+.app-header__center { display: flex; justify-content: center; min-width: 0; }
+.app-header__tools { justify-self: end; margin-left: 0; }
+/* 목록이 열리면 뒤 화면을 반투명하게 덮는다 (scrim) */
+.search-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: color-mix(in srgb, #05070a 45%, transparent);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+  animation: ac-fade 0.15s ease-out;
+}
+.ac { position: relative; width: 100%; }
+.ac--open { z-index: 1001; }
+.ac__box {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 42px;
+  padding: 0 12px 0 16px;
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
+  background: var(--surface-raised);
+  color: var(--text-muted);
+}
+.ac--open .ac__box,
+.ac__box:focus-within {
+  border-color: var(--accent-border);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--cyan) 16%, transparent);
+}
+.ac__box input {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: var(--text);
+  font-size: 14px;
+  outline: none;
+  box-shadow: none;
+}
+.ac__box kbd {
+  font-size: 10px;
+  padding: 2px 6px;
+  border-radius: 5px;
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+.ac__clear {
+  border: 0;
+  background: none;
+  color: var(--text-muted);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+.ac__panel {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  right: 0;
+  max-height: min(70vh, 520px);
+  overflow: auto;
+  padding: 6px;
+  border: 1px solid var(--border-strong);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--surface-raised) 92%, transparent);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  box-shadow: 0 24px 60px #0000005c;
+  animation: ac-drop 0.15s ease-out;
+}
+.ac__group + .ac__group { border-top: 1px solid var(--border); margin-top: 4px; padding-top: 4px; }
+.ac__group-label {
+  margin: 4px 10px 2px;
+  font-size: 10px;
+  letter-spacing: 0.5px;
+  color: var(--text-muted);
+}
+.ac__item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 7px 10px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+}
+.ac__item[aria-selected="true"] { background: var(--accent-background); }
+.ac__icon {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  border-radius: 8px;
+  background: var(--surface-sunken);
+  color: var(--cyan);
+}
+.ac__text { display: grid; min-width: 0; }
+.ac__text strong { font-size: 13px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ac__text small { font-size: 11px; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ac__text mark { background: none; color: var(--cyan); font-weight: 700; }
+.ac__hint { margin: 8px 10px; font-size: 12px; color: var(--text-muted); }
+.ac__footer {
+  margin: 4px 0 0;
+  padding: 6px 10px 2px;
+  border-top: 1px solid var(--border);
+  font-size: 10px;
+  color: var(--text-muted);
+}
+/* 장비 찾기 화면의 큰 검색창 */
+.ac--hero { width: min(100%, 1000px); }
+.ac--hero .ac__box { height: auto; padding: 8px 8px 8px 22px; box-shadow: 0 10px 30px #0000001f; }
+.ac--hero .ac__box input { height: 56px; font-size: 18px; }
+.ac--hero .ac__submit { border-radius: 999px; min-height: 52px; padding-inline: 28px; font-size: 15px; }
+.ac--hero .ac__panel { top: calc(100% + 10px); }
+.ac--hero .ac__text strong { font-size: 14px; }
+@keyframes ac-fade { from { opacity: 0; } }
+@keyframes ac-drop { from { opacity: 0; transform: translateY(-4px); } }
+@media (max-width: 900px) {
+  .app-header { grid-template-columns: auto minmax(0, 1fr) auto; }
+  .ac__box kbd { display: none; }
+}
+@media (max-width: 700px) {
+  .app-header__center { display: none; }
+  .ac--hero .ac__box input { height: 46px; font-size: 16px; }
+}
