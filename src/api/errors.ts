@@ -55,6 +55,7 @@ const messages: Record<string, string> = {
   EQUIPMENT_NOT_FOUND: "장비가 없거나 비활성화되었습니다.",
   NOT_FOUND: "요청한 정보를 찾을 수 없습니다.",
   INTERNAL_ERROR: "서버에서 오류가 발생했습니다. 잠시 후 다시 시도해주세요.",
+  AI_UPSTREAM_ERROR: "AI가 지금 응답하지 못했습니다. 잠시 후 다시 보내 주세요.",
   RESERVATION_OVERLAP: "이미 확정된 예약과 시간이 겹칩니다. 최신 일정을 확인한 뒤 다른 시간을 선택해주세요.",
 };
 
@@ -71,8 +72,9 @@ export function errorFromEnvelope(body: ErrorEnvelope | null | undefined, status
           : status >= 500
             ? messages.INTERNAL_ERROR
             : "요청을 처리할 수 없습니다.";
+  // AI 응답 실패(502)는 원인이 분명하므로 일반 서버 오류 문구 대신 다시 시도 안내를 보여 준다
   const message =
-    status >= 500
+    status >= 500 && code !== "AI_UPSTREAM_ERROR"
       ? fallback
       : (messages[code] ??
         (typeof item?.message === "string" ? item.message : fallback));

@@ -4,6 +4,7 @@
  */
 import { Inbox } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import { isValidElement } from "react";
 import type { ComponentPropsWithoutRef, ReactNode } from "react";
 import { Button as AxButton } from "@astryxdesign/core/Button";
 import { Badge as AxBadge } from "@astryxdesign/core/Badge";
@@ -29,9 +30,11 @@ interface HeadingProps {
 type PanelProps = Omit<ComponentPropsWithoutRef<"section">, "title" | "color"> &
   HeadingProps & { action?: ReactNode };
 
+/** 버튼 안 글자를 꺼낸다. <span>전송</span>처럼 감싼 글자도 읽는다(접근성 라벨·아이콘 전용 판단에 씀). */
 const textOf = (node: ReactNode): string => {
   if (typeof node === "string" || typeof node === "number") return String(node);
   if (Array.isArray(node)) return node.map(textOf).join("");
+  if (isValidElement<{ children?: ReactNode }>(node)) return textOf(node.props.children);
   return "";
 };
 

@@ -21,6 +21,10 @@ export default function ApiState({ loading = false, error, onRetry }: ApiStatePr
           ? "404 · 정보를 찾을 수 없습니다"
           : error?.status === 409
             ? "409 · 요청 상태가 충돌했습니다"
+            : error?.code === "TOO_MANY_REQUESTS"
+              ? "요청이 많아 잠시 쉬어 갑니다"
+            : error?.code === "AI_UPSTREAM_ERROR"
+              ? "AI가 응답하지 못했습니다"
             : (error?.status ?? 0) >= 500
               ? "500 · 서버 오류가 발생했습니다"
               : "정보를 불러오지 못했습니다";

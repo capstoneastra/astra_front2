@@ -135,6 +135,41 @@ export default function Chatbot({ setActiveMenu }) {
                 </div>
               </div>
             )}
+            {/* AI가 대화에서 조건을 뽑았으면 마지막 답변 아래에 붙여 보여 주고, 바로 시험 맡기기로 넘긴다 */}
+            {isConditionReady && !isSending && (
+              <div className="chat-handoff">
+                <p className="chat-handoff__title"><Check size={13} aria-hidden="true" /> 지금까지 정리한 조건</p>
+                <ul className="chat-handoff__conditions">
+                  {metadata?.extractedConditions?.map((c) => (
+                    <li key={c.key} className={c.status === "CONFIRMED" ? "" : "is-missing"}>
+                      {c.label} <strong>{c.status === "MISSING" ? "아직 모름" : valueText(c)}</strong>
+                      {c.status === "UNCONFIRMED" && <small> 확인 필요</small>}
+                    </li>
+                  ))}
+                </ul>
+                {suggested.data && suggested.data.length > 0 && (
+                  <div className="chat-suggested">
+                    <p className="small-note">이 시험을 할 수 있는 장비</p>
+                    {suggested.data.map((item) => (
+                      <div className="chat-suggested__item" key={item.id}>
+                        <div>
+                          <strong>{item.name}</strong>
+                          <small>{item.institution}, {item.region ?? "지역 확인 필요"}</small>
+                          <Badge tone={availabilityTone[item.availability ?? "UNKNOWN"]}>
+                            {availabilityLabels[item.availability ?? "UNKNOWN"]}
+                          </Badge>
+                        </div>
+                        <Button variant="secondary" className="button--sm" disabled={action.busy} onClick={() => handOff(item)}>이 장비로 의뢰</Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {suggested.error && <p className="small-note">{suggested.error.message}</p>}
+                <Button icon={ArrowRight} disabled={action.busy} onClick={() => handOff()}>
+                  이 조건으로 시험 맡기기
+                </Button>
+              </div>
+            )}
             <div ref={messagesEnd} />
           </div>
           {messages.length === 1 && (
@@ -177,65 +212,6 @@ export default function Chatbot({ setActiveMenu }) {
             시연 응답은 실제 장비 적합성 판단이나 예약 가능 여부를 보장하지
             않습니다.
           </p>
-        </Panel>
-        <Panel
-          title="정리된 시험조건"
-          action={<Sparkles size={15} color="var(--violet)" />}
-          className="chat-conditions"
-        >
-          <div className="chat-conditions__body">
-            {isConditionReady ? (
-              <>
-                <div className="condition-ready">
-                  <span>
-                    <Check size={12} />
-                    조건 추출 · 사용자 확인 필요
-                  </span>
-                  {metadata?.extractedConditions?.map((c) => (
-                    <p key={c.key}>
-                      {c.label}:{" "}
-                      {c.status === "MISSING" ? "미확인" : valueText(c)}{" "}
-                      {c.status === "UNCONFIRMED" && "(사용자 확인 필요)"}
-                    </p>
-                  ))}
-                </div>
-                {suggested.data && suggested.data.length > 0 && (
-                  <div className="chat-suggested">
-                    <p className="section-label">AI가 소개한 장비</p>
-                    {suggested.data.map((item) => (
-                      <div className="chat-suggested__item" key={item.id}>
-                        <div>
-                          <strong>{item.name}</strong>
-                          <small>{item.institution} · {item.region ?? "지역 확인 필요"}</small>
-                          <Badge tone={availabilityTone[item.availability ?? "UNKNOWN"]} dot>
-                            {availabilityLabels[item.availability ?? "UNKNOWN"]}
-                          </Badge>
-                        </div>
-                        <Button className="button--sm" disabled={action.busy} onClick={() => handOff(item)}>이 장비로 의뢰</Button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-                {suggested.error && <p className="small-note">{suggested.error.message}</p>}
-                <Button icon={ArrowRight} disabled={action.busy} onClick={() => handOff()}>
-                  이 조건으로 시험 맡기기
-                </Button>
-                <p className="small-note">조건을 확인하고 추천 장비를 받아 의뢰서로 이어집니다.</p>
-              </>
-            ) : (
-              <>
-                <p>
-                  대화를 시작하면 이곳에서 정리된 시험조건을 확인할 수 있습니다.
-                </p>
-                <ol className="condition-steps">
-                  <li>시험 목적 이야기하기</li>
-                  <li>시험조건 확인하기</li>
-                  <li>장비 검색으로 연결하기</li>
-                </ol>
-                <Badge>상담 대기 중</Badge>
-              </>
-            )}
-          </div>
         </Panel>
       </div>
       <Feedback action={{ ...action, error: action.error ?? history.error }} />
