@@ -3,7 +3,6 @@ import { IconButton } from "@astryxdesign/core/IconButton";
 import { Button } from "@astryxdesign/core/Button";
 import { Badge } from "@astryxdesign/core/Badge";
 import { HStack } from "@astryxdesign/core/HStack";
-import { Avatar } from "@astryxdesign/core/Avatar";
 import { DropdownMenu } from "@astryxdesign/core/DropdownMenu";
 import { ArrowLeft, Bell, LogOut, Moon, Sun, UserRoundPen } from "lucide-react";
 import { menuLabel, navigationByRole } from "../../data/navigation";
@@ -41,6 +40,8 @@ export default function AppHeader({ activeMenu, onSearch, onBack, canGoBack, onN
   const showSearch = canAccessMenu(user.role, "search") && activeMenu !== "search" &&
     !(activeMenu === "home" && user.role === "COMPANY_USER");
   const isMenuPage = (navigationByRole[user.role] ?? []).some((item) => item.id === activeMenu);
+  // 오른쪽 위 계정 버튼에 보이는 짧은 역할 이름
+  const roleShort = user.role === "ADMIN" ? "관리자" : user.role === "COMPANY_USER" ? "기업" : "기관";
   const role = user.organization?.orgType === "UNIVERSITY" && user.role === "INSTITUTION_MANAGER" ? "대학 담당자" : roleLabels[user.role];
   const pick = (choice: SearchPick) => {
     // 목록에서 고른 장비는 이름 그대로 찾고 상세를 연다
@@ -67,7 +68,7 @@ export default function AppHeader({ activeMenu, onSearch, onBack, canGoBack, onN
           onOpenChange={(isOpen) => { if (isOpen) recent.reload(); }}
           renderTrigger={(props) => <button type="button" className="bell-trigger" {...props}
             aria-label={unread > 0 ? `업무 알림, 읽지 않은 알림 ${unread}건` : "업무 알림"}>
-            <Bell size={22} aria-hidden="true" />
+            <Bell size={24} aria-hidden="true" />
             {unread > 0 && <span className="bell-trigger__count" aria-hidden="true">{unread > 99 ? "99+" : unread}</span>}
           </button>}
           items={[
@@ -84,14 +85,14 @@ export default function AppHeader({ activeMenu, onSearch, onBack, canGoBack, onN
             ...(unread > 0 ? [{ id: "read-all", label: "모두 읽음으로 표시", onClick: () => void notificationService.readAll() }] : []),
           ]}
         />
-        <IconButton variant="ghost" size="lg" className="header-icon-button" icon={theme === "dark" ? <Sun size={22} /> : <Moon size={22} />}
+        <IconButton variant="ghost" size="lg" className="header-icon-button" icon={theme === "dark" ? <Sun size={24} /> : <Moon size={24} />}
           label={theme === "dark" ? "밝은 화면으로 바꾸기" : "어두운 화면으로 바꾸기"} tooltip={theme === "dark" ? "밝은 화면" : "어두운 화면"}
           onClick={toggleTheme} />
         <DropdownMenu
           alignment="end"
           menuWidth={240}
           renderTrigger={(props) => <button type="button" className="account-trigger" aria-label="내 계정 메뉴" {...props}>
-            <Avatar name={user.name} size={32} tooltip={false} />
+            <span className="account-trigger__role">{roleShort}</span>
           </button>}
           items={[
             { label: user.name, description: `${role}, ${user.organization?.name ?? "플랫폼"}`, isDisabled: true },
