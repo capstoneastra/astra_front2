@@ -34,13 +34,23 @@ interface EquipmentFilters {
   includeMock?: boolean;
 }
 
+/** 시험 종류 코드 → 화면 이름 (GET /test-types 의 nameKo와 같게, 15종) */
 const testLabels: Record<string, string> = {
-  VIBRATION: "진동시험",
-  TEMPERATURE_HUMIDITY: "온습도시험",
-  ELECTRICAL_RF_ANALYSIS: "전기·RF 측정",
-  X_RAY_INSPECTION: "X선 비파괴검사",
   ACOUSTIC_NOISE: "음향·소음 시험",
   BATTERY_TEST: "배터리 시험",
+  CHARPY_IMPACT: "충격시험(샤르피)",
+  COMPRESSION: "압축시험",
+  DIMENSIONAL_INSPECTION: "치수·형상 측정",
+  ELECTRICAL_RF_ANALYSIS: "전기·RF 측정",
+  HARDNESS: "경도시험",
+  MATERIAL_ANALYSIS: "재료·성분 분석",
+  MICROSCOPY: "현미경 관찰",
+  POWER_SUPPLY: "전원 시험",
+  PROCESS_MEASUREMENT: "공정 계측",
+  TEMPERATURE_HUMIDITY: "온습도시험",
+  TENSILE: "인장시험",
+  VIBRATION: "진동시험",
+  X_RAY_INSPECTION: "X선 비파괴검사",
 };
 export const testTypeLabel = (code: string) => testLabels[code] ?? code;
 const optionalText = (value: unknown) => value == null || typeof value === "string";

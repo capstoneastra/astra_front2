@@ -401,3 +401,31 @@
     transform: none;
   }
 }
+
+/* ── 채팅 위젯 크기 (인터콤·채널톡처럼): 오른쪽 아래, 폭 400, 높이는 화면에 맞춰 최대 640 ──
+   메시지 칸이 남는 높이를 다 쓰고, 입력칸은 맨 아래에 붙는다. 아래에 빈 공간이 생기지 않는다. */
+@media (min-width: 701px) {
+  .ai-assistant {
+    top: auto;
+    bottom: 92px;
+    width: min(400px, calc(100vw - 40px));
+    height: min(640px, calc(100dvh - 120px));
+  }
+}
+.ai-assistant__topbar { padding-block: 8px; }
+.ai-assistant__body { display: flex; flex-direction: column; padding: 0; overflow: hidden; }
+.ai-assistant__pane { flex: 1; min-height: 0; overflow-y: auto; padding: 12px; }
+/* 상담 탭: 한 장의 채팅 화면 */
+.ai-assistant__pane#ai-pane-chatbot { display: flex; flex-direction: column; overflow: hidden; padding: 0; }
+.ai-assistant__pane#ai-pane-chatbot[hidden] { display: none; }
+.ai-assistant #ai-pane-chatbot .content-page,
+.ai-assistant #ai-pane-chatbot .chat-layout { display: flex; flex: 1; flex-direction: column; min-height: 0; gap: 0; }
+.ai-assistant #ai-pane-chatbot .chat-panel {
+  display: flex; flex: 1; flex-direction: column; min-height: 0;
+  border: 0; border-radius: 0; background: none; box-shadow: none;
+}
+.ai-assistant #ai-pane-chatbot .chat-messages { flex: 1; height: auto; min-height: 0; overflow-y: auto; padding: 14px 14px 8px; gap: 12px; }
+.ai-assistant #ai-pane-chatbot .chat-examples { flex: none; padding: 0 12px 6px; }
+.ai-assistant #ai-pane-chatbot .chat-form { flex: none; margin: 0 12px 6px; }
+.ai-assistant #ai-pane-chatbot .chat-panel__footnote { flex: none; margin: 0 14px 10px; }
+.ai-assistant .message__bubble { line-height: 1.6; padding: 9px 12px; }

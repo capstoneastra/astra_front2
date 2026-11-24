@@ -34,7 +34,7 @@ const saveRecent = (text: string) => {
 
 
 /** 입력 중 단어를 굵게 */
-function Highlight({ text, term }: { text: string; term: string }) {
+export function Highlight({ text, term }: { text: string; term: string }) {
   const index = term ? text.toLowerCase().indexOf(term.toLowerCase()) : -1;
   if (index < 0) return <>{text}</>;
   return <>{text.slice(0, index)}<mark>{text.slice(index, index + term.length)}</mark>{text.slice(index + term.length)}</>;

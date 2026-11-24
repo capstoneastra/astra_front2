@@ -3,7 +3,6 @@ import { ArrowRight, Info } from "lucide-react";
 import { canAccessMenu } from "../auth/permissions";
 import { availabilityLabels, availabilityTone } from "../domain/constants";
 import { useWorkspace } from "../context/AppContext";
-import { catalogService } from "../services/catalogService";
 import { Table, proportional, pixel } from "@astryxdesign/core/Table";
 import { Text } from "@astryxdesign/core/Text";
 import { SegmentedControl, SegmentedControlItem } from "@astryxdesign/core/SegmentedControl";
@@ -12,7 +11,9 @@ import { useApiQuery } from "../hooks/useApiQuery";
 import { useAction } from "../hooks/useAction";
 import { simulationService } from "../services/simulationService";
 import type { SimulationInput, SimulationResult } from "../services/simulationService";
-import { DemoNotice, Feedback } from "./workflow/Feedback";
+import { Feedback } from "./workflow/Feedback";
+import SimulationPicker from "./workflow/SimulationPicker";
+import { testTypeLabel } from "../services/equipmentService";
 import SimulationChart from "./workflow/SimulationChart";
 import ApiState from "./ui/ApiState";
 import SimulationExports from "./workflow/SimulationExports";
@@ -39,7 +40,6 @@ export default function Simulation({ setActiveMenu }: { setActiveMenu?: (menu: s
       setSelectedEquipment,
       setDraftRequestId,
     } = useWorkspace(),
-    [testText, setTestText] = useState(""),
     [edited, setEdited] = useState<{ presetId: string; values: SimulationInput } | null>(null),
     [result, setResult] = useState<SimulationResult | null>(null),
     action = useAction();
@@ -56,31 +56,9 @@ export default function Simulation({ setActiveMenu }: { setActiveMenu?: (menu: s
     (signal) => simulationService.history(signal),
     "simulation-history",
   );
-  // 시험 이름으로 찾기: 시험 종류 목록에서 입력한 이름과 맞는 것을 고른다
-  const types = useApiQuery((signal) => catalogService.testTypes(signal), "test-types");
-  const term = testText.trim().toLowerCase();
-  const matchedType = term ? (types.data ?? []).find((type) => type.nameKo.toLowerCase() === term)
-    ?? ((types.data ?? []).filter((type) => type.nameKo.toLowerCase().includes(term)).length === 1
-      ? (types.data ?? []).find((type) => type.nameKo.toLowerCase().includes(term)) : undefined) : undefined;
-  const typeCandidates = matchedType ? equipmentList.filter((item) => item.testTypes.includes(matchedType.code)).slice(0, 40) : [];
-  // 그 시험의 장비 중 가상 모델이 있는 것만 남긴다. 목록 응답의 simulation.presetIds로 알 수 있고,
-  // 그 값이 없는 장비(서버 없이 보기 등)만 장비별 프리셋을 조회한다.
-  const hasPresets = (item: (typeof equipmentList)[number]) =>
-    item.simulation !== undefined ? (item.simulation?.presetIds?.length ?? 0) > 0 : undefined;
-  const unknownCandidates = typeCandidates.filter((item) => hasPresets(item) === undefined);
-  const withModel = useApiQuery(
-    async (signal) => {
-      const checks = await Promise.all(unknownCandidates.map(async (item) => {
-        try { return (await simulationService.presets(item.id, signal)).length > 0 ? item.id : null; } catch { return null; }
-      }));
-      return checks.filter((id): id is number => id != null);
-    },
-    `simulation-capable:${matchedType?.code}:${unknownCandidates.length}`,
-    unknownCandidates.length > 0,
-  );
-  const equipmentOptions = matchedType
-    ? typeCandidates.filter((item) => hasPresets(item) ?? withModel.data?.includes(item.id))
-    : equipmentList;
+  // 가상 시험이 되는 장비만 (목록 응답의 simulation.presetIds). 그 정보가 아예 없으면(서버 없이 보기) 전부 보여 준다.
+  const known = equipmentList.some((item) => item.simulation !== undefined);
+  const simulatable = known ? equipmentList.filter((item) => (item.simulation?.presetIds?.length ?? 0) > 0) : equipmentList;
   const chooseEquipment = (id: number | null) => {
     setSimulationEquipmentId(id);
     setEdited(null);
@@ -97,131 +75,67 @@ export default function Simulation({ setActiveMenu }: { setActiveMenu?: (menu: s
       edited && edited.presetId === preset?.presetId
         ? edited.values
         : (preset?.inputParameters ?? {});
-  // 실제 시험 의뢰로 넘어가는 버튼: 실행 버튼 옆과 결과 아래에 둔다
+  const shownResult = result && result.presetId === preset?.presetId ? result : null;
+  // 실제 시험 의뢰로 넘어가는 버튼
   const requestButton = selected && canAccessMenu(user.role, "request") && setActiveMenu ? (
     <Button variant="secondary" icon={ArrowRight} disabled={selected.institutionId === user.organization?.id}
       title={selected.institutionId === user.organization?.id ? "우리 기관 장비에는 의뢰할 수 없습니다" : undefined}
       onClick={() => { setDraftRequestId(null); setSelectedEquipment(selected); setActiveMenu("request"); }}>
-      이 장비로 실제 시험 의뢰
+      이 장비로 실제 시험 맡기기
     </Button>
   ) : null;
+  const run = () => {
+    if (!preset) return;
+    setResult(null);
+    void action.run(async (signal) =>
+      setResult(await simulationService.run({
+        presetId: preset.presetId,
+        inputParameters: input,
+        ...(requirementId ? { requirementId } : {}),
+      }, signal)));
+  };
+
   return (
-    <div className="content-page page-enter">
+    <div className="content-page page-enter sim-page">
       <PageHeader title="가상 시험" description="예약이 차 있어도 결과를 먼저 가늠해 보세요">
         <SegmentedControl label="보기 방식" size="sm" value={view} onChange={(value) => setView(value as "simple" | "3d")}>
           <SegmentedControlItem value="simple" label="간단 보기" />
           <SegmentedControlItem value="3d" label="3D 보기" />
         </SegmentedControl>
-        <Badge tone="amber">참고용 계산</Badge>
       </PageHeader>
-      {selected && selected.availability !== "AVAILABLE" && <p className="content-note">
-        <Info size={14} aria-hidden="true" />
-        <span><strong>{selected.name}</strong>은(는) 지금 <Badge tone={availabilityTone[selected.availability ?? "UNKNOWN"]}>
-          {availabilityLabels[selected.availability ?? "UNKNOWN"]}</Badge> 상태입니다. 실제 시험을 기다리는 동안 아래 가상 시험으로 결과를 미리 확인할 수 있습니다.</span>
-      </p>}
-      <DemoNotice>
-        계산 모델로 만든 참고값이며 실제 장비 성능·시험 적합성·성적서를 대신하지 않습니다.
-      </DemoNotice>
-      <Panel className="form-panel">
-        <div className="form-grid">
-          <FormField id="simulation-test" label="시험 이름" hint={matchedType
-            ? (withModel.loading ? "가상 시험이 되는 장비를 찾는 중…" : `${matchedType.nameKo}: 가상 시험이 되는 장비 ${equipmentOptions.length}대`)
-            : "예: 진동시험, 온습도시험. 입력하면 그 시험을 하는 장비만 보여 줍니다."}>
-            <input id="simulation-test" list="simulation-test-types" value={testText} autoComplete="off"
-              placeholder="시험 이름을 입력하세요"
-              onChange={(e) => { setTestText(e.target.value); }} />
-            <datalist id="simulation-test-types">
-              {types.data?.map((type) => <option key={type.code} value={type.nameKo} />)}
-            </datalist>
-          </FormField>
-          <FormField id="simulation-equipment" label="장비">
-            <select
-              id="simulation-equipment"
-              value={equipmentOptions.some((item) => item.id === simulationEquipmentId) ? simulationEquipmentId ?? "" : ""}
-              onChange={(e) => chooseEquipment(e.target.value ? Number(e.target.value) : null)}
-            >
-              <option value="">{matchedType && !withModel.loading && equipmentOptions.length === 0
-                ? "이 시험은 가상 시험이 되는 장비가 없습니다" : "장비를 선택하세요"}</option>
-              {equipmentOptions.map((e) => (
-                <option key={e.id} value={e.id}>
-                  {e.name} ({e.institution || "기관 정보 없음"})
-                </option>
-              ))}
-            </select>
-          </FormField>
-        </div>
-      </Panel>
-      {(models.loading || models.error || presets.loading || presets.error) && (
-        <ApiState
-          loading={models.loading || presets.loading}
-          error={models.error ?? presets.error}
-          onRetry={() => {
-            models.reload();
-            presets.reload();
-          }}
-        />
-      )}
-      {presets.data?.length === 0 && (
-        <Panel>
-          <p className="inline-empty">
-            {selected?.name ?? "이 장비"}로는 아직 가상 시험을 할 수 없습니다. 같은 시험을 하는 다른 장비로 돌려 보세요.
-            {setActiveMenu && <Button variant="secondary" onClick={() => setActiveMenu("search")}>다른 장비 찾기</Button>}
-          </p>
-        </Panel>
-      )}
-      {view === "3d" && model && preset && (
-        <Suspense fallback={<div className="sim-stage-loading" role="status">3D 시험실을 준비하고 있습니다…</div>}>
-          <SimulationStage
-            key={preset.presetId}
-            modelType={model.modelType}
-            input={input}
-            result={result?.presetId === preset.presetId ? result : null}
-            equipmentName={equipmentList.find((e) => e.id === simulationEquipmentId)?.name ?? "선택 장비"}
-          />
-        </Suspense>
-      )}
-      {model && preset && (
-        <Panel
-          className="form-panel"
-          title={model.description}
-          action={<Badge tone="amber">{capabilityLabels[model.capability] ?? "참고용 계산"}</Badge>}
-        >
-          <p className="content-note">{model.limitation}</p>
-          <p className="field-hint">
-            아래 값은 예시 입력값입니다. 내 시료에 맞게 바꿔 보세요.
-          </p>
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              setResult(null);
-              action.run(async (signal) =>
-                setResult(
-                  await simulationService.run(
-                    {
-                      presetId: preset.presetId,
-                      inputParameters: input,
-                      ...(requirementId ? { requirementId } : {}),
-                    },
-                    signal,
-                  ),
-                ),
-              );
-            }}
-          >
-            <div className="form-grid">
+
+      {/* 한 장에: ① 장비 고르기 → ② 입력값 → ③ 결과 */}
+      <Panel className="sim-card">
+        <SimulationPicker key={simulationEquipmentId ?? "none"} equipment={simulatable} selectedId={simulationEquipmentId} onChoose={chooseEquipment} />
+        <p className="sim-note"><Info size={13} aria-hidden="true" /> 계산 모델로 만든 참고값이에요. 실제 장비 성능·시험 적합성·성적서를 대신하지 않습니다.</p>
+
+        {selected && <section className="sim-section" aria-label="고른 장비와 입력값">
+          <header className="sim-equipment">
+            <span className="sim-equipment__name">
+              <strong>{selected.name}</strong>
+              <small>{[selected.institution, selected.testTypes.map(testTypeLabel).join(", ")].filter(Boolean).join(", ")}</small>
+            </span>
+            <span className="sim-equipment__tags">
+              <Badge tone={availabilityTone[selected.availability ?? "UNKNOWN"]} dot>{availabilityLabels[selected.availability ?? "UNKNOWN"]}</Badge>
+              {model && <Badge tone="amber">{capabilityLabels[model.capability] ?? "참고용 계산"}</Badge>}
+            </span>
+          </header>
+
+          {(models.loading || models.error || presets.loading || presets.error) &&
+            <ApiState loading={models.loading || presets.loading} error={models.error ?? presets.error}
+              onRetry={() => { models.reload(); presets.reload(); }} />}
+          {presets.data?.length === 0 && <p className="inline-empty">
+            이 장비로는 아직 가상 시험을 할 수 없습니다. 위에서 다른 장비를 골라 보세요.
+          </p>}
+
+          {model && preset && <form onSubmit={(e) => { e.preventDefault(); run(); }}>
+            <p className="sim-model">{model.description}<small>{model.limitation}</small></p>
+            <div className="sim-inputs">
               {model.requiredInputFields.map((field) => (
-                <FormField
-                  key={field}
-                  id={`simulation-${field}`}
-                  label={simulationLabel(field)}
-                >
+                <FormField key={field} id={`simulation-${field}`} label={simulationLabel(field)}>
                   <input
                     id={`simulation-${field}`}
-                    type={
-                      typeof preset.inputParameters[field] === "number"
-                        ? "number"
-                        : "text"
-                    }
+                    type={typeof preset.inputParameters[field] === "number" ? "number" : "text"}
                     step="any"
                     required
                     value={input[field] ?? ""}
@@ -231,12 +145,9 @@ export default function Simulation({ setActiveMenu }: { setActiveMenu?: (menu: s
                         presetId: preset.presetId,
                         values: {
                           ...input,
-                          [field]:
-                            typeof preset.inputParameters[field] === "number"
-                              ? e.target.value === ""
-                                ? ""
-                                : Number(e.target.value)
-                              : e.target.value,
+                          [field]: typeof preset.inputParameters[field] === "number"
+                            ? e.target.value === "" ? "" : Number(e.target.value)
+                            : e.target.value,
                         },
                       });
                     }}
@@ -245,65 +156,49 @@ export default function Simulation({ setActiveMenu }: { setActiveMenu?: (menu: s
               ))}
             </div>
             <div className="form-actions">
-              <span className="small-note">계산 결과는 참고용이며 실제 시험·성적서를 대신하지 않습니다.</span>
+              <span className="small-note">처음 값은 예시예요. 내 시료에 맞게 바꿔 보세요.</span>
               {requestButton}
-              <Button type="submit" disabled={action.busy}>
-                가상 시험 실행
-              </Button>
+              <Button type="submit" disabled={action.busy}>{action.busy ? "계산 중…" : "가상 시험 실행"}</Button>
             </div>
-          </form>
-        </Panel>
-      )}
-      <Feedback action={action} />
-      {result && (
-        <Panel
-          className="form-panel"
-          title="가상 시험 결과"
-          action={<Badge tone="amber">{capabilityLabels[result.capability] ?? "참고용 계산"}</Badge>}
-        >
-          <SimulationExports key={result.id} result={result} equipment={equipmentList.find((item) => item.id === result.equipmentId)} />
-          <p className="content-note">{result.warning}</p>
-          <p>{result.limitation}</p>
-          {result.output.chart && (
-            <SimulationChart chart={result.output.chart} />
-          )}
-          {result.output.summary && (
-            <dl className="detail-list">
-              {Object.entries(result.output.summary).map(([key, value]) => (
-                <div key={key}>
-                  <dt>
-                    {simulationLabel(key)}
-                  </dt>
-                  <dd>{simulationValue(value)}</dd>
-                </div>
+          </form>}
+          <Feedback action={action} />
+        </section>}
+
+        {view === "3d" && model && preset && (
+          <Suspense fallback={<div className="sim-stage-loading" role="status">3D 시험실을 준비하고 있습니다…</div>}>
+            <SimulationStage
+              key={preset.presetId}
+              modelType={model.modelType}
+              input={input}
+              result={shownResult}
+              equipmentName={selected?.name ?? "선택 장비"}
+            />
+          </Suspense>
+        )}
+
+        {shownResult && <section className="sim-section sim-result" aria-label="가상 시험 결과">
+          <header className="sim-result__head">
+            <h2>결과</h2>
+            <SimulationExports key={shownResult.id} result={shownResult} equipment={equipmentList.find((item) => item.id === shownResult.equipmentId)} />
+          </header>
+          {shownResult.output.summary && (
+            <dl className="sim-summary">
+              {Object.entries(shownResult.output.summary).map(([key, value]) => (
+                <div key={key}><dt>{simulationLabel(key)}</dt><dd>{simulationValue(value)}</dd></div>
               ))}
             </dl>
           )}
-          {result.output.checks && (
+          {shownResult.output.chart && <SimulationChart chart={shownResult.output.chart} />}
+          {shownResult.output.checks && (
             <div className="table-scroll">
               <table>
-                <thead>
-                  <tr>
-                    <th>예시 사양</th>
-                    <th>입력</th>
-                    <th>가상 비교</th>
-                    <th>출처</th>
-                  </tr>
-                </thead>
+                <thead><tr><th>예시 사양</th><th>입력</th><th>가상 비교</th><th>출처</th></tr></thead>
                 <tbody>
-                  {result.output.checks.map((c) => (
+                  {shownResult.output.checks.map((c) => (
                     <tr key={c.key}>
                       <td>{c.key}</td>
                       <td>{c.input}</td>
-                      <td>
-                        {
-                          {
-                            MET: "가상 범위 내",
-                            NOT_MET: "가상 범위 초과",
-                            UNKNOWN: "미확인",
-                          }[c.result]
-                        }
-                      </td>
+                      <td>{({ MET: "가상 범위 내", NOT_MET: "가상 범위 초과", UNKNOWN: "미확인" } as Record<string, string>)[c.result]}</td>
                       <td>{c.sourceType ?? "정보 없음"}</td>
                     </tr>
                   ))}
@@ -311,54 +206,52 @@ export default function Simulation({ setActiveMenu }: { setActiveMenu?: (menu: s
               </table>
             </div>
           )}
-          {result.output.concept && (
-            <p>
-              {result.output.concept.label}: {result.output.concept.value}{" "}
-              {result.output.concept.unit} · 개념 시각화
-            </p>
+          {shownResult.output.concept && (
+            <p>{shownResult.output.concept.label}: {shownResult.output.concept.value} {shownResult.output.concept.unit}, 개념 시각화</p>
           )}
-          {result.output.steps && (
-            <ol className="condition-steps">
-              {result.output.steps.map((step, i) => (
-                <li key={i}>{step}</li>
-              ))}
-            </ol>
+          {shownResult.output.steps && (
+            <ol className="condition-steps">{shownResult.output.steps.map((step, i) => <li key={i}>{step}</li>)}</ol>
           )}
+          {(shownResult.warning || shownResult.limitation) &&
+            <p className="sim-note">{[shownResult.warning, shownResult.limitation].filter(Boolean).join(" ")}</p>}
           {requestButton && <div className="form-actions">
             <span className="small-note">정확한 결과와 성적서가 필요하면 실제 시험을 맡기세요.</span>
             {requestButton}
           </div>}
-        </Panel>
-      )}
-      <Panel title="지난 가상 시험">
-        {history.loading || history.error ? (
-          <ApiState loading={history.loading} error={history.error} onRetry={history.reload} />
-        ) : history.data?.content.length ? (
-          <Table<SimulationResult & Record<string, unknown>>
-            data={history.data.content as (SimulationResult & Record<string, unknown>)[]}
-            idKey="id"
-            density="compact"
-            hasHover
-            columns={[
-              { key: "equipment", header: "장비", width: proportional(1.5), renderCell: (r) =>
-                <Text>{equipmentList.find((item) => item.id === r.equipmentId)?.name ?? `장비 ${r.equipmentId}`}</Text> },
-              { key: "model", header: "계산 내용", width: proportional(2), renderCell: (r) =>
-                <Text color="secondary">{models.data?.find((m) => m.modelType === r.modelType)?.description ?? "가상 시험"}</Text> },
-              { key: "createdAt", header: "실행 시각", width: pixel(180), renderCell: (r) =>
-                <Text hasTabularNumbers color="secondary">{formatAgo(r.createdAt)}</Text> },
-              { key: "open", header: <span className="sr-only">동작</span>, width: pixel(110), align: "end", renderCell: (r) =>
-                <Button variant="ghost" className="button--sm" onClick={() =>
-                  action.run(async (signal) => {
-                    const saved = await simulationService.result(r.id, signal);
-                    setSimulationEquipmentId(saved.equipmentId);
-                    setEdited({ presetId: saved.presetId, values: saved.inputParameters });
-                    setResult(saved);
-                  })}>결과 보기</Button> },
-            ]}
-          />
-        ) : (
-          <p className="inline-empty">아직 실행한 가상 시험이 없습니다.</p>
-        )}
+        </section>}
+
+        {/* 지난 가상 시험: 같은 카드 아래에 접어 둔다 */}
+        <details className="sim-history">
+          <summary>지난 가상 시험 {history.data?.content.length ?? ""}</summary>
+          {history.loading || history.error ? (
+            <ApiState loading={history.loading} error={history.error} onRetry={history.reload} />
+          ) : history.data?.content.length ? (
+            <Table<SimulationResult & Record<string, unknown>>
+              data={history.data.content as (SimulationResult & Record<string, unknown>)[]}
+              idKey="id"
+              density="compact"
+              hasHover
+              columns={[
+                { key: "equipment", header: "장비", width: proportional(1.5), renderCell: (r) =>
+                  <Text>{equipmentList.find((item) => item.id === r.equipmentId)?.name ?? `장비 ${r.equipmentId}`}</Text> },
+                { key: "model", header: "계산 내용", width: proportional(2), renderCell: (r) =>
+                  <Text color="secondary">{models.data?.find((m) => m.modelType === r.modelType)?.description ?? "가상 시험"}</Text> },
+                { key: "createdAt", header: "실행", width: pixel(110), renderCell: (r) =>
+                  <Text hasTabularNumbers color="secondary">{formatAgo(r.createdAt)}</Text> },
+                { key: "open", header: <span className="sr-only">동작</span>, width: pixel(100), align: "end", renderCell: (r) =>
+                  <Button variant="secondary" className="button--sm" onClick={() =>
+                    action.run(async (signal) => {
+                      const saved = await simulationService.result(r.id, signal);
+                      setSimulationEquipmentId(saved.equipmentId);
+                      setEdited({ presetId: saved.presetId, values: saved.inputParameters });
+                      setResult(saved);
+                    })}>결과 보기</Button> },
+              ]}
+            />
+          ) : (
+            <p className="inline-empty">아직 실행한 가상 시험이 없습니다.</p>
+          )}
+        </details>
       </Panel>
     </div>
   );
