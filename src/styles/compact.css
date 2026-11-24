@@ -1542,3 +1542,32 @@ dialog[open]::backdrop { animation: astra-fade var(--motion-base) var(--motion-e
 .equip-detail dt { color: var(--color-text-secondary); }
 .equip-detail dd { display: flex; flex-wrap: wrap; gap: 2px 14px; margin: 0; color: var(--color-text-primary); }
 .equip-detail small { color: var(--color-text-secondary); }
+
+/* ── 관리자 대시보드: 한 계열 가로 막대 (한 색, 값은 글자색) ── */
+.dash-grid--even { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+@media (max-width: 900px) { .dash-grid--even { grid-template-columns: minmax(0, 1fr); } }
+.hbars { display: grid; gap: 2px; margin: 0; padding: 0 12px 10px; list-style: none; }
+.hbars__row {
+  display: grid;
+  grid-template-columns: minmax(84px, 9rem) minmax(0, 1fr) minmax(48px, max-content);
+  gap: 10px;
+  align-items: center;
+  width: 100%;
+  min-height: 28px;
+  padding: 2px 6px;
+  border: 0;
+  border-radius: var(--radius-element);
+  background: none;
+  color: var(--color-text-primary);
+  font: inherit;
+  font-size: 13px;
+  text-align: left;
+}
+button.hbars__row { cursor: pointer; transition: background-color var(--motion-fast) var(--motion-ease); }
+button.hbars__row:hover { background: var(--color-overlay-hover); }
+.hbars__label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.hbars__label small { margin-left: 6px; color: var(--color-text-secondary); font-size: 11px; }
+.hbars__track { height: 10px; border-radius: 0 4px 4px 0; background: var(--color-background-muted); overflow: hidden; }
+.hbars__fill { display: block; height: 100%; min-width: 2px; border-radius: 0 4px 4px 0; background: var(--color-accent); transition: width var(--motion-base) var(--motion-ease); }
+.hbars__value { color: var(--color-text-secondary); font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap; }
+.hbars--progress .hbars__row { grid-template-columns: minmax(140px, 16rem) minmax(0, 1fr) minmax(64px, max-content); }

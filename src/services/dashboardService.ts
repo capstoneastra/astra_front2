@@ -54,7 +54,7 @@ interface DashboardSummary {
   role: UserRole;
   view?: DashboardView;
   requestCounts: Record<RequestStatus, number>;
-  equipmentStats: { total: number };
+  equipmentStats: { total: number; byRegion?: Record<string, number> };
   dataAvailable: { requests: boolean; chats?: boolean };
   institution?: NamedResource | null;
   actionRequired?: DashboardRequest[];
