@@ -17,14 +17,14 @@ import type { ChatExchange } from "../../services/chatService";
 import { equipmentView, testTypeLabel } from "../../services/equipmentService";
 import type { Equipment } from "../../services/equipmentService";
 import { loadCalendar } from "../../services/calendarService";
+import WeekCalendar from "./WeekCalendar";
 import type { RequestBox } from "../../services/contracts";
-import { addDays, dayStart, seoulDate } from "../../domain/calendar";
+import { dayStart, seoulDate } from "../../domain/calendar";
 import { availabilityLabels, valueText } from "../../domain/constants";
 import { toApiError } from "../../api/errors";
 import { Button, Panel, TextLink } from "../ui";
 import ApiState from "../ui/ApiState";
 import { requestStages } from "../../domain/requestStages";
-import { formatDateTime } from "../../domain/format";
 
 interface Props {
   setActiveMenu: (menu: string) => void;
@@ -158,38 +158,17 @@ function AiExplore({ setActiveMenu }: Pick<Props, "setActiveMenu">) {
   </Panel>;
 }
 
-/** 오늘부터 2주 미니 달력: 시험이 있는 날에 점 */
-function MiniCalendar({ days, marked }: { days: string[]; marked: Set<string> }) {
-  const today = seoulDate();
-  const weekday = ["일", "월", "화", "수", "목", "금", "토"];
-  return <div className="mini-cal" role="grid" aria-label="오늘부터 2주 시험 일정">
-    {weekday.map((w) => <span key={w} className="mini-cal__head" role="columnheader">{w}</span>)}
-    {Array.from({ length: new Date(`${days[0]}T00:00:00Z`).getUTCDay() }, (_, i) => <span key={`pad${i}`} />)}
-    {days.map((day) => <span key={day} role="gridcell"
-      className={`mini-cal__day ${day === today ? "is-today" : ""} ${marked.has(day) ? "has-event" : ""}`}
-      aria-label={`${Number(day.slice(5, 7))}월 ${Number(day.slice(8))}일${marked.has(day) ? ", 시험 있음" : ""}`}>
-      {Number(day.slice(8))}
-    </span>)}
-  </div>;
-}
-
 export default function CompanyDashboard({ setActiveMenu, openRequest }: Props) {
   const { user } = useWorkspace();
   const summary = useApiQuery((signal) => dashboardService.summary(user, "REQUESTER", signal), `summary:${user.id}:REQUESTER`);
   const list = useApiQuery((signal) => requestService.list({ box: "SENT", size: 100 }, signal), `home-sent:${user.id}`);
   const calendar = useApiQuery((signal) => loadCalendar(signal, "SENT"), `calendar:${user.id}:SENT`);
-  const [now] = useState(() => Date.now());
 
   const counts = useMemo(() => {
     const rows = list.data?.content ?? [];
     return stages.map((stage) => rows.filter((row) => stage.statuses.includes(row.status)).length);
   }, [list.data]);
   const todo = summary.data?.actionRequired ?? [];
-  const upcoming = (calendar.data?.schedules ?? [])
-    .filter((item) => item.status !== "CANCELED" && Date.parse(item.endAt) > now).slice(0, 5);
-  const days = Array.from({ length: 14 }, (_, i) => addDays(seoulDate(now), i));
-  const marked = new Set(days.filter((day) => upcoming.some((item) =>
-    Date.parse(item.startAt) < dayStart(addDays(day, 1)) && Date.parse(item.endAt) > dayStart(day))));
 
   return <>
     <AiExplore setActiveMenu={setActiveMenu} />
@@ -202,8 +181,7 @@ export default function CompanyDashboard({ setActiveMenu, openRequest }: Props) 
       </button>)}
     </nav>
 
-    <div className="dash-grid">
-      <Panel title={`지금 처리할 일 ${todo.length || ""}`} action={<TextLink onClick={() => setActiveMenu("sent")}>내 의뢰</TextLink>}>
+    <Panel title={`지금 처리할 일 ${todo.length || ""}`} action={<TextLink onClick={() => setActiveMenu("sent")}>내 의뢰</TextLink>}>
         {summary.loading || summary.error ? <ApiState loading={summary.loading} error={summary.error} onRetry={summary.reload} /> :
           todo.length === 0 ? <p className="inline-empty">지금 처리할 일이 없습니다.</p> :
           <List hasDividers density="compact">
@@ -220,25 +198,10 @@ export default function CompanyDashboard({ setActiveMenu, openRequest }: Props) 
             })}
           </List>}
       </Panel>
-      <Panel title="다가오는 시험" action={<TextLink onClick={() => setActiveMenu("calendar")}>시험 일정</TextLink>}>
-        <div className="upcoming">
-          <MiniCalendar days={days} marked={marked} />
-          {calendar.loading || calendar.error ? <ApiState loading={calendar.loading} error={calendar.error} onRetry={calendar.reload} /> :
-            upcoming.length === 0 ? <p className="inline-empty">예정된 시험이 없습니다.</p> :
-            <List hasDividers density="compact">
-              {upcoming.map((item) => {
-                const day = seoulDate(item.startAt);
-                return <ListItem key={item.id} itemKey={item.id} onClick={() => openRequest("SENT", item.requestId)}
-                  startContent={<span className="date-chip"><strong>{Number(day.slice(8))}</strong>
-                    <small>{["일", "월", "화", "수", "목", "금", "토"][new Date(`${day}T00:00:00Z`).getUTCDay()]}</small></span>}
-                  label={item.equipment?.name ?? item.title}
-                  description={`${formatDateTime(item.startAt)} 시작`}
-                  endContent={<AxBadge variant={item.status === "CONFIRMED" ? "success" : "neutral"}
-                    label={item.status === "CONFIRMED" ? dDay(day) ?? "확정" : "제안 중"} />} />;
-              })}
-            </List>}
-        </div>
-      </Panel>
-    </div>
+    <Panel title="다가오는 시험" description="이번 주와 다음 주"
+      action={<TextLink onClick={() => setActiveMenu("calendar")}>전체 일정</TextLink>}>
+      {calendar.loading || calendar.error ? <ApiState loading={calendar.loading} error={calendar.error} onRetry={calendar.reload} /> :
+        <WeekCalendar schedules={calendar.data?.schedules ?? []} onOpen={(id) => openRequest("SENT", id)} />}
+    </Panel>
   </>;
 }
