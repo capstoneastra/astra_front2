@@ -153,7 +153,7 @@
 [ { "id": 5, "orgType": "INSTITUTION", "name": "가온대학교 첨단소재분석센터", "region": "진주" }, ... ]
 
 // GET /users/me → 200 (organization 은 소속이 없으면 null)
-{ "id": 3, "email": "manager1@astra.demo", "name": "김담당", "phone": "042-000-0001",
+{ "id": 3, "email": "manager@example.com", "name": "김담당", "phone": "042-000-0001",
   "role": "INSTITUTION_MANAGER", "status": "ACTIVE",
   "organization": { "id": 2, "orgType": "INSTITUTION", "name": "미리내우주환경시험센터", "region": "대전", "isVerified": true },
   "lastLoginAt": "2026-11-07T17:03:04+09:00", "createdAt": "2026-11-07T17:02:51+09:00" }
@@ -161,7 +161,7 @@
 // PATCH /users/me { "name"?: "김담당", "phone"?: "042-000-0009" } → 200 (GET 과 같은 형식, 보낸 값만 수정)
 ```
 
-> 시연 계정(V3 seed): `admin@astra.demo`, `company@astra.demo`, `manager1@astra.demo`, `manager2@astra.demo`, `pending@astra.demo`(PENDING), V8 추가 `company2@astra.demo`, `univ1@astra.demo`. 비밀번호는 모두 `12345678` (V9).
+> 시연 계정과 비밀번호는 저장소에 적지 않습니다. 백엔드 담당자에게 받아 주세요.
 
 > 토큰: access 토큰은 `Authorization: Bearer` 헤더로 보냅니다(유효 1시간). refresh 토큰은 유효 14일이고, 서버는 원문 대신 해시만 `refresh_tokens.token_hash`에 저장합니다.
 
@@ -810,7 +810,7 @@ UNDER_REVIEW ──reject──▶ REJECTED        (DRAFT~SCHEDULING 에서 기�
 ```json
 // GET /admin/users?status=PENDING → 200 (페이지). 정렬 가능: createdAt(기본, 최신순)·email·name·role·status·approvedAt·lastLoginAt
 { "content": [
-    { "id": 5, "email": "pending@astra.demo", "name": "이대기", "phone": "055-000-0003",
+    { "id": 5, "email": "pending@example.com", "name": "이대기", "phone": "055-000-0003",
       "role": "INSTITUTION_MANAGER", "status": "PENDING",
       "organization": { "id": 4, "orgType": "INSTITUTION", "name": "가람재료시험연구원", "businessRegNo": null,
                         "region": "경남", "address": null, "phone": null, "isVerified": true },
