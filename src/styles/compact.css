@@ -2067,7 +2067,9 @@ button.hbars__row:hover { background: var(--color-overlay-hover); }
 .cell-status { display: inline-flex; gap: 6px; align-items: center; }
 .cell-warn { color: var(--color-text-warning); font-weight: 600; }
 /* 우리 장비 표(행 펼치기 표)는 예전 전역 td 여백(14px 20px)이 덮어써서 다른 표와 줄 높이가 달랐다. 같은 촘촘한 여백으로 */
-.equipment-manage tbody td { padding-block: 3px; padding-inline-end: 6px; }
+/* 머리글 칸(좌우 6px, 펼치기 칸 0)과 같은 여백이어야 글자가 제목 아래 줄이 맞는다 */
+.equipment-manage tbody td:not(:has(.equip-detail)) { padding: 3px 0; }
+.equipment-manage tbody td:first-child:not(:has(.equip-detail)) { padding-inline: 0; }
 .equipment-manage tbody td:has(.equip-detail) { padding-block: 10px 12px; }
 
 /* ── 가상 시험: 한 장 (장비 고르기 → 입력값 → 결과), 지난 기록은 접어 둠 ── */
