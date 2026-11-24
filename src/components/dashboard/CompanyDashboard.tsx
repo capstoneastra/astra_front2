@@ -116,14 +116,15 @@ function AiExplore({ setActiveMenu }: Pick<Props, "setActiveMenu">) {
   return <Panel className="ai-explore">
     <form className="ai-explore__form" onSubmit={submit} role="search">
       <label htmlFor="ai-explore-input" className="ai-explore__label">어떤 시험이 필요하세요?</label>
+      <p className="ai-explore__hint">장비 이름만 써도 되고, 시료와 조건을 문장으로 써도 됩니다.</p>
       <HStack gap={2} vAlign="center" className="ai-explore__box">
-        <Sparkles size={20} aria-hidden="true" />
+        <Sparkles size={24} aria-hidden="true" />
         <input id="ai-explore-input" value={text} autoComplete="off" enterKeyHint="search"
           placeholder="예: 위성 전장품 15kg, 20~2000Hz 진동시험"
           onChange={(event) => setText(event.target.value)} />
-        <Button type="submit" disabled={busy || !text.trim()}>{busy ? "찾는 중…" : "AI로 찾기"}</Button>
+        <Button type="submit" className="button--lg" disabled={busy || !text.trim()}>{busy ? "찾는 중…" : "찾기"}</Button>
       </HStack>
-      <HStack gap={3} wrap="wrap" className="ai-explore__links">
+      <HStack gap={4} wrap="wrap" hAlign="center" className="ai-explore__links">
         <TextLink onClick={() => setActiveMenu("search")}>장비 직접 찾기</TextLink>
         <TextLink onClick={() => setActiveMenu("request")}>단계별로 맡기기</TextLink>
         <TextLink onClick={() => setActiveMenu("simulation")}>가상 시험</TextLink>

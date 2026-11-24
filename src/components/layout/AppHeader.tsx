@@ -37,7 +37,9 @@ export default function AppHeader({ activeMenu, onSearch, onBack, canGoBack, onN
   const { data: unreadCount } = useApiQuery(notificationService.unreadCount, `notifications-unread:${user.id}`, true, () => 60_000);
   const recent = useApiQuery((signal) => notificationService.list({ size: 6 }, signal), `notifications-recent:${user.id}`);
   const openNotification = useOpenNotification(onOpenRequest);
-  const showSearch = canAccessMenu(user.role, "search") && activeMenu !== "search";
+  // 기업 대시보드는 큰 탐색창이 검색을 대신하므로 위쪽 검색창을 숨긴다
+  const showSearch = canAccessMenu(user.role, "search") && activeMenu !== "search" &&
+    !(activeMenu === "home" && user.role === "COMPANY_USER");
   const isMenuPage = (navigationByRole[user.role] ?? []).some((item) => item.id === activeMenu);
   const role = user.organization?.orgType === "UNIVERSITY" && user.role === "INSTITUTION_MANAGER" ? "대학 담당자" : roleLabels[user.role];
   const pick = (choice: SearchPick) => {

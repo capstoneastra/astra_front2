@@ -54,14 +54,15 @@ export function Button({
   const text = textOf(children).trim();
   const label = text || props["aria-label"] || title || "";
   const small = className.includes("button--sm");
+  const large = className.includes("button--lg");
   return (
     <AxButton
       {...(props as object)}
       type={type as "button" | "submit" | "reset"}
-      className={className.replace("button--sm", "").trim() || undefined}
+      className={className.replace("button--sm", "").replace("button--lg", "").trim() || undefined}
       label={label}
       variant={buttonVariant(variant)}
-      size={small ? "sm" : "md"}
+      size={small ? "sm" : large ? "lg" : "md"}
       isDisabled={disabled}
       isIconOnly={!text && Boolean(Icon)}
       tooltip={title}
