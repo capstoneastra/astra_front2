@@ -8,6 +8,7 @@ import ApiState from "./ui/ApiState";
 import type { ReactNode } from "react";
 import type { EquipmentSpec } from "../services/contracts";
 import type { Equipment } from "../services/equipmentService";
+import { formatFee } from "../domain/format";
 
 function specValue(spec: EquipmentSpec) {
   if (spec.value !== null && spec.value !== undefined)
@@ -117,7 +118,7 @@ export default function EquipmentDetailDialog({
             <div>
               <dt>비용·기간</dt>
               <dd>
-                {data.usage?.feeText || "비용 확인 필요"} /{" "}
+                {formatFee(data.usage?.feeText ?? data.feeText)} /{" "}
                 {data.usage?.durationText || "기간 확인 필요"}
               </dd>
             </div>

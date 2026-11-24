@@ -9,7 +9,8 @@ import { requestService } from "../../services/requestService";
 import { equipmentService } from "../../services/equipmentService";
 import { loadCalendar } from "../../services/calendarService";
 import type { RequestBox, RequestSummary } from "../../services/contracts";
-import { addDays, dayStart, seoulDate, timeLabel } from "../../domain/calendar";
+import { addDays, dayStart, seoulDate } from "../../domain/calendar";
+import { formatDateTime } from "../../domain/format";
 import { requestStatusLabels } from "../../domain/constants";
 import { Button, Panel, TextLink } from "../ui";
 import ApiState from "../ui/ApiState";
@@ -80,7 +81,7 @@ export default function InstitutionDashboard({ setActiveMenu, openRequest }: Pro
         hint={oldestDays != null ? `가장 오래된 접수 ${oldestDays}일 경과` : "새 접수 없음"} onClick={() => openRequest("RECEIVED", undefined, "REVIEW_QUEUE")} />
       <Stat label="일정 협의" value={list.data ? pick("SCHEDULING").length : null} hint="일정을 정할 의뢰"
         onClick={() => openRequest("RECEIVED", undefined, "SCHEDULING")} />
-      <Stat label="2주 안 시험" value={calendar.data ? inRange.length : null} hint={`${days[0].slice(5).replace("-", "/")}부터 14일`}
+      <Stat label="2주 안 시험" value={calendar.data ? inRange.length : null} hint="오늘부터 14일"
         onClick={() => setActiveMenu("calendar")} />
       <Stat label="정보 갱신 필요" value={equipment.data ? stale.length : null}
         hint={equipment.data ? `등록 장비 ${equipment.data.totalElements}대 중` : undefined} onClick={() => setActiveMenu("equipment")} />
@@ -93,7 +94,7 @@ export default function InstitutionDashboard({ setActiveMenu, openRequest }: Pro
           <List hasDividers density="compact">
             {todo.map((item) => <ListItem key={item.id} itemKey={item.id} onClick={() => openRequest("RECEIVED", item.id)}
               label={item.title || item.requestNo}
-              description={[item.companyName ?? item.requester?.name, item.equipment?.name, item.requestNo].filter(Boolean).join(", ")}
+              description={[item.companyName ?? item.requester?.name, item.equipment?.name].filter(Boolean).join(", ")}
               endContent={<HStack gap={2} vAlign="center">
                 <AxBadge variant={item.status === "SUBMITTED" || item.status === "RESUBMITTED" ? "warning" : "neutral"} label={requestStatusLabels[item.status]} />
                 <Button variant="secondary" className="button--sm" onClick={() => openRequest("RECEIVED", item.id)}>{nextAction[item.status]}</Button>
@@ -135,9 +136,9 @@ export default function InstitutionDashboard({ setActiveMenu, openRequest }: Pro
                 return <button key={item.id} type="button" role="cell"
                   className={`two-week__bar ${item.status === "CONFIRMED" ? "is-confirmed" : "is-proposed"}`}
                   style={{ gridColumn: `${column} / span ${width}` }}
-                  title={`${item.requestNo}, ${timeLabel(item.startAt)} 시작, ${item.status === "CONFIRMED" ? "확정" : "제안 중"}`}
+                  title={`${item.title ?? item.requestNo}, ${formatDateTime(item.startAt)} 시작, ${item.status === "CONFIRMED" ? "확정" : "일정 조율 중"}`}
                   onClick={() => openRequest("RECEIVED", item.requestId)}>
-                  {item.requestNo}
+                  {item.companyName ?? item.title ?? item.requestNo}
                 </button>;
               })}
             </div>)}

@@ -18,7 +18,7 @@ export default function Calendar({ month, today, selected, events, busy = [], te
   return (
     <section className="panel calendar" aria-label="월간 시험 예약 캘린더" ref={root}>
       <header className="calendar__toolbar">
-        <div><span className="eyebrow">TEST SCHEDULE</span><h2 aria-live="polite">{Number(month.slice(0, 4))}년 <strong>{Number(month.slice(5))}월</strong></h2></div>
+        <div><h2 aria-live="polite">{Number(month.slice(0, 4))}년 <strong>{Number(month.slice(5))}월</strong></h2></div>
         <div className="calendar__navigation">
           <span className="calendar__timezone">한국 시간</span>
           <Button variant="secondary" onClick={onToday}>오늘</Button>

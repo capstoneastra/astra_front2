@@ -1,3 +1,4 @@
+import { formatDateTime } from "./format";
 export const requestStatusLabels = {
   DRAFT: "작성 중",
   SUBMITTED: "접수",
@@ -32,10 +33,8 @@ export const accountStatusLabels = {
   REJECTED: "가입 거절",
   SUSPENDED: "이용 정지",
 };
-export const formatDate = (value) =>
-  value
-    ? new Date(value).toLocaleString("ko-KR", { timeZone: "Asia/Seoul" })
-    : "확인 필요";
+/** 날짜+시각 (예: 11월 24일 (화) 14:00). 표기 규칙은 domain/format.ts */
+export const formatDate = (value) => formatDateTime(value, "기록 없음");
 export function valueText(value) {
   if (!value) return "확인 필요";
   return `${value.value ?? (value.min != null && value.max != null ? `${value.min}~${value.max}` : (value.valueText ?? "확인 필요"))} ${value.unit ?? ""}`.trim();

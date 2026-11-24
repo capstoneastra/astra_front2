@@ -1,5 +1,13 @@
 import type { SimulationChartData } from "../../services/simulationService";
 
+/** 그래프 축 이름: 백엔드가 주는 단위·영문 이름을 우리말로 */
+const axisLabels: Record<string, string> = {
+  Hz: "주파수 (Hz)", Transmissibility: "전달률 (배)", A: "전류 (A)", W: "전력 (W)", h: "시간 (h)", "SOC %": "충전량 (%)",
+  m: "높이 (m)", J: "에너지 (J)", min: "시간 (분)", "°C": "온도 (°C)", mm: "거리 (mm)", "I/I0": "투과율 (I/I₀)",
+  N: "하중 (N)", s: "시간 (초)", kN: "하중 (kN)", dB: "음압 (dB)",
+};
+const axis = (label: string) => axisLabels[label] ?? label;
+
 export default function SimulationChart({ chart }: { chart: SimulationChartData }) {
   const points = chart.series.filter(
     (p) => Array.isArray(p) && p.length === 2 && p.every(Number.isFinite),
@@ -15,7 +23,7 @@ export default function SimulationChart({ chart }: { chart: SimulationChartData 
     <svg
       viewBox="0 0 640 290"
       role="img"
-      aria-label={`DEMO 그래프: ${chart.xLabel}, ${chart.yLabel}`}
+      aria-label={`참고용 그래프: 가로 ${axis(chart.xLabel)}, 세로 ${axis(chart.yLabel)}`}
       style={{ width: "100%", maxHeight: 340, display: "block" }}
     >
       {[0, 1, 2, 3, 4].map((i) => (
@@ -58,10 +66,10 @@ export default function SimulationChart({ chart }: { chart: SimulationChartData 
         fontSize="12"
         textAnchor="middle"
       >
-        {chart.xLabel}
+        {axis(chart.xLabel)}
       </text>
       <text x="65" y="23" fill="var(--text-secondary)" fontSize="12">
-        {chart.yLabel} (참고용)
+        {axis(chart.yLabel)} (참고용)
       </text>
     </svg>
   );

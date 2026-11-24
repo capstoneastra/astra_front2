@@ -127,8 +127,7 @@ export default function SimulationStage({ modelType, input, result, equipmentNam
     <section className="sim-lab" aria-label="3D 가상 시험실">
       <div className="sim-lab__heading">
         <div>
-          <span className="eyebrow">INTERACTIVE 3D LAB</span>
-          <h2>눈앞에서 살펴보는 가상 시험실</h2>
+                    <h2>눈앞에서 살펴보는 가상 시험실</h2>
           <p>물체를 돌려보고, 시험 조건에 따른 변화를 확인하세요.</p>
         </div>
         <span className="sim-lab__badge"><Box size={14} /> 3D 시연</span>

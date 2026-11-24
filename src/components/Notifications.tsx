@@ -8,9 +8,9 @@ import { useApiQuery } from "../hooks/useApiQuery";
 import { useAction } from "../hooks/useAction";
 import { notificationService } from "../services/notificationService";
 import { Feedback } from "./workflow/Feedback";
-import { formatDate } from "../domain/constants";
 import ApiState from "./ui/ApiState";
 import { notificationTypeLabels, useOpenNotification } from "../domain/notifications";
+import { formatAgo } from "../domain/format";
 
 export default function Notifications({ onOpenRequest }: { onOpenRequest: (requestId: number) => void }) {
   const [unreadOnly, setUnreadOnly] = useState(false);
@@ -36,7 +36,7 @@ export default function Notifications({ onOpenRequest }: { onOpenRequest: (reque
           <List hasDividers density="compact">
             {items.map((item) => <ListItem key={item.id} itemKey={item.id} onClick={() => void open(item)}
               label={<Text weight={item.isRead ? "normal" : "semibold"} color={item.isRead ? "secondary" : "primary"}>{item.title}</Text>}
-              description={[item.body, formatDate(item.createdAt)].filter(Boolean).join(", ")}
+              description={[item.body, formatAgo(item.createdAt)].filter(Boolean).join(", ")}
               endContent={<HStack gap={1} vAlign="center">
                 <AxBadge variant="neutral" label={notificationTypeLabels[item.type] ?? "알림"} />
                 {!item.isRead && <AxBadge variant="orange" label="새 알림" />}

@@ -25,6 +25,7 @@ import {
 import EquipmentDetailDialog from "./EquipmentDetailDialog";
 import { looksLikeSentence } from "../domain/search";
 import ApiState from "./ui/ApiState";
+import { formatFee } from "../domain/format";
 
 const PAGE_SIZE = 20;
 const emptyFilters = {
@@ -59,7 +60,7 @@ function SpecSummary({ id }: { id: number }) {
   const fee = detail.data?.usage?.feeText ?? detail.data?.feeText;
   return <Text type="supporting" maxLines={2}>
     {specs.length ? specs.map((spec) => `${spec.label ?? spec.key} ${valueText(spec)}`).join(", ") : "사양 확인 필요"}
-    <Text type="supporting" color="secondary">{`, ${fee ?? "이용료 문의"}`}</Text>
+    <Text type="supporting" color="secondary">{`, ${formatFee(fee)}`}</Text>
   </Text>;
 }
 

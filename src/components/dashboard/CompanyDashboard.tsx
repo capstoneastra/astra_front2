@@ -18,12 +18,13 @@ import { equipmentView, testTypeLabel } from "../../services/equipmentService";
 import type { Equipment } from "../../services/equipmentService";
 import { loadCalendar } from "../../services/calendarService";
 import type { RequestBox } from "../../services/contracts";
-import { addDays, dayStart, seoulDate, timeLabel } from "../../domain/calendar";
+import { addDays, dayStart, seoulDate } from "../../domain/calendar";
 import { availabilityLabels, valueText } from "../../domain/constants";
 import { toApiError } from "../../api/errors";
 import { Button, Panel, TextLink } from "../ui";
 import ApiState from "../ui/ApiState";
 import { requestStages } from "../../domain/requestStages";
+import { formatDateTime } from "../../domain/format";
 
 interface Props {
   setActiveMenu: (menu: string) => void;
@@ -208,7 +209,7 @@ export default function CompanyDashboard({ setActiveMenu, openRequest }: Props) 
             {todo.map((item) => {
               const due = dDay(item.dueDate);
               return <ListItem key={item.requestId} itemKey={item.requestId} onClick={() => openRequest("SENT", item.requestId)}
-                label={item.title} description={[item.requestNo, item.institutionName].filter(Boolean).join(", ")}
+                label={item.title} description={item.institutionName ?? undefined}
                 endContent={<HStack gap={2} vAlign="center">
                   {due && <AxBadge variant={due.startsWith("기한") || due === "D-day" ? "error" : "warning"} label={due} />}
                   <Button variant="secondary" className="button--sm" onClick={() => openRequest("SENT", item.requestId)}>
@@ -230,7 +231,7 @@ export default function CompanyDashboard({ setActiveMenu, openRequest }: Props) 
                   startContent={<span className="date-chip"><strong>{Number(day.slice(8))}</strong>
                     <small>{["일", "월", "화", "수", "목", "금", "토"][new Date(`${day}T00:00:00Z`).getUTCDay()]}</small></span>}
                   label={item.equipment?.name ?? item.title}
-                  description={`${Number(day.slice(5, 7))}월 ${Number(day.slice(8))}일 ${timeLabel(item.startAt)} 시작, ${item.requestNo}`}
+                  description={`${formatDateTime(item.startAt)} 시작`}
                   endContent={<AxBadge variant={item.status === "CONFIRMED" ? "success" : "neutral"}
                     label={item.status === "CONFIRMED" ? dDay(day) ?? "확정" : "제안 중"} />} />;
               })}

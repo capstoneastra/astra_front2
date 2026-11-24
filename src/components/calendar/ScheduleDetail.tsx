@@ -9,6 +9,7 @@ import ApiState from "../ui/ApiState";
 import ReservationControls from "../workflow/ReservationControls";
 import { useAuth } from "../../auth/context";
 import { ownsOrganization } from "../../auth/permissions";
+import { formatRange } from "../../domain/format";
 
 export default function ScheduleDetail({ date, events, busy = [], initialId, eligibleRequests, testName, requestBox, onClose, onRequest }) {
   const dialog = useRef(null);
@@ -23,7 +24,7 @@ export default function ScheduleDetail({ date, events, busy = [], initialId, eli
   return (
     <dialog className="dialog schedule-detail" ref={dialog} aria-labelledby="schedule-detail-title" onClose={onClose}
       onClick={(e) => { if (e.target === dialog.current) dialog.current.close(); }}>
-      <header className="schedule-detail__header"><div><span className="eyebrow">DAILY FLIGHT PLAN · KST</span><h2 id="schedule-detail-title">{dateLabel(date)}</h2><span>{events.length}건의 시험 일정</span></div>
+      <header className="schedule-detail__header"><div><h2 id="schedule-detail-title">{dateLabel(date)}</h2><span>{events.length}건의 시험 일정</span></div>
         <button type="button" className="icon-button" aria-label="일정 상세 닫기" onClick={() => dialog.current.close()}><X size={21} /></button></header>
       {busy.length > 0 && <section className="schedule-detail__busy"><h3>선택 장비의 확정 점유 시간</h3><p>이 구간은 예약할 수 없습니다. 다른 기업의 비공개 의뢰 정보는 표시하지 않습니다.</p>{busy.map((interval, index) => <p key={index}>{formatDate(interval.startAt)} ~ {formatDate(interval.endAt)}</p>)}</section>}
       {events.length > 0 ? <div className="schedule-detail__layout">
@@ -37,7 +38,7 @@ export default function ScheduleDetail({ date, events, busy = [], initialId, eli
             <h3>{testName(request.revision?.content?.test?.testTypeCode)}</h3>
             <p className="schedule-detail__request-number">{request.requestNo ?? "의뢰번호 확인 필요"}</p>
             <dl className="schedule-detail__facts">
-              <div><dt><CalendarDays size={15} />예약 기간</dt><dd>{formatDate(reservation.startAt)}<br />~ {formatDate(reservation.endAt)}</dd></div>
+              <div><dt><CalendarDays size={15} />예약 기간</dt><dd>{formatRange(reservation.startAt, reservation.endAt)}</dd></div>
               <div><dt>시험장비</dt><dd>{request.equipment?.name ?? "확인 필요"}</dd></div>
               <div><dt><Building2 size={15} />수행기관</dt><dd>{request.institution?.name ?? "확인 필요"}</dd></div>
               <div><dt>신청 기업</dt><dd>{request.revision?.content?.applicant?.companyName ?? "확인 필요"}</dd></div>

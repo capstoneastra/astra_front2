@@ -5,9 +5,9 @@ import { requestService } from "../../services/requestService";
 import { Button, FormField } from "../ui/index";
 import { Feedback } from "./Feedback";
 import ApiState from "../ui/ApiState";
-import { formatDate } from "../../domain/constants";
 import { invalidateData } from "../../api/cache";
 import { overlaps } from "../../domain/calendar";
+import { formatRange } from "../../domain/format";
 export default function ReservationControls({ request, initialDate, canConfirm }) {
   const [startAt, setStart] = useState(initialDate ? `${initialDate}T09:00` : ""),
     [endAt, setEnd] = useState(initialDate ? `${initialDate}T18:00` : ""),
@@ -56,7 +56,7 @@ export default function ReservationControls({ request, initialDate, canConfirm }
             <strong>이 장비의 확정된 구간</strong>
             {busy.data.map((r, i) => (
               <p key={i}>
-                {formatDate(r.startAt)} ~ {formatDate(r.endAt)}
+                {formatRange(r.startAt, r.endAt)}
               </p>
             ))}
           </div>
@@ -133,7 +133,7 @@ export default function ReservationControls({ request, initialDate, canConfirm }
           <div className="content-note" key={r.id}>
             <div>
               <strong>
-                {formatDate(r.startAt)} ~ {formatDate(r.endAt)}
+                {formatRange(r.startAt, r.endAt)}
               </strong>
               <p>
                 {

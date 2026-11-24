@@ -16,8 +16,8 @@ import { equipmentService, testTypeLabel } from "../services/equipmentService";
 import type { OwnedEquipment } from "../services/equipmentService";
 import EquipmentEditDialog from "./workflow/EquipmentEditDialog";
 import { Feedback } from "./workflow/Feedback";
-import { accessScopeLabels, availabilityLabels, equipmentTypeLabels, formatDate, valueText } from "../domain/constants";
-import { seoulDate } from "../domain/calendar";
+import { accessScopeLabels, availabilityLabels, equipmentTypeLabels, valueText } from "../domain/constants";
+import { formatAgo, formatFee, formatRange } from "../domain/format";
 
 const updateReasonLabels: Record<string, string> = {
   NOT_CONFIRMED: "조직 확인 전",
@@ -48,12 +48,12 @@ function EquipmentRowDetail({ item }: { item: OwnedEquipment }) {
     <dt>주요 사양</dt>
     <dd>{data?.specs?.length ? data.specs.map((spec) => <span key={spec.key}>{spec.label ?? spec.key} {valueText(spec)}
       {spec.verificationStatus === "NOT_VERIFIED" && <small> (미검증)</small>}</span>) : "등록된 사양 없음"}</dd>
-    <dt>이용료</dt><dd>{usage?.feeText ?? data?.feeText ?? "입력 필요"}</dd>
+    <dt>이용료</dt><dd>{formatFee(usage?.feeText ?? data?.feeText, "입력 필요")}</dd>
     <dt>이용 범위</dt><dd>{accessScopeLabels[usage?.accessScope ?? ""] ?? "입력 필요"}</dd>
     <dt>제조사</dt><dd>{data?.manufacturer ?? "입력 필요"}</dd>
     <dt>정비 일정</dt>
     <dd>{downtimes.loading ? "불러오는 중" : upcoming.length ? upcoming.map((d) =>
-      <span key={d.id}>{seoulDate(d.startAt)} ~ {seoulDate(d.endAt)}, {d.reason}</span>) : "예정된 정비 없음"}</dd>
+      <span key={d.id}>{formatRange(d.startAt, d.endAt)}, {d.reason}</span>) : "예정된 정비 없음"}</dd>
     {data?.description && <><dt>활용 설명</dt><dd>{data.description}</dd></>}
   </dl>;
 }
@@ -74,7 +74,7 @@ function DowntimeDialog({ equipment, onClose }: { equipment: OwnedEquipment; onC
     <div className="request-form__body" style={{ paddingTop: 12 }}>
       {query.loading || query.error ? <ApiState loading={query.loading} error={query.error} onRetry={query.reload} /> :
         query.data?.length ? <table className="data-table"><tbody>{query.data.map((item) => <tr key={item.id}>
-          <td>{formatDate(item.startAt)} ~ {formatDate(item.endAt)}<small>{item.reason}</small></td>
+          <td>{formatRange(item.startAt, item.endAt)}<small>{item.reason}</small></td>
           <td className="cell-actions"><Button variant="ghost" className="button--sm" disabled={action.busy}
             onClick={() => action.run(() => catalogService.deleteDowntime(equipment.id, item.id), "정비 일정을 지웠습니다.")}>삭제</Button></td>
         </tr>)}</tbody></table> : <p className="inline-empty">등록된 정비 일정이 없습니다.</p>}
@@ -216,7 +216,7 @@ export default function EquipmentManager(_props: { setActiveMenu: (menu: string)
                 <HStack gap={1}><AxBadge variant={item.needsUpdate ? "warning" : "success"} label={item.needsUpdate ? "갱신 필요" : "최신"} />
                   {item.isMock && <AxBadge variant="neutral" label="시연" />}</HStack>
                 <Text type="supporting" color="secondary">{[...(item.updateReasons ?? []).map((reason) => updateReasonLabels[reason] ?? reason),
-                  item.infoUpdatedAt ? `${seoulDate(item.infoUpdatedAt)} 갱신${item.daysSinceUpdate != null ? ` (${item.daysSinceUpdate}일 전)` : ""}` : null].filter(Boolean).join(", ")}</Text>
+                  item.infoUpdatedAt ? `${formatAgo(item.infoUpdatedAt)} 갱신` : null].filter(Boolean).join(", ")}</Text>
               </VStack> },
               { key: "actions", header: <span className="sr-only">동작</span>, width: pixel(230), align: "end", renderCell: (item) => <HStack gap={1} hAlign="end">
                 <Button variant="secondary" className="button--sm" icon={Pencil} disabled={action.busy} onClick={() => setEditing(item.id)}>수정</Button>

@@ -14,8 +14,8 @@ import RequestDetailDialog from "./workflow/RequestDetailDialog";
 import ApiState from "./ui/ApiState";
 import { requestStatusLabels } from "../domain/constants";
 import { groupedStages } from "../domain/requestStages";
-import { seoulDate } from "../domain/calendar";
 import type { RequestBox, RequestSummary } from "../services/contracts";
+import { formatDay, formatRange } from "../domain/format";
 
 // 상태 필터는 자주 쓰는 묶음 + 개별 상태
 const quickFilters: { id: string; label: string; statuses: string[] }[] = [
@@ -127,10 +127,10 @@ export default function ReservationCheck({
               { key: "schedule", header: "희망 기간", width: pixel(150), renderCell: (item) => {
                 const start = item.desiredStartDate ?? item.revision?.content?.schedule?.desiredStartDate;
                 const end = item.desiredEndDate ?? item.revision?.content?.schedule?.desiredEndDate;
-                return <Text hasTabularNumbers color={start ? "primary" : "secondary"}>{start ? `${start}${end ? ` ~ ${end.slice(5)}` : ""}` : "미정"}</Text>;
+                return <Text hasTabularNumbers color={start ? "primary" : "secondary"}>{formatRange(start, end, false)}</Text>;
               } },
               { key: "submittedAt", header: "접수일", width: pixel(110), renderCell: (item) =>
-                <Text hasTabularNumbers color={item.submittedAt ? "primary" : "secondary"}>{item.submittedAt ? seoulDate(item.submittedAt) : "미제출"}</Text> },
+                <Text hasTabularNumbers color={item.submittedAt ? "primary" : "secondary"}>{formatDay(item.submittedAt, "미제출")}</Text> },
               { key: "actions", header: <span className="sr-only">동작</span>, width: pixel(190), align: "end", renderCell: (item) => <HStack gap={1} hAlign="end">
                 {!received && item.status === "DRAFT" && <Button variant="secondary" className="button--sm" onClick={() => continueDraft(item.id)}>이어서 작성</Button>}
                 <Button variant="ghost" className="button--sm" onClick={() => setSelected(item.id)}>상세</Button>

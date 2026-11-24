@@ -7,6 +7,7 @@ import { catalogService } from "../services/catalogService";
 import ApiState from "./ui/ApiState";
 import { DemoNotice } from "./workflow/Feedback";
 import { availabilityLabels, valueText } from "../domain/constants";
+import { formatDay, formatFee } from "../domain/format";
 
 const usageLabels = { feeText: "이용료", durationText: "기간", availability: "가용 상태", infoUpdatedAt: "갱신일" };
 
@@ -83,7 +84,7 @@ export default function EquipmentCompare({ setActiveMenu }: { setActiveMenu: (me
                       const value = item[key];
                       return <td key={item.equipmentId}>
                         {!value || value === "UNKNOWN" ? "확인 필요" : key === "availability" ? availabilityLabels[value] ?? value :
-                          key === "infoUpdatedAt" ? String(value).slice(0, 10) : value}
+                          key === "infoUpdatedAt" ? formatDay(String(value)) : key === "feeText" ? formatFee(String(value)) : value}
                       </td>;
                     })}
                   </tr>

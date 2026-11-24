@@ -1,7 +1,7 @@
 import { lazy, Suspense, useState } from "react";
 import { ArrowRight, Info } from "lucide-react";
 import { canAccessMenu } from "../auth/permissions";
-import { availabilityLabels, availabilityTone, formatDate } from "../domain/constants";
+import { availabilityLabels, availabilityTone } from "../domain/constants";
 import { useWorkspace } from "../context/AppContext";
 import { catalogService } from "../services/catalogService";
 import { Table, proportional, pixel } from "@astryxdesign/core/Table";
@@ -16,25 +16,14 @@ import { DemoNotice, Feedback } from "./workflow/Feedback";
 import SimulationChart from "./workflow/SimulationChart";
 import ApiState from "./ui/ApiState";
 import SimulationExports from "./workflow/SimulationExports";
+import { formatAgo } from "../domain/format";
+import { simulationLabel, simulationValue } from "../domain/simulationLabels";
 const SimulationStage = lazy(() => import("./workflow/SimulationStage"));
 /** 계산 방식 코드 → 화면 이름 */
 const capabilityLabels: Record<string, string> = {
   CALCULATED_DEMO: "계산 모델(참고용)",
   RULE_BASED_DEMO: "규칙 기반(참고용)",
   VISUAL_DEMO: "개념 시각화(참고용)",
-};
-const labels = {
-  massKg: "시료 질량 (kg)",
-  fixtureMassKg: "고정구 질량 (kg)",
-  stiffnessNPerM: "가상 강성 (N/m)",
-  dampingRatio: "감쇠비 (0 초과~1)",
-  frequencyMinHz: "시작 주파수 (Hz)",
-  frequencyMaxHz: "종료 주파수 (Hz)",
-  startTempC: "시작 온도 (°C)",
-  targetTempC: "목표 온도 (°C)",
-  rampMin: "승온 시간 (분)",
-  holdMin: "유지 시간 (분)",
-  targetHumidityPct: "목표 습도 (%)",
 };
 /**
  * 가상 시험: 장비 예약이 차 있거나 일정이 멀어도, 기업이 결과를 대략 가늠해 볼 수 있게 한다.
@@ -220,7 +209,7 @@ export default function Simulation({ setActiveMenu }: { setActiveMenu?: (menu: s
                 <FormField
                   key={field}
                   id={`simulation-${field}`}
-                  label={labels[field] ?? field}
+                  label={simulationLabel(field)}
                 >
                   <input
                     id={`simulation-${field}`}
@@ -279,11 +268,9 @@ export default function Simulation({ setActiveMenu }: { setActiveMenu?: (menu: s
               {Object.entries(result.output.summary).map(([key, value]) => (
                 <div key={key}>
                   <dt>
-                    {key === "naturalFrequencyHz"
-                      ? "가상 고유진동수 (Hz)"
-                      : key}
+                    {simulationLabel(key)}
                   </dt>
-                  <dd>{value}</dd>
+                  <dd>{simulationValue(value)}</dd>
                 </div>
               ))}
             </dl>
@@ -354,7 +341,7 @@ export default function Simulation({ setActiveMenu }: { setActiveMenu?: (menu: s
               { key: "model", header: "계산 내용", width: proportional(2), renderCell: (r) =>
                 <Text color="secondary">{models.data?.find((m) => m.modelType === r.modelType)?.description ?? "가상 시험"}</Text> },
               { key: "createdAt", header: "실행 시각", width: pixel(180), renderCell: (r) =>
-                <Text hasTabularNumbers color="secondary">{r.createdAt ? formatDate(r.createdAt) : "기록 없음"}</Text> },
+                <Text hasTabularNumbers color="secondary">{formatAgo(r.createdAt)}</Text> },
               { key: "open", header: <span className="sr-only">동작</span>, width: pixel(110), align: "end", renderCell: (r) =>
                 <Button variant="ghost" className="button--sm" onClick={() =>
                   action.run(async (signal) => {

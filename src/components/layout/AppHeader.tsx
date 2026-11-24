@@ -12,10 +12,11 @@ import { useAuth } from "../../auth/context";
 import { useTheme } from "../../theme/useTheme";
 import { useApiQuery } from "../../hooks/useApiQuery";
 import { notificationService } from "../../services/notificationService";
-import { formatDate, roleLabels } from "../../domain/constants";
+import { roleLabels } from "../../domain/constants";
 import { notificationTypeLabels, useOpenNotification } from "../../domain/notifications";
 import SearchAutocomplete from "../ui/SearchAutocomplete";
 import type { SearchPick } from "../ui/SearchAutocomplete";
+import { formatAgo } from "../../domain/format";
 
 /**
  * 상단 바(Astryx TopNav): 가운데 장비 검색(자동완성), 오른쪽 알림·테마·내 계정.
@@ -72,7 +73,7 @@ export default function AppHeader({ activeMenu, onSearch, onBack, canGoBack, onN
               ? (recent.data?.content ?? []).map((item) => ({
                 id: String(item.id),
                 label: item.title,
-                description: `${notificationTypeLabels[item.type] ?? "알림"}, ${formatDate(item.createdAt)}${item.isRead ? "" : ", 새 알림"}`,
+                description: `${notificationTypeLabels[item.type] ?? "알림"}, ${formatAgo(item.createdAt)}${item.isRead ? "" : ", 새 알림"}`,
                 onClick: () => void openNotification(item),
               }))
               : [{ id: "empty", label: recent.loading ? "불러오는 중…" : "알림이 없습니다", isDisabled: true }]),
