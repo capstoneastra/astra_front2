@@ -8,7 +8,6 @@ import { Badge as AxBadge } from "@astryxdesign/core/Badge";
 import { Link } from "@astryxdesign/core/Link";
 import { Text } from "@astryxdesign/core/Text";
 import { HStack } from "@astryxdesign/core/HStack";
-import { VStack } from "@astryxdesign/core/VStack";
 import { useWorkspace } from "../context/AppContext";
 import { Button, Panel } from "./ui";
 import { useApiQuery } from "../hooks/useApiQuery";
@@ -47,6 +46,22 @@ type Filters = typeof emptyFilters;
  * - 숫자·단위가 섞인 문장("15kg, 20~2000Hz 진동시험") → GET /search?q= 로 해석
  */
 
+
+/**
+ * 주요 사양 2개와 이용료. 목록 응답에는 없어서 장비 상세(GET /equipment/{id})를 불러온다.
+ * 상세 창과 같은 캐시 키를 써서 같은 장비는 한 번만 불러온다.
+ */
+function SpecSummary({ id }: { id: number }) {
+  const { resolveEquipment, user } = useWorkspace();
+  const detail = useApiQuery((signal) => resolveEquipment(id, signal), `equipment-detail:${user.id}:${id}`);
+  if (detail.loading) return <Text type="supporting" color="secondary">불러오는 중…</Text>;
+  const specs = [...(detail.data?.specs ?? [])].sort((a, b) => (a.sourceType === "REAL" ? -1 : 0) - (b.sourceType === "REAL" ? -1 : 0)).slice(0, 2);
+  const fee = detail.data?.usage?.feeText ?? detail.data?.feeText;
+  return <Text type="supporting" maxLines={2}>
+    {specs.length ? specs.map((spec) => `${spec.label ?? spec.key} ${valueText(spec)}`).join(", ") : "사양 확인 필요"}
+    <Text type="supporting" color="secondary">{`, ${fee ?? "이용료 문의"}`}</Text>
+  </Text>;
+}
 
 /** 장비 가용 상태 → 상태 점 색 */
 const availabilityDot: Record<string, "success" | "warning" | "error" | "accent" | "neutral"> = {
@@ -284,14 +299,14 @@ export default function EquipmentSearch({
                 return <CheckboxInput label={`${item.name} 비교에 담기`} isLabelHidden value={checked}
                   isDisabled={!checked && comparisonIds.length >= 5} onChange={(next) => toggleCompare(item.id, next)} />;
               } }] : []),
-              { key: "name", header: "장비", width: proportional(2, { minWidth: 200 }), renderCell: (item) => <VStack gap={0.5}>
+              // 회의(11/24): 카드 대신 한 줄. 장비명 옆에 모델, 기관 옆에 지역
+              { key: "name", header: "장비", width: proportional(2, { minWidth: 200 }), renderCell: (item) => <HStack gap={1.5} vAlign="center" wrap="wrap">
                 <Link onClick={() => setDetailEquipment(item)} weight="semibold" color="primary">{item.name}</Link>
-                <Text type="supporting" color="secondary">{[item.model, item.externalId].filter(Boolean).join(", ")}</Text>
-              </VStack> },
-              { key: "institution", header: "보유 조직", width: proportional(1.5), renderCell: (item) => <VStack gap={0.5}>
-                <Text>{item.institution || "확인 필요"}</Text>
-                <Text type="supporting" color="secondary">{item.region ?? "지역 확인 필요"}</Text>
-              </VStack> },
+                {item.model && <Text type="supporting" color="secondary">{item.model}</Text>}
+              </HStack> },
+              { key: "institution", header: "보유 조직", width: proportional(1.4), renderCell: (item) =>
+                <Text maxLines={1}>{[item.institution || "확인 필요", item.region].filter(Boolean).join(", ")}</Text> },
+              { key: "specs", header: "주요 사양과 이용료", width: proportional(1.8), renderCell: (item) => <SpecSummary id={item.id} /> },
               { key: "testTypes", header: "시험유형", width: proportional(1), renderCell: (item) => <HStack gap={1} wrap="wrap">
                 {item.testTypes.length ? item.testTypes.map((code) => <AxBadge key={code} variant="neutral" label={testTypeLabel(code)} />) :
                   <Text color="secondary">없음</Text>}
