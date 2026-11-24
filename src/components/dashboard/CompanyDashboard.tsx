@@ -20,7 +20,8 @@ import { loadCalendar } from "../../services/calendarService";
 import WeekCalendar from "./WeekCalendar";
 import type { RequestBox } from "../../services/contracts";
 import { dayStart, seoulDate } from "../../domain/calendar";
-import { availabilityLabels, valueText } from "../../domain/constants";
+import { availabilityLabels, requestStatusLabels, valueText } from "../../domain/constants";
+import { formatAgo } from "../../domain/format";
 import { toApiError } from "../../api/errors";
 import { Button, Panel, TextLink } from "../ui";
 import ApiState from "../ui/ApiState";
@@ -169,26 +170,27 @@ export default function CompanyDashboard({ setActiveMenu, openRequest }: Props) 
     return stages.map((stage) => rows.filter((row) => stage.statuses.includes(row.status)).length);
   }, [list.data]);
   const todo = summary.data?.actionRequired ?? [];
+  const rowsById = new Map((list.data?.content ?? []).map((row) => [row.id, row]));
 
   return <>
     <AiExplore setActiveMenu={setActiveMenu} />
 
-    {/* 의뢰 진행 단계: 작게 한 줄 */}
-    <nav className="stage-strip" aria-label="내 의뢰 단계">
-      {stages.map((stage, index) => <button key={stage.label} type="button" className={counts[index] ? "has-count" : ""}
-        onClick={() => openRequest("SENT", undefined, stage.id)}>
-        <span>{stage.label}</span><strong>{list.data ? counts[index] : "–"}</strong>
-      </button>)}
-    </nav>
 
-    <Panel title={`지금 처리할 일 ${todo.length || ""}`} action={<TextLink onClick={() => setActiveMenu("sent")}>내 의뢰</TextLink>}>
+    <div className="dash-grid dash-grid--stretch">
+      <Panel title={`지금 처리할 일 ${todo.length || ""}`} action={<TextLink onClick={() => setActiveMenu("sent")}>내 의뢰</TextLink>}>
         {summary.loading || summary.error ? <ApiState loading={summary.loading} error={summary.error} onRetry={summary.reload} /> :
           todo.length === 0 ? <p className="inline-empty">지금 처리할 일이 없습니다.</p> :
           <List hasDividers density="compact">
             {todo.map((item) => {
               const due = dDay(item.dueDate);
+              // 요약 응답에는 장비·시험기관이 없어서, 이미 불러온 내 의뢰 목록에서 찾아 붙인다
+              const row = rowsById.get(item.requestId);
               return <ListItem key={item.requestId} itemKey={item.requestId} onClick={() => openRequest("SENT", item.requestId)}
-                label={item.title} description={item.institutionName ?? undefined}
+                startContent={<span className={`todo-status todo-status--${item.status === "SUPPLEMENT_REQUESTED" ? "warn" : "plain"}`}>
+                  {requestStatusLabels[item.status as keyof typeof requestStatusLabels] ?? item.status}</span>}
+                label={item.title}
+                description={[row?.equipment?.name, row?.institution?.name ?? item.institutionName,
+                  item.submittedAt ? `${formatAgo(item.submittedAt)} 접수` : "아직 제출 전"].filter(Boolean).join(", ")}
                 endContent={<HStack gap={2} vAlign="center">
                   {due && <AxBadge variant={due.startsWith("기한") || due === "D-day" ? "error" : "warning"} label={due} />}
                   <Button variant="secondary" className="button--sm" onClick={() => openRequest("SENT", item.requestId)}>
@@ -198,6 +200,23 @@ export default function CompanyDashboard({ setActiveMenu, openRequest }: Props) 
             })}
           </List>}
       </Panel>
+      {/* 의뢰 진행 단계: 세로 흐름으로 작게. 내가 답할 차례(보완 요청)는 강조 */}
+      <Panel title={`내 의뢰 진행 ${list.data ? counts.reduce((sum, n) => sum + n, 0) : ""}`}
+        action={<TextLink onClick={() => setActiveMenu("sent")}>전체 보기</TextLink>}>
+        <ol className="stage-flow" aria-label="내 의뢰 단계별 건수">
+          {stages.map((stage, index) => <li key={stage.id}>
+            <button type="button" onClick={() => openRequest("SENT", undefined, stage.id)}
+              className={[counts[index] ? "has-count" : "", stage.id === "SUPPLEMENT_REQUESTED" && counts[index] ? "is-my-turn" : ""].filter(Boolean).join(" ")}>
+              <span className="stage-flow__dot" aria-hidden="true" />
+              <span className="stage-flow__label">{stage.label}</span>
+              {stage.id === "SUPPLEMENT_REQUESTED" && counts[index] > 0 && <small>내 차례</small>}
+              <strong>{list.data ? counts[index] : "–"}</strong>
+            </button>
+          </li>)}
+        </ol>
+      </Panel>
+    </div>
+
     <Panel title="다가오는 시험" description="이번 주와 다음 주"
       action={<TextLink onClick={() => setActiveMenu("calendar")}>전체 일정</TextLink>}>
       {calendar.loading || calendar.error ? <ApiState loading={calendar.loading} error={calendar.error} onRetry={calendar.reload} /> :
