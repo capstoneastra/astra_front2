@@ -2106,3 +2106,17 @@ button.hbars__row:hover { background: var(--color-overlay-hover); }
 .side-nav-frame .astryx-side-nav { transition: width var(--motion-base) var(--motion-ease); }
 .side-nav-frame[data-collapsed="true"] .astryx-side-nav { width: 64px; }
 @media (prefers-reduced-motion: reduce) { .side-nav-frame .astryx-side-nav { transition: none; } }
+
+/* 기관 대시보드: 현황 흐름의 보조 문구, 갱신 필요 장비 미니 목록 */
+.stage-flow__hint { display: block; color: var(--color-text-secondary); font-size: 11px; font-style: normal; }
+.stale-mini { display: grid; gap: 4px; margin: 4px 8px 8px; padding-top: 10px; border-top: 1px solid var(--color-border); }
+.stale-mini header { display: flex; align-items: center; justify-content: space-between; padding: 0 4px; }
+.stale-mini header strong { font-size: 13px; }
+.stale-mini ul { display: grid; margin: 0; padding: 0; list-style: none; }
+.stale-mini li button {
+  display: flex; gap: 10px; align-items: center; justify-content: space-between; width: 100%;
+  padding: 6px 8px; border: 0; border-radius: var(--radius-element); background: none; font: inherit; text-align: left; cursor: pointer;
+  transition: background-color var(--motion-fast) var(--motion-ease);
+}
+.stale-mini li button:hover { background: var(--color-overlay-hover); }
+.stale-mini__go { flex: none; color: var(--color-icon-accent); font-size: 12px; font-weight: 600; }

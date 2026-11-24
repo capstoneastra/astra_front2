@@ -1,4 +1,4 @@
-import { Database, Inbox, RefreshCw } from "lucide-react";
+import { RefreshCw } from "lucide-react";
 import { useWorkspace } from "../context/AppContext";
 import { useAuth } from "../auth/context";
 import { invalidateData } from "../api/cache";
@@ -23,10 +23,6 @@ export default function Home(props: HomeProps) {
   return <div className="work-dashboard page-enter">
     <PageHeader title="대시보드" description={user.organization?.name ?? "플랫폼 관리자"}>
       <Button variant="ghost" icon={RefreshCw} aria-label="새로고침" title="새로고침" disabled={local} onClick={invalidateData} />
-      {role === "INSTITUTION_MANAGER" && <>
-        <Button variant="secondary" icon={Database} onClick={() => props.setActiveMenu("equipment")}>우리 장비</Button>
-        <Button icon={Inbox} onClick={() => props.setActiveMenu("received")}>받은 의뢰</Button>
-      </>}
     </PageHeader>
     {role === "COMPANY_USER" ? <CompanyDashboard {...props} /> :
       role === "INSTITUTION_MANAGER" ? <InstitutionDashboard {...props} /> : <AdminDashboard {...props} />}
