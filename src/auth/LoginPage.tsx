@@ -6,7 +6,6 @@ import AuthCardLink from "./AuthCardLink";
 import { useAuth } from "./context";
 import { localWorkspaceAccounts } from "./localWorkspace";
 import type { LocalWorkspaceAccount } from "./localWorkspace";
-import LoginGuide from "./LoginGuide";
 
 const rememberedEmailKey = "astra.auth.remembered-email";
 const accountStatus: Record<string, string> = {
@@ -169,8 +168,6 @@ export default function LoginPage({ onEnterLocal }: { onEnterLocal?: (account: L
           </div>
         </div>
       )}
-      <LoginGuide />
-      <p className="login-card__note">신규 계정은 관리자 승인 후 이용할 수 있습니다.</p>
     </div>
   );
 }
