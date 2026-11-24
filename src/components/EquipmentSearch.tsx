@@ -334,7 +334,7 @@ export default function EquipmentSearch({
                   <span className="cell-2line__sub" title={tags || undefined}>{tags || " "}</span>
                 </span>;
               } },
-              { key: "actions", header: <span className="sr-only">동작</span>, width: pixel(canRequest ? 216 : 80), align: "end", renderCell: (item) => <HStack gap={1} hAlign="end">
+              { key: "actions", header: <span className="sr-only">동작</span>, width: pixel(canRequest ? 216 : canSimulate ? 164 : 80), align: "end", renderCell: (item) => <HStack gap={1} hAlign="end">
                 {canSimulate && item.availability !== "AVAILABLE" && <Button variant="ghost" className="button--sm"
                   title="예약이 차 있어도 결과를 미리 가늠해 볼 수 있습니다" onClick={() => openSimulation(item.id)}>가상 시험</Button>}
                 {canRequest ? <Button variant="secondary" className="button--sm"

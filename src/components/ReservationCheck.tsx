@@ -6,7 +6,6 @@ import { Table, proportional, pixel } from "@astryxdesign/core/Table";
 import { Badge as AxBadge } from "@astryxdesign/core/Badge";
 import { Link } from "@astryxdesign/core/Link";
 import { Text } from "@astryxdesign/core/Text";
-import { VStack } from "@astryxdesign/core/VStack";
 import { useApiQuery } from "../hooks/useApiQuery";
 import { requestService } from "../services/requestService";
 import { testTypeLabel } from "../services/equipmentService";
@@ -123,10 +122,15 @@ export default function ReservationCheck({
                   <span className="cell-2line__sub">{testType ? testTypeLabel(testType) : " "}</span>
                 </span>;
               } },
-              { key: "party", header: admin ? "맡긴 곳 / 맡은 곳" : received ? "맡긴 곳" : "맡은 곳", width: proportional(1.4), renderCell: (item) => admin
-                ? <VStack gap={0.5}><Text>{item.companyName ?? item.requester?.name ?? "정보 없음"}</Text>
-                  <Text type="supporting" color="secondary">{item.institution?.name ?? ""}</Text></VStack>
-                : <Text>{received ? item.companyName ?? item.requester?.name ?? "정보 없음" : item.institution?.name ?? "정보 없음"}</Text> },
+              { key: "party", header: admin ? "맡긴 곳 / 맡은 곳" : received ? "맡긴 곳" : "맡은 곳", width: proportional(1.4), renderCell: (item) => {
+                const company = item.companyName ?? item.requester?.name ?? "정보 없음";
+                const institution = item.institution?.name ?? "정보 없음";
+                const main = admin || received ? company : institution;
+                return <span className="cell-2line">
+                  <span className="cell-2line__main" title={main}>{main}</span>
+                  <span className="cell-2line__sub" title={admin ? institution : undefined}>{admin ? institution : " "}</span>
+                </span>;
+              } },
               { key: "status", header: "상태", width: pixel(110), renderCell: (item) =>
                 <AxBadge variant={statusVariant(item.status)} label={requestStatusLabels[item.status] ?? item.status} /> },
               { key: "schedule", header: "희망 기간", width: pixel(150), renderCell: (item) => {

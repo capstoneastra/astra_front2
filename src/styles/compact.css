@@ -2065,3 +2065,7 @@ button.hbars__row:hover { background: var(--color-overlay-hover); }
 .cell-2line__main--muted { color: var(--color-text-secondary); }
 .cell-2line__sub { min-height: 1.35em; color: var(--color-text-secondary); font-size: 12px; }
 .cell-status { display: inline-flex; gap: 6px; align-items: center; }
+.cell-warn { color: var(--color-text-warning); font-weight: 600; }
+/* 우리 장비 표(행 펼치기 표)는 예전 전역 td 여백(14px 20px)이 덮어써서 다른 표와 줄 높이가 달랐다. 같은 촘촘한 여백으로 */
+.equipment-manage tbody td { padding-block: 3px; padding-inline-end: 6px; }
+.equipment-manage tbody td:has(.equip-detail) { padding-block: 10px 12px; }

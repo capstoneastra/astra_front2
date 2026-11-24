@@ -3,11 +3,9 @@ import { CalendarClock, Pencil, Plus, Trash2, X } from "lucide-react";
 import { useWorkspace } from "../context/AppContext";
 import { Button, PageHeader, Panel } from "./ui";
 import { Table, proportional, pixel, useTableRowExpansion } from "@astryxdesign/core/Table";
-import { Badge as AxBadge } from "@astryxdesign/core/Badge";
 import { Link } from "@astryxdesign/core/Link";
-import { Text } from "@astryxdesign/core/Text";
+import { StatusDot } from "@astryxdesign/core/StatusDot";
 import { HStack } from "@astryxdesign/core/HStack";
-import { VStack } from "@astryxdesign/core/VStack";
 import ApiState from "./ui/ApiState";
 import { useApiQuery } from "../hooks/useApiQuery";
 import { useAction } from "../hooks/useAction";
@@ -160,7 +158,7 @@ export default function EquipmentManager(_props: { setActiveMenu: (menu: string)
         <Button icon={Plus} disabled={admin && !adminInstitution} onClick={() => setAdding((value) => !value)}>장비 등록</Button>
       </PageHeader>
 
-      <Panel>
+      <Panel className="equipment-manage">
       {adding && <section className="form-group">
         <header><h3>새 장비 등록</h3><Button variant="ghost" className="button--sm" onClick={() => setAdding(false)}>닫기</Button></header>
         <form onSubmit={(e) => { e.preventDefault(); handleAdd(); }}>
@@ -201,23 +199,35 @@ export default function EquipmentManager(_props: { setActiveMenu: (menu: string)
             hasHover
             plugins={{ expansion }}
             columns={[
-              { key: "name", header: "장비", width: proportional(2, { minWidth: 200 }), renderCell: (item) => <VStack gap={0.5}>
-                <Link onClick={() => setEditing(item.id)} weight="semibold" color="primary">{item.name}</Link>
-                <Text type="supporting" color="secondary">{[item.model, item.externalId, equipmentTypeLabels[item.equipmentType ?? ""]].filter(Boolean).join(", ")}</Text>
-              </VStack> },
-              { key: "testTypes", header: "시험 종류", width: proportional(1.2), renderCell: (item) => <HStack gap={1} wrap="wrap">
-                {item.testTypes.length ? item.testTypes.map((code) => <AxBadge key={code} variant="neutral" label={testTypeLabel(code)} />) : <Text color="secondary">없음</Text>}
-              </HStack> },
-              { key: "availability", header: "가용 상태", width: pixel(110), renderCell: (item) =>
-                <AxBadge variant={availabilityVariant(item.availability)} label={availabilityLabels[item.availability ?? "UNKNOWN"]} /> },
-              { key: "verificationStatus", header: "정보 확인", width: pixel(100), renderCell: (item) =>
-                <Text color={item.verificationStatus === "NEEDS_MANUAL_REVIEW" ? "secondary" : undefined}>{verificationLabels[item.verificationStatus ?? ""] ?? "확인 전"}</Text> },
-              { key: "update", header: "정보 갱신", width: proportional(1.3), renderCell: (item) => <VStack gap={0.5}>
-                <HStack gap={1}><AxBadge variant={item.needsUpdate ? "warning" : "success"} label={item.needsUpdate ? "갱신 필요" : "최신"} />
-                  {item.isMock && <AxBadge variant="neutral" label="예시" />}</HStack>
-                <Text type="supporting" color="secondary">{[...(item.updateReasons ?? []).map((reason) => updateReasonLabels[reason] ?? reason),
-                  item.infoUpdatedAt ? `${formatAgo(item.infoUpdatedAt)} 갱신` : null].filter(Boolean).join(", ")}</Text>
-              </VStack> },
+              // 장비 찾기와 같은 두 줄 고정 (윗줄 핵심, 아랫줄 보조, 길면 말줄임)
+              { key: "name", header: "장비", width: proportional(2, { minWidth: 180 }), renderCell: (item) => {
+                const sub = [item.model, equipmentTypeLabels[item.equipmentType ?? ""]].filter(Boolean).join(", ");
+                return <span className="cell-2line">
+                  <span className="cell-2line__main" title={item.name}><Link onClick={() => setEditing(item.id)} weight="semibold" color="primary">{item.name}</Link></span>
+                  <span className="cell-2line__sub" title={sub || undefined}>{sub || " "}</span>
+                </span>;
+              } },
+              { key: "testTypes", header: "시험 종류", width: proportional(1.1, { minWidth: 100 }), renderCell: (item) => <span className="cell-2line">
+                {item.testTypes.length ? <>
+                  <span className="cell-2line__main" title={item.testTypes.map(testTypeLabel).join(", ")}>{testTypeLabel(item.testTypes[0])}</span>
+                  <span className="cell-2line__sub">{item.testTypes.length > 1 ? `외 ${item.testTypes.length - 1}개` : " "}</span>
+                </> : <span className="cell-2line__main cell-2line__main--muted">없음</span>}
+              </span> },
+              { key: "availability", header: "가용 상태", width: pixel(118), renderCell: (item) => {
+                const label = availabilityLabels[item.availability ?? "UNKNOWN"];
+                return <span className="cell-2line">
+                  <span className="cell-2line__main cell-status"><StatusDot variant={availabilityVariant(item.availability)} label={label} />{label}</span>
+                  <span className="cell-2line__sub">{verificationLabels[item.verificationStatus ?? ""] ?? "확인 전"}</span>
+                </span>;
+              } },
+              { key: "update", header: "정보 갱신", width: proportional(1.4, { minWidth: 140 }), renderCell: (item) => {
+                const reasons = [...(item.updateReasons ?? []).map((reason) => updateReasonLabels[reason] ?? reason), item.isMock ? "예시" : null].filter(Boolean).join(", ");
+                return <span className="cell-2line">
+                  <span className={`cell-2line__main ${item.needsUpdate ? "cell-warn" : ""}`}>
+                    {item.needsUpdate ? "갱신 필요" : "최신"}{item.infoUpdatedAt ? `, ${formatAgo(item.infoUpdatedAt)} 갱신` : ""}</span>
+                  <span className="cell-2line__sub" title={reasons || undefined}>{reasons || " "}</span>
+                </span>;
+              } },
               { key: "actions", header: <span className="sr-only">동작</span>, width: pixel(230), align: "end", renderCell: (item) => <HStack gap={1} hAlign="end">
                 <Button variant="secondary" className="button--sm" icon={Pencil} disabled={action.busy} onClick={() => setEditing(item.id)}>수정</Button>
                 <Button variant="ghost" className="button--sm" icon={CalendarClock} onClick={() => setDowntime(item)}>정비 일정</Button>
