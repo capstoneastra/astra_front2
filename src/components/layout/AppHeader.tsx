@@ -1,10 +1,10 @@
-import { TopNav } from "@astryxdesign/core/TopNav";
+import { TopNav, TopNavHeading } from "@astryxdesign/core/TopNav";
 import { IconButton } from "@astryxdesign/core/IconButton";
 import { Button } from "@astryxdesign/core/Button";
 import { Badge } from "@astryxdesign/core/Badge";
 import { HStack } from "@astryxdesign/core/HStack";
 import { DropdownMenu } from "@astryxdesign/core/DropdownMenu";
-import { ArrowLeft, Bell, LogOut, Moon, Sun, UserRoundPen } from "lucide-react";
+import { ArrowLeft, Bell, LogOut, Moon, Satellite, Sun, UserRoundPen } from "lucide-react";
 import { menuLabel, navigationByRole } from "../../data/navigation";
 import { canAccessMenu } from "../../auth/permissions";
 import { useAuth } from "../../auth/context";
@@ -16,13 +16,16 @@ import { notificationTypeLabels, useOpenNotification } from "../../domain/notifi
 import SearchAutocomplete from "../ui/SearchAutocomplete";
 import type { SearchPick } from "../ui/SearchAutocomplete";
 import { formatAgo } from "../../domain/format";
+import HomeLinkProvider from "./HomeLinkProvider";
 
 /**
  * 상단 바(Astryx TopNav): 가운데 장비 검색(자동완성), 오른쪽 알림·테마·내 계정.
  * 뒤로가기는 메뉴에 없는 하위 화면(비교·내 정보 등)에서만 보인다.
  */
-export default function AppHeader({ activeMenu, onSearch, onBack, canGoBack, onNotifications, onProfile, onOpenRequest }: {
+export default function AppHeader({ activeMenu, onSearch, onBack, canGoBack, onNotifications, onProfile, onOpenRequest, onHome }: {
   activeMenu: string;
+  /** 왼쪽 위 로고를 누르면 대시보드로 */
+  onHome: () => void;
   onSearch: (query: string, options?: { institutionId?: number; testType?: string; sentence?: boolean; equipmentId?: number }) => void;
   onBack: () => void;
   canGoBack: boolean;
@@ -53,8 +56,11 @@ export default function AppHeader({ activeMenu, onSearch, onBack, canGoBack, onN
   const unread = Number(unreadCount ?? 0);
 
   return (
+    <HomeLinkProvider onHome={onHome}>
     <TopNav
       label="상단 메뉴"
+      heading={<TopNavHeading heading="ASTRA" headingHref="/" subheading={user.organization?.name ?? "플랫폼 관리자"}
+        logo={<Satellite size={24} aria-hidden="true" className="topnav-logo" />} />}
       startContent={<HStack gap={2} vAlign="center">
         {!isMenuPage && canGoBack && <Button variant="ghost" size="sm" icon={<ArrowLeft size={16} />}
           label={menuLabel(user.role, activeMenu) || "이전"} onClick={onBack} />}
@@ -103,5 +109,6 @@ export default function AppHeader({ activeMenu, onSearch, onBack, canGoBack, onN
         />
       </HStack>}
     />
+    </HomeLinkProvider>
   );
 }

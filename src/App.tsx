@@ -236,6 +236,7 @@ function Workspace() {
           onNotifications={() => navigate("notifications")}
           onProfile={() => navigate("profile")}
           onOpenRequest={openRequestFromNotification}
+          onHome={() => navigate("home")}
         />}
       >
         <div id="main-content" className="main-content" tabIndex={-1}>

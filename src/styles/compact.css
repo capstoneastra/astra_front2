@@ -2054,3 +2054,14 @@ button.hbars__row:hover { background: var(--color-overlay-hover); }
   white-space: nowrap;
 }
 .account-trigger:hover .account-trigger__role { filter: brightness(1.08); }
+
+/* 상단 바 로고 아이콘은 강조색 */
+.topnav-logo { color: var(--color-icon-accent); }
+
+/* ── 표 칸: 두 줄 고정 (윗줄 핵심, 아랫줄 보조), 길면 말줄임 ── */
+.cell-2line { display: grid; gap: 1px; min-width: 0; line-height: 1.35; }
+.cell-2line__main, .cell-2line__sub { display: block; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cell-2line__main { color: var(--color-text-primary); font-size: 14px; }
+.cell-2line__main--muted { color: var(--color-text-secondary); }
+.cell-2line__sub { min-height: 1.35em; color: var(--color-text-secondary); font-size: 12px; }
+.cell-status { display: inline-flex; gap: 6px; align-items: center; }

@@ -23,6 +23,13 @@ interface ApiClientOptions {
   adapter?: AxiosRequestConfig["adapter"];
 }
 
+/**
+ * AI를 거치는 요청은 오래 걸린다. 백엔드는 AI 응답을 45초까지 기다리므로(GeminiLlmClient·AnthropicLlmClient),
+ * 화면이 먼저(기본 15초) 포기하지 않게 60초까지 기다린다.
+ */
+const AI_TIMEOUT = 60000;
+const aiRequest = /\/chat\/sessions\/[^/]+\/(messages|requirement)$|\/test-requests\/ai-draft$|\/requirements\/[^/]+\/(match-runs|analyze)$|^\/?ai\//;
+
 const localWorkspaceAdapter = () => Promise.reject(new ApiError("백엔드 연결 후 이 기능을 이용할 수 있습니다.", { code: "LOCAL_WORKSPACE" }));
 
 export function createApiClient({
@@ -90,6 +97,7 @@ export function createApiClient({
 
   client.interceptors.request.use((config) => {
     if (config.adapter === localWorkspaceAdapter) return config;
+    if (config.method?.toLowerCase() !== "get" && aiRequest.test(config.url ?? "")) config.timeout = AI_TIMEOUT;
     config.sessionVersion ??= store.getVersion();
     if (config.retriedAfterRefresh && config.sessionVersion !== store.getVersion())
       throw aborted();

@@ -1,21 +1,21 @@
 import { useState } from "react";
-import { CalendarDays, Send } from "lucide-react";
+import { CalendarDays, ChevronRight, Send } from "lucide-react";
 import { useWorkspace } from "../context/AppContext";
 import { Button, PageHeader, Panel } from "./ui";
 import { Table, proportional, pixel } from "@astryxdesign/core/Table";
 import { Badge as AxBadge } from "@astryxdesign/core/Badge";
 import { Link } from "@astryxdesign/core/Link";
 import { Text } from "@astryxdesign/core/Text";
-import { HStack } from "@astryxdesign/core/HStack";
 import { VStack } from "@astryxdesign/core/VStack";
 import { useApiQuery } from "../hooks/useApiQuery";
 import { requestService } from "../services/requestService";
+import { testTypeLabel } from "../services/equipmentService";
 import RequestDetailDialog from "./workflow/RequestDetailDialog";
 import ApiState from "./ui/ApiState";
 import { requestStatusLabels } from "../domain/constants";
 import { groupedStages } from "../domain/requestStages";
 import type { RequestBox, RequestSummary } from "../services/contracts";
-import { formatDay, formatRange } from "../domain/format";
+import { formatDay } from "../domain/format";
 
 // 상태 필터는 자주 쓰는 묶음 + 개별 상태
 const quickFilters: { id: string; label: string; statuses: string[] }[] = [
@@ -70,6 +70,7 @@ export default function ReservationCheck({
     `requests:${user.id}:${box ?? "ALL"}:${status}`,
   );
   const rows: Row[] = query.data ?? [];
+  const hasDraftAction = !received && rows.some((row) => row.status === "DRAFT");
   const continueDraft = (id: number) => {
     setSelectedEquipment(null);
     setDraftRequestId(id);
@@ -110,14 +111,18 @@ export default function ReservationCheck({
             density="compact"
             hasHover
             columns={[
-              { key: "title", header: "의뢰", width: proportional(2, { minWidth: 200 }), renderCell: (item) => <VStack gap={0.5}>
-                <Link onClick={() => setSelected(item.id)} weight="semibold" color="primary">{item.title || item.requestNo}</Link>
-                <Text type="supporting" color="secondary">{item.requestNo}</Text>
-              </VStack> },
-              { key: "equipment", header: "장비", width: proportional(1.4), renderCell: (item) => <VStack gap={0.5}>
-                <Text>{item.equipment?.name ?? "없음"}</Text>
-                <Text type="supporting" color="secondary">{item.equipment?.externalId ?? ""}</Text>
-              </VStack> },
+              { key: "title", header: "의뢰", width: proportional(2, { minWidth: 200 }), renderCell: (item) => <span className="cell-2line">
+                <span className="cell-2line__main" title={item.title || item.requestNo}>
+                  <Link onClick={() => setSelected(item.id)} weight="semibold" color="primary">{item.title || item.requestNo}</Link></span>
+                <span className="cell-2line__sub">{item.requestNo}</span>
+              </span> },
+              { key: "equipment", header: "장비", width: proportional(1.4), renderCell: (item) => {
+                const testType = item.revision?.content?.test?.testTypeCode;
+                return <span className="cell-2line">
+                  <span className="cell-2line__main" title={item.equipment?.name ?? undefined}>{item.equipment?.name ?? "장비 미정"}</span>
+                  <span className="cell-2line__sub">{testType ? testTypeLabel(testType) : " "}</span>
+                </span>;
+              } },
               { key: "party", header: admin ? "맡긴 곳 / 맡은 곳" : received ? "맡긴 곳" : "맡은 곳", width: proportional(1.4), renderCell: (item) => admin
                 ? <VStack gap={0.5}><Text>{item.companyName ?? item.requester?.name ?? "정보 없음"}</Text>
                   <Text type="supporting" color="secondary">{item.institution?.name ?? ""}</Text></VStack>
@@ -127,14 +132,20 @@ export default function ReservationCheck({
               { key: "schedule", header: "희망 기간", width: pixel(150), renderCell: (item) => {
                 const start = item.desiredStartDate ?? item.revision?.content?.schedule?.desiredStartDate;
                 const end = item.desiredEndDate ?? item.revision?.content?.schedule?.desiredEndDate;
-                return <Text hasTabularNumbers color={start ? "primary" : "secondary"}>{formatRange(start, end, false)}</Text>;
+                // 두 줄: 시작일 / ~ 종료일 (한 줄에 넣으면 줄바꿈되어 줄 높이가 들쭉날쭉해진다)
+                if (!start) return <span className="cell-2line"><span className="cell-2line__main cell-2line__main--muted">미정</span></span>;
+                return <span className="cell-2line">
+                  <span className="cell-2line__main">{formatDay(start)}</span>
+                  <span className="cell-2line__sub">{end && end !== start ? `~ ${formatDay(end)}` : " "}</span>
+                </span>;
               } },
-              { key: "submittedAt", header: "접수일", width: pixel(110), renderCell: (item) =>
+              { key: "submittedAt", header: "접수일", width: pixel(104), renderCell: (item) =>
                 <Text hasTabularNumbers color={item.submittedAt ? "primary" : "secondary"}>{formatDay(item.submittedAt, "미제출")}</Text> },
-              { key: "actions", header: <span className="sr-only">동작</span>, width: pixel(190), align: "end", renderCell: (item) => <HStack gap={1} hAlign="end">
-                {!received && item.status === "DRAFT" && <Button variant="secondary" className="button--sm" onClick={() => continueDraft(item.id)}>이어서 작성</Button>}
-                <Button variant="ghost" className="button--sm" onClick={() => setSelected(item.id)}>상세</Button>
-              </HStack> },
+              // 한 줄에 버튼 하나: 작성 중이면 '이어서 작성', 아니면 '상세' (작성 중 의뢰의 상세는 제목을 누르면 열린다)
+              { key: "actions", header: <span className="sr-only">동작</span>, width: pixel(hasDraftAction ? 112 : 92), align: "end", renderCell: (item) =>
+                !received && item.status === "DRAFT"
+                  ? <Button className="button--sm" onClick={() => continueDraft(item.id)}>이어서 작성</Button>
+                  : <Button variant="secondary" className="button--sm" icon={ChevronRight} onClick={() => setSelected(item.id)}>상세</Button> },
             ]}
           />}
       </Panel>

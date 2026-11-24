@@ -4,9 +4,7 @@ import SearchAutocomplete from "./ui/SearchAutocomplete";
 import { Table, proportional, pixel } from "@astryxdesign/core/Table";
 import { CheckboxInput } from "@astryxdesign/core/CheckboxInput";
 import { StatusDot } from "@astryxdesign/core/StatusDot";
-import { Badge as AxBadge } from "@astryxdesign/core/Badge";
 import { Link } from "@astryxdesign/core/Link";
-import { Text } from "@astryxdesign/core/Text";
 import { HStack } from "@astryxdesign/core/HStack";
 import { useWorkspace } from "../context/AppContext";
 import { Button, Panel } from "./ui";
@@ -52,17 +50,18 @@ type Filters = typeof emptyFilters;
 /** 주요 사양 2개와 이용료 한 줄 */
 function SpecLine({ specs, fee }: { specs: EquipmentSpec[]; fee?: string | null }) {
   const top = [...specs].sort((a, b) => (a.sourceType === "REAL" ? -1 : 0) - (b.sourceType === "REAL" ? -1 : 0)).slice(0, 2);
-  return <Text type="supporting" maxLines={2}>
-    {top.length ? top.map((spec) => `${spec.label ?? spec.key} ${valueText(spec)}`).join(", ") : "사양 정보 없음"}
-    <Text type="supporting" color="secondary">{`, ${formatFee(fee)}`}</Text>
-  </Text>;
+  const specText = top.length ? top.map((spec) => `${spec.label ?? spec.key} ${valueText(spec)}`).join(", ") : "사양 정보 없음";
+  return <span className="cell-2line">
+    <span className="cell-2line__main" title={specText}>{specText}</span>
+    <span className="cell-2line__sub">{formatFee(fee)}</span>
+  </span>;
 }
 
 /** 목록 응답에 keySpecs·usage가 없을 때(AI 검색 결과, 서버 없이 보기)만 장비 상세를 불러온다. */
 function SpecFromDetail({ id }: { id: number }) {
   const { resolveEquipment, user } = useWorkspace();
   const detail = useApiQuery((signal) => resolveEquipment(id, signal), `equipment-detail:${user.id}:${id}`);
-  if (detail.loading) return <Text type="supporting" color="secondary">불러오는 중…</Text>;
+  if (detail.loading) return <span className="cell-2line"><span className="cell-2line__sub">불러오는 중…</span></span>;
   return <SpecLine specs={detail.data?.specs ?? []} fee={detail.data?.usage?.feeText ?? detail.data?.feeText} />;
 }
 
@@ -308,31 +307,34 @@ export default function EquipmentSearch({
                 return <CheckboxInput label={`${item.name} 비교에 담기`} isLabelHidden value={checked}
                   isDisabled={!checked && comparisonIds.length >= 5} onChange={(next) => toggleCompare(item.id, next)} />;
               } }] : []),
-              // 회의(11/24): 카드 대신 한 줄. 장비명 옆에 모델, 기관 옆에 지역
-              { key: "name", header: "장비", width: proportional(2, { minWidth: 200 }), renderCell: (item) => <HStack gap={1.5} vAlign="center" wrap="wrap">
-                <Link onClick={() => setDetailEquipment(item)} weight="semibold" color="primary">{item.name}</Link>
-                {item.model && <Text type="supporting" color="secondary">{item.model}</Text>}
-              </HStack> },
-              { key: "institution", header: "시험기관", width: proportional(1.4), renderCell: (item) =>
-                <Text maxLines={1}>{[item.institution || "정보 없음", item.region].filter(Boolean).join(", ")}</Text> },
-              { key: "specs", header: "주요 사양과 이용료", width: proportional(1.8), renderCell: (item) => <SpecSummary item={item} /> },
-              { key: "testTypes", header: "시험 종류", width: proportional(1), renderCell: (item) => <HStack gap={1} wrap="wrap">
-                {item.testTypes.length ? item.testTypes.map((code) => <AxBadge key={code} variant="neutral" label={testTypeLabel(code)} />) :
-                  <Text color="secondary">없음</Text>}
-              </HStack> },
-              { key: "availability", header: "상태", width: proportional(1.2), renderCell: (item) => {
+              // 모든 줄을 같은 높이(두 줄)로: 윗줄 핵심, 아랫줄 보조. 길면 말줄임, 마우스를 올리면 전체가 보인다.
+              { key: "name", header: "장비", width: proportional(2.2, { minWidth: 180 }), renderCell: (item) => <span className="cell-2line">
+                <span className="cell-2line__main" title={item.name}><Link onClick={() => setDetailEquipment(item)} weight="semibold" color="primary">{item.name}</Link></span>
+                <span className="cell-2line__sub" title={item.model ?? undefined}>{item.model || "모델 정보 없음"}</span>
+              </span> },
+              { key: "institution", header: "시험기관", width: proportional(1.3, { minWidth: 120 }), renderCell: (item) => <span className="cell-2line">
+                <span className="cell-2line__main" title={item.institution || undefined}>{item.institution || "정보 없음"}</span>
+                <span className="cell-2line__sub">{item.region || "지역 정보 없음"}</span>
+              </span> },
+              { key: "specs", header: "주요 사양과 이용료", width: proportional(1.9, { minWidth: 160 }), renderCell: (item) => <SpecSummary item={item} /> },
+              { key: "testTypes", header: "시험 종류", width: proportional(1, { minWidth: 96 }), renderCell: (item) => <span className="cell-2line">
+                {item.testTypes.length ? <>
+                  <span className="cell-2line__main" title={item.testTypes.map(testTypeLabel).join(", ")}>{testTypeLabel(item.testTypes[0])}</span>
+                  <span className="cell-2line__sub">{item.testTypes.length > 1 ? `외 ${item.testTypes.length - 1}개` : " "}</span>
+                </> : <span className="cell-2line__main cell-2line__main--muted">없음</span>}
+              </span> },
+              { key: "availability", header: "상태", width: proportional(1.1, { minWidth: 110 }), renderCell: (item) => {
                 const scope = accessScopeOf(item);
-                return <HStack gap={1} wrap="wrap">
-                  <HStack gap={1} vAlign="center">
-                    <StatusDot variant={availabilityDot[item.availability ?? "UNKNOWN"] ?? "neutral"}
-                      label={availabilityLabels[item.availability ?? "UNKNOWN"] ?? String(item.availability)} />
-                    <Text>{availabilityLabels[item.availability ?? "UNKNOWN"] ?? String(item.availability)}</Text>
-                  </HStack>
-                  {scope && accessScopeLabels[scope] && <AxBadge variant={scope === "EXTERNAL_ALLOWED" ? "blue" : "purple"} label={accessScopeLabels[scope]} />}
-                  {item.isMock && <AxBadge variant="neutral" label="예시" />}
-                </HStack>;
+                const label = availabilityLabels[item.availability ?? "UNKNOWN"] ?? String(item.availability);
+                const tags = [scope && accessScopeLabels[scope], item.isMock ? "예시" : null].filter(Boolean).join(", ");
+                return <span className="cell-2line">
+                  <span className="cell-2line__main cell-status">
+                    <StatusDot variant={availabilityDot[item.availability ?? "UNKNOWN"] ?? "neutral"} label={label} />{label}
+                  </span>
+                  <span className="cell-2line__sub" title={tags || undefined}>{tags || " "}</span>
+                </span>;
               } },
-              { key: "actions", header: <span className="sr-only">동작</span>, width: pixel(canRequest ? 260 : 80), align: "end", renderCell: (item) => <HStack gap={1} hAlign="end">
+              { key: "actions", header: <span className="sr-only">동작</span>, width: pixel(canRequest ? 216 : 80), align: "end", renderCell: (item) => <HStack gap={1} hAlign="end">
                 {canSimulate && item.availability !== "AVAILABLE" && <Button variant="ghost" className="button--sm"
                   title="예약이 차 있어도 결과를 미리 가늠해 볼 수 있습니다" onClick={() => openSimulation(item.id)}>가상 시험</Button>}
                 {canRequest ? <Button variant="secondary" className="button--sm"
