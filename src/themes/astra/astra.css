@@ -666,10 +666,10 @@
   }
 
   .astryx-side-nav-item {
-    font-size: 15px;
     min-height: 42px;
     padding-inline: 12px;
     gap: 10px;
+    font-size: 16px;
   }
 
   .astryx-side-nav-section {
@@ -678,6 +678,10 @@
 
   .astryx-side-nav-heading {
     --text-large-size: 1.25rem;
+  }
+
+  .astryx-side-nav {
+    width: 188px;
   }
 
   .astryx-text[data-color="primary"] { color: var(--color-text-primary); }

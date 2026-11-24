@@ -8,6 +8,8 @@ import ApiState from "./ui/ApiState";
 import { Feedback } from "./workflow/Feedback";
 import RequirementWorkbench from "./workflow/RequirementWorkbench";
 import Reservation from "./Reservation";
+import { DraftShelf, FlowSummary, StepRail } from "./request/FlowSide";
+import type { Step } from "./request/FlowSide";
 import { useApiQuery } from "../hooks/useApiQuery";
 import { useAction } from "../hooks/useAction";
 import { catalogService } from "../services/catalogService";
@@ -23,12 +25,6 @@ import {
   verdictLabels,
 } from "../domain/constants";
 
-type Step = 1 | 2 | 3;
-const steps: { id: Step; label: string }[] = [
-  { id: 1, label: "조건 정하기" },
-  { id: 2, label: "장비 고르기" },
-  { id: 3, label: "의뢰서 쓰기" },
-];
 
 /** 고른 시험 종류 한 줄 안내: 가능 기관·장비 수·예상 비용·기간 */
 function TestTypeHelp({ code, openTestInfo }: { code: string; openTestInfo: (code: string) => void }) {
@@ -241,22 +237,28 @@ export default function RequestFlow({ setActiveMenu, openRequest }: {
     setRequirementId(null);
     setStep(1);
   };
+  const continueDraft = (id: number) => {
+    setSelectedEquipment(null);
+    setDraftRequestId(id);
+    setStep(3);
+  };
+  // 왼쪽 단계 안내 | 가운데 지금 단계 | 오른쪽 지금까지 정한 것. 좁은 화면에서는 위아래로 쌓인다.
   return <div className="content-page content-page--flow page-enter">
     <PageHeader title="시험 맡기기">
-      <ol className="stepper" aria-label="진행 단계">
-        {steps.map(({ id, label }) => <li key={id}>
-          <button type="button" aria-current={step === id ? "step" : undefined} disabled={!canOpen(id)} onClick={() => setStep(id)}>
-            <span>{id}</span>{label}
-          </button>
-        </li>)}
-      </ol>
       {(draftRequestId || selectedEquipment || matchRun || requirementId) &&
         <Button variant="ghost" className="button--sm" icon={RotateCcw} onClick={restart}>처음부터</Button>}
     </PageHeader>
-    {step === 1 && <ConditionStep onMatched={(run) => { setMatchRun(run); setStep(2); }} />}
-    {step === 2 && matchRun && <MatchStep matchRun={matchRun} setActiveMenu={setActiveMenu} onBack={() => setStep(1)}
-      onChoose={(id) => { setDraftRequestId(id); setStep(3); }} />}
-    {step === 3 && <Reservation key={draftRequestId ?? "new"} setActiveMenu={setActiveMenu} openRequest={openRequest}
-      onChangeEquipment={() => { setSelectedEquipment(null); setStep(matchRun ? 2 : 1); if (!matchRun) setActiveMenu("search"); }} />}
+    <div className="flow-layout">
+      <StepRail step={step} canOpen={canOpen} onStep={setStep} />
+      <div className="flow-main">
+        {step === 1 && <ConditionStep onMatched={(run) => { setMatchRun(run); setStep(2); }} />}
+        {step === 2 && matchRun && <MatchStep matchRun={matchRun} setActiveMenu={setActiveMenu} onBack={() => setStep(1)}
+          onChoose={(id) => { setDraftRequestId(id); setStep(3); }} />}
+        {step === 3 && <Reservation key={draftRequestId ?? "new"} setActiveMenu={setActiveMenu} openRequest={openRequest}
+          onChangeEquipment={() => { setSelectedEquipment(null); setStep(matchRun ? 2 : 1); if (!matchRun) setActiveMenu("search"); }} />}
+        {step === 1 && !requirementId && <DraftShelf onContinue={continueDraft} setActiveMenu={setActiveMenu} />}
+      </div>
+      <FlowSummary step={step} setActiveMenu={setActiveMenu} />
+    </div>
   </div>;
 }

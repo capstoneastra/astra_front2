@@ -141,3 +141,19 @@
   .schedule-detail { width: calc(100vw - 20px); max-height: calc(100dvh - 20px); }.schedule-detail__facts > div { grid-template-columns: 100px minmax(0, 1fr); }.schedule-detail__controls .form-grid { grid-template-columns: minmax(0, 1fr); }.schedule-detail__eligible > div { align-items: flex-start; flex-direction: column; }
 }
 @media (prefers-reduced-motion: reduce) { .schedule-card, .calendar-day { transition: none; }.schedule-detail[open] { animation: none; } }
+
+/* ── 노트북~데스크톱: 화면 높이에 맞춰 달력이 한 화면에 들어오게 ── */
+.calendar-day { min-height: clamp(78px, calc((100dvh - 330px) / 5), 145px); }
+.schedule-metrics { gap: clamp(8px, 1.4vh, 16px); margin-bottom: clamp(8px, 1.6vh, 18px); }
+.schedule-metric { padding: clamp(10px, 1.6vh, 17px) clamp(14px, 1.6vw, 22px); }
+.schedule-metric strong { font-size: clamp(24px, 3vh, 32px); line-height: 1.25; }
+@media (max-height: 860px) { .schedule-metric p { display: none; } }
+/* 다가오는 시험은 1200px 넘으면 달력 오른쪽에 (전에는 1650px 이상에서만) */
+@media (min-width: 1200px) { .schedule-workspace { grid-template-columns: minmax(0, 1fr) clamp(240px, 18vw, 300px); }.schedule-upcoming__list { grid-template-columns: minmax(0, 1fr); } }
+/* 다가오는 시험 목록이 길어도 화면 높이 안에서 자체 스크롤 (페이지가 길어지지 않게) */
+@media (min-width: 1200px) {
+  .schedule-upcoming { position: sticky; top: 8px; display: flex; flex-direction: column; max-height: calc(100dvh - 150px); }
+  .schedule-upcoming__list { flex: 1; min-height: 0; overflow-y: auto; }
+}
+.calendar__toolbar { padding-block: clamp(10px, 1.8vh, 18px); }
+.calendar__weekdays > span { padding-block: clamp(6px, 1vh, 12px); }

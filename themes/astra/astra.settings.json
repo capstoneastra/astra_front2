@@ -38,12 +38,6 @@
       "source": "dial"
     },
     {
-      "thing": "font-size",
-      "value": "15px",
-      "source": "property",
-      "on": "side-nav-item"
-    },
-    {
       "thing": "min-height",
       "value": "42px",
       "source": "property",
@@ -72,6 +66,18 @@
       "value": "1.25rem",
       "source": "token",
       "on": "side-nav-heading"
+    },
+    {
+      "thing": "font-size",
+      "value": "16px",
+      "source": "property",
+      "on": "side-nav-item"
+    },
+    {
+      "thing": "width",
+      "value": "188px",
+      "source": "property",
+      "on": "side-nav"
     }
   ],
   "lifted": [],

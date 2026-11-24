@@ -501,10 +501,10 @@ export const astraTheme = {
     },
     "side-nav-item": {
       "base": {
-        "fontSize": "15px",
         "minHeight": "42px",
         "paddingInline": "12px",
-        "gap": "10px"
+        "gap": "10px",
+        "fontSize": "16px"
       }
     },
     "side-nav-section": {
@@ -515,6 +515,11 @@ export const astraTheme = {
     "side-nav-heading": {
       "base": {
         "--text-large-size": "1.25rem"
+      }
+    },
+    "side-nav": {
+      "base": {
+        "width": "188px"
       }
     }
   },
