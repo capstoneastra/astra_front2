@@ -215,7 +215,7 @@
 .login-card {
   --login-card-padding: clamp(22px, 5vw, 36px);
   width: min(100%, 410px);
-  padding: var(--login-card-padding) var(--login-card-padding) 0;
+  padding: var(--login-card-padding);
   border-radius: 19px;
 }
 
@@ -415,17 +415,6 @@
 .login-card__account-options > button[aria-pressed="true"] {
   border-color: var(--login-accent);
   color: var(--login-accent);
-}
-
-.login-card__note {
-  margin: 24px calc(-1 * var(--login-card-padding)) 0;
-  padding: 15px var(--login-card-padding);
-  border-top: 1px solid var(--login-line);
-  border-radius: 0 0 19px 19px;
-  background: var(--login-input-bg);
-  color: var(--login-muted);
-  text-align: center;
-  font-size: 11px;
 }
 
 .login-guide__layout {

@@ -24,7 +24,11 @@ export const localWorkspaceAccounts = {
 
 export type LocalWorkspaceAccount = keyof typeof localWorkspaceAccounts;
 
+/**
+ * '서버 없이 화면 열기'(로그인 화면의 역할 버튼). 백엔드가 배포되어 기본으로 끈다.
+ * 화면만 따로 점검할 때는 .env.local 에 VITE_LOCAL_PREVIEW=true 를 넣고 개발 서버에서 쓴다.
+ */
 export function canOpenLocalWorkspace() {
-  return import.meta.env.DEV ||
-    (typeof window !== "undefined" && ["localhost", "127.0.0.1", "[::1]"].includes(window.location.hostname));
+  return import.meta.env.VITE_LOCAL_PREVIEW === "true" &&
+    typeof window !== "undefined" && ["localhost", "127.0.0.1", "[::1]"].includes(window.location.hostname);
 }

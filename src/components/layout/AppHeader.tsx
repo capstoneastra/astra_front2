@@ -60,14 +60,14 @@ export default function AppHeader({ activeMenu, onSearch, onBack, canGoBack, onN
         {status === "local" && <Badge variant="warning" label="미리보기 모드" />}
       </HStack>}
       centerContent={showSearch ? <SearchAutocomplete autoFocusKey onPick={pick} /> : undefined}
-      endContent={<HStack gap={1} vAlign="center">
+      endContent={<HStack gap={2} vAlign="center">
         <DropdownMenu
           alignment="end"
           menuWidth={360}
           onOpenChange={(isOpen) => { if (isOpen) recent.reload(); }}
           renderTrigger={(props) => <button type="button" className="bell-trigger" {...props}
             aria-label={unread > 0 ? `업무 알림, 읽지 않은 알림 ${unread}건` : "업무 알림"}>
-            <Bell size={18} aria-hidden="true" />
+            <Bell size={22} aria-hidden="true" />
             {unread > 0 && <span className="bell-trigger__count" aria-hidden="true">{unread > 99 ? "99+" : unread}</span>}
           </button>}
           items={[
@@ -84,14 +84,14 @@ export default function AppHeader({ activeMenu, onSearch, onBack, canGoBack, onN
             ...(unread > 0 ? [{ id: "read-all", label: "모두 읽음으로 표시", onClick: () => void notificationService.readAll() }] : []),
           ]}
         />
-        <IconButton variant="ghost" icon={theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
+        <IconButton variant="ghost" size="lg" className="header-icon-button" icon={theme === "dark" ? <Sun size={22} /> : <Moon size={22} />}
           label={theme === "dark" ? "밝은 화면으로 바꾸기" : "어두운 화면으로 바꾸기"} tooltip={theme === "dark" ? "밝은 화면" : "어두운 화면"}
           onClick={toggleTheme} />
         <DropdownMenu
           alignment="end"
           menuWidth={240}
           renderTrigger={(props) => <button type="button" className="account-trigger" aria-label="내 계정 메뉴" {...props}>
-            <Avatar name={user.name} size="sm" tooltip={false} />
+            <Avatar name={user.name} size={32} tooltip={false} />
           </button>}
           items={[
             { label: user.name, description: `${role}, ${user.organization?.name ?? "플랫폼"}`, isDisabled: true },
