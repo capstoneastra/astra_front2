@@ -6,19 +6,13 @@ import { useAuth } from "../auth/context";
 import { useApiQuery } from "../hooks/useApiQuery";
 import { invalidateData } from "../api/cache";
 import { dashboardService } from "../services/dashboardService";
-import { requestService } from "../services/requestService";
-import { equipmentService } from "../services/equipmentService";
-import type { RequestBox, RequestSummary } from "../services/contracts";
+import type { RequestBox } from "../services/contracts";
 import type { ApprovalFocus } from "../hooks/useWorkspaceNavigation";
-import { dateLabel, seoulDate, timeLabel } from "../domain/calendar";
 import { requestStatusLabels } from "../domain/constants";
 import { Button, PageHeader, Panel, TextLink } from "./ui";
-import { List, ListItem } from "@astryxdesign/core/List";
-import { Badge as AxBadge } from "@astryxdesign/core/Badge";
-import { Text } from "@astryxdesign/core/Text";
-import { HStack } from "@astryxdesign/core/HStack";
 import ApiState from "./ui/ApiState";
 import CompanyDashboard from "./dashboard/CompanyDashboard";
+import InstitutionDashboard from "./dashboard/InstitutionDashboard";
 
 interface HomeProps {
   setActiveMenu: (menu: string) => void;
@@ -26,12 +20,6 @@ interface HomeProps {
   openRequest: (box: RequestBox, requestId?: number, status?: string) => void;
   openApprovals: (focus: ApprovalFocus) => void;
 }
-
-type Row = RequestSummary & { companyName?: string; requester?: { name: string }; desiredStartDate?: string | null };
-
-const statusVariant = (status: string): "warning" | "success" | "error" | "neutral" =>
-  status === "SUPPLEMENT_REQUESTED" ? "warning" : status === "COMPLETED" ? "success" :
-    ["REJECTED", "CANCELED"].includes(status) ? "error" : "neutral";
 
 interface Tab {
   id: string;
@@ -63,72 +51,6 @@ function TabbedBoard({ tabs, initial }: { tabs: Tab[]; initial?: string }) {
       {current.body}
     </div>
   </Panel>;
-}
-
-function RowList({ rows, empty, render, state }: {
-  rows: Row[];
-  empty: string;
-  render: (row: Row) => ReactNode;
-  state?: { loading: boolean; error: unknown; reload: () => void };
-}) {
-  if (state?.loading) return <ApiState loading />;
-  if (state?.error) return <ApiState error={state.error as never} onRetry={state.reload} />;
-  return rows.length === 0 ? <p className="inline-empty">{empty}</p> : <List hasDividers density="compact">{rows.map(render)}</List>;
-}
-
-/* ───────── 기관·대학: 시험을 받는 쪽 ───────── */
-const nextAction: Record<string, string> = {
-  SUBMITTED: "검토 시작",
-  RESUBMITTED: "보완 내용 검토",
-  UNDER_REVIEW: "검토 결과·이용료 입력",
-  SCHEDULING: "일정 확정",
-  CONFIRMED: "결과·성적서 등록",
-};
-
-function InstitutionDashboard({ setActiveMenu, openRequest }: Pick<HomeProps, "setActiveMenu" | "openRequest">) {
-  const { user } = useWorkspace();
-  const summary = useApiQuery((signal) => dashboardService.summary(user, "PROVIDER", signal), `summary:${user.id}:PROVIDER`);
-  const list = useApiQuery((signal) => requestService.list({ box: "RECEIVED", size: 100 }, signal), `home-received:${user.id}`);
-  const equipment = useApiQuery((signal) => equipmentService.mine({}, signal), `home-my-equipment:${user.id}`);
-  const [now] = useState(() => Date.now());
-  const rows: Row[] = list.data?.content ?? [];
-  const ready = Boolean(list.data);
-  const pick = (...statuses: string[]) => rows.filter((row) => statuses.includes(row.status));
-  const upcoming = (summary.data?.upcomingReservations ?? []).filter((item) => Date.parse(item.endAt) > now)
-    .sort((a, b) => Date.parse(a.startAt) - Date.parse(b.startAt));
-  const stale = (equipment.data?.content ?? []).filter((item) => item.needsUpdate);
-  const requestRows = (items: Row[], empty: string) => <RowList rows={items} state={list} empty={empty} render={(item) =>
-    <ListItem key={item.id} itemKey={item.id} onClick={() => openRequest("RECEIVED", item.id)} label={item.title || item.requestNo}
-      description={[item.companyName ?? item.requester?.name, item.equipment?.name, item.desiredStartDate ? `희망 ${item.desiredStartDate}` : null].filter(Boolean).join(", ")}
-      endContent={<HStack gap={2} vAlign="center">
-        <AxBadge variant={statusVariant(item.status)} label={requestStatusLabels[item.status]} />
-        <Text type="supporting" color="accent">{nextAction[item.status] ?? "보기"}</Text>
-      </HStack>} />} />;
-  const review = pick("SUBMITTED", "RESUBMITTED", "UNDER_REVIEW");
-  const tabs: Tab[] = [
-    { id: "review", label: "검토할 의뢰", tone: "amber", count: ready ? review.length : null,
-      body: requestRows(review, "검토할 의뢰가 없습니다.") },
-    { id: "schedule", label: "일정 조율", tone: "blue", count: ready ? pick("SCHEDULING").length : null,
-      body: requestRows(pick("SCHEDULING"), "일정을 조율할 의뢰가 없습니다.") },
-    { id: "result", label: "결과 등록 대기", tone: "violet", count: ready ? pick("CONFIRMED").length : null,
-      body: requestRows(pick("CONFIRMED"), "결과를 올릴 의뢰가 없습니다.") },
-    { id: "upcoming", label: "다가오는 일정", count: summary.data ? upcoming.length : null,
-      more: <TextLink onClick={() => setActiveMenu("calendar")}>시험 일정</TextLink>,
-      body: upcoming.length === 0 ? <p className="inline-empty">{summary.loading ? "불러오는 중…" : "확정된 시험 일정이 없습니다."}</p> :
-        <List hasDividers density="compact">{upcoming.map((item) => <ListItem key={item.reservationId} itemKey={item.reservationId}
-          onClick={() => openRequest("RECEIVED", item.requestId)} label={item.equipmentName}
-          description={`${dateLabel(seoulDate(item.startAt))} ${timeLabel(item.startAt)}–${timeLabel(item.endAt)}, ${item.requestNo}`} />)}</List> },
-    { id: "stale", label: "갱신 필요 장비", tone: "amber", count: equipment.data ? stale.length : null,
-      hint: equipment.data ? `전체 ${equipment.data.totalElements}대` : undefined,
-      more: <TextLink onClick={() => setActiveMenu("equipment")}>우리 장비</TextLink>,
-      body: equipment.loading ? <ApiState loading /> : equipment.error ? <ApiState error={equipment.error} onRetry={equipment.reload} /> :
-        stale.length === 0 ? <p className="inline-empty">모든 장비 정보가 최신입니다.</p> :
-        <List hasDividers density="compact">{stale.map((item) => <ListItem key={item.id} itemKey={item.id}
-          onClick={() => setActiveMenu("equipment")} label={item.name}
-          description={`${item.externalId ?? ""}, ${item.daysSinceUpdate ?? "?"}일 전 갱신`}
-          endContent={<AxBadge variant="warning" label="갱신 필요" />} />)}</List> },
-  ];
-  return ready ? <TabbedBoard key="institution" tabs={tabs} /> : <Panel><RowList rows={[]} state={list} empty="" render={() => null} /></Panel>;
 }
 
 /* ───────── 관리자 ───────── */
