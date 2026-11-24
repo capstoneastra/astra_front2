@@ -1,6 +1,6 @@
 import { useState } from "react";
 import type { ReactNode } from "react";
-import { Activity, Database, Inbox, RefreshCw, Send, Telescope } from "lucide-react";
+import { Database, Inbox, RefreshCw } from "lucide-react";
 import { useWorkspace } from "../context/AppContext";
 import { useAuth } from "../auth/context";
 import { useApiQuery } from "../hooks/useApiQuery";
@@ -18,6 +18,7 @@ import { Badge as AxBadge } from "@astryxdesign/core/Badge";
 import { Text } from "@astryxdesign/core/Text";
 import { HStack } from "@astryxdesign/core/HStack";
 import ApiState from "./ui/ApiState";
+import CompanyDashboard from "./dashboard/CompanyDashboard";
 
 interface HomeProps {
   setActiveMenu: (menu: string) => void;
@@ -31,18 +32,6 @@ type Row = RequestSummary & { companyName?: string; requester?: { name: string }
 const statusVariant = (status: string): "warning" | "success" | "error" | "neutral" =>
   status === "SUPPLEMENT_REQUESTED" ? "warning" : status === "COMPLETED" ? "success" :
     ["REJECTED", "CANCELED"].includes(status) ? "error" : "neutral";
-
-/** 의뢰가 어디까지 왔는지: 제출 → 검토 → 일정 → 시험 → 결과 */
-const stages = ["제출", "검토", "일정", "시험", "결과"];
-const stageOf: Record<string, number> = {
-  SUBMITTED: 0, RESUBMITTED: 1, UNDER_REVIEW: 1, SUPPLEMENT_REQUESTED: 1, SCHEDULING: 2, CONFIRMED: 3, COMPLETED: 4,
-};
-function StageBar({ status }: { status: string }) {
-  const at = stageOf[status] ?? -1;
-  return <span className="stage-bar" aria-label={`진행 단계: ${stages[at] ?? requestStatusLabels[status]}`}>
-    {stages.map((label, index) => <span key={label} className={index < at ? "is-done" : index === at ? "is-now" : ""}>{label}</span>)}
-  </span>;
-}
 
 interface Tab {
   id: string;
@@ -85,56 +74,6 @@ function RowList({ rows, empty, render, state }: {
   if (state?.loading) return <ApiState loading />;
   if (state?.error) return <ApiState error={state.error as never} onRetry={state.reload} />;
   return rows.length === 0 ? <p className="inline-empty">{empty}</p> : <List hasDividers density="compact">{rows.map(render)}</List>;
-}
-
-/* ───────── 기업: 시험을 맡기는 쪽 ───────── */
-function CompanyDashboard({ setActiveMenu, openRequest }: Pick<HomeProps, "setActiveMenu" | "openRequest">) {
-  const { user } = useWorkspace();
-  const list = useApiQuery((signal) => requestService.list({ box: "SENT", size: 100 }, signal), `home-sent:${user.id}`);
-  const rows: Row[] = list.data?.content ?? [];
-  const ready = list.data ? true : false;
-  const pick = (...statuses: string[]) => rows.filter((row) => statuses.includes(row.status));
-  const myTurn = pick("SUPPLEMENT_REQUESTED", "SCHEDULING");
-  const active = pick("SUBMITTED", "UNDER_REVIEW", "SUPPLEMENT_REQUESTED", "RESUBMITTED", "SCHEDULING", "CONFIRMED");
-  const results = pick("COMPLETED");
-  const drafts = pick("DRAFT");
-  const open = (row: Row) => openRequest("SENT", row.id);
-  const row = (item: Row, side: ReactNode) => <ListItem key={item.id} itemKey={item.id} onClick={() => open(item)}
-    label={item.title || item.requestNo} description={[item.equipment?.name, item.institution?.name].filter(Boolean).join(", ")}
-    endContent={<HStack gap={2} vAlign="center">{side}</HStack>} />;
-  const tabs: Tab[] = [
-    { id: "turn", label: "내가 답할 차례", tone: "amber", count: ready ? myTurn.length : null, hint: "보완 요청과 일정 확인",
-      body: <RowList rows={myTurn} state={list} empty="지금 답할 의뢰가 없습니다." render={(item) => row(item, <>
-        <Text type="supporting" color="accent">{item.status === "SUPPLEMENT_REQUESTED" ? "추가 정보 입력" : "일정 확인"}</Text>
-      </>)} /> },
-    { id: "active", label: "진행 중", count: ready ? active.length : null,
-      more: <TextLink onClick={() => openRequest("SENT", undefined, "ACTIVE")}>목록으로</TextLink>,
-      body: <RowList rows={active} state={list} empty="진행 중인 의뢰가 없습니다." render={(item) => row(item, <>
-        <StageBar status={item.status} />
-      </>)} /> },
-    { id: "results", label: "결과 도착", tone: "green", count: ready ? results.length : null,
-      body: <RowList rows={results} state={list} empty="아직 도착한 결과가 없습니다." render={(item) => row(item, <>
-        <Text type="supporting" color="accent">결과와 성적서 보기</Text>
-      </>)} /> },
-    { id: "drafts", label: "작성 중", tone: "violet", count: ready ? drafts.length : null,
-      body: <RowList rows={drafts} state={list} empty="작성 중인 의뢰서가 없습니다." render={(item) => row(item, <>
-        <Text type="supporting" color="accent">이어서 작성</Text>
-      </>)} /> },
-  ];
-  return <>
-    <div className="dash-hero">
-      <div>
-        <h2>어떤 시험이 필요하신가요?</h2>
-        <p>조건을 말하면 맞는 장비를 추천하고, 의뢰서까지 채워 드립니다.</p>
-      </div>
-      <Button icon={Send} onClick={() => setActiveMenu("request")}>시험 맡기기</Button>
-      <Button variant="secondary" icon={Telescope} onClick={() => setActiveMenu("search")}>장비 직접 찾기</Button>
-      <Button variant="secondary" icon={Activity} title="예약이 차 있어도 결과를 미리 가늠해 볼 수 있습니다"
-        onClick={() => setActiveMenu("simulation")}>가상 시험</Button>
-    </div>
-    {ready && <TabbedBoard key="company" tabs={tabs} initial={myTurn.length ? "turn" : "active"} />}
-    {!ready && <Panel><RowList rows={[]} state={list} empty="" render={() => null} /></Panel>}
-  </>;
 }
 
 /* ───────── 기관·대학: 시험을 받는 쪽 ───────── */

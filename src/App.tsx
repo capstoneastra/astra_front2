@@ -242,7 +242,8 @@ function Workspace() {
           {renderContent()}
         </div>
       </AppShell>
-        {canAccessMenu(user.role, "assistant") && (
+        {/* 기업 대시보드에는 큰 AI 입력창이 있으므로 오른쪽 아래 버튼은 숨긴다 */}
+        {canAccessMenu(user.role, "assistant") && !(activeMenu === "home" && user.role === "COMPANY_USER") && (
           <AiAssistant
             chatPanelKey={chatPanelKey}
             open={assistantOpen}
