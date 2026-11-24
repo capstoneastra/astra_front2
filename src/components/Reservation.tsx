@@ -154,13 +154,20 @@ export default function Reservation({ setActiveMenu, openRequest, onChangeEquipm
 
   // 초안이 아직 없다: 선택한 장비를 확인하고 의뢰서를 만든다.
   if (!draftRequestId)
-    return <Panel title="의뢰서 만들기" action={<Button variant="ghost" className="button--sm" icon={RefreshCw} onClick={onChangeEquipment}>장비 바꾸기</Button>}>
-      <div className="inline-empty" style={{ color: "var(--text-secondary)" }}>
-        <span><strong>{selectedEquipment?.name}</strong> · {selectedEquipment?.institution || "기관 정보 없음"}
-          {requirementId ? " · 앞에서 정리한 조건을 함께 넣습니다(AI 초안)" : ""}</span>
-        <Button icon={ArrowRight} disabled={busy || !selectedEquipment || ownEquipment} onClick={createDraft}>
-          {busy ? "만드는 중…" : "의뢰서 작성 시작"}
-        </Button>
+    return <Panel className="flow-card">
+      <div className="flow-equipment">
+        <div className="flow-equipment__info">
+          <span className="flow-equipment__eyebrow">맡길 장비</span>
+          <strong>{selectedEquipment?.name ?? "장비를 먼저 골라 주세요"}</strong>
+          <span>{[selectedEquipment?.institution || null, selectedEquipment?.region || null].filter(Boolean).join(", ")}</span>
+          {requirementId && <span className="small-note">앞에서 정한 조건이 의뢰서에 자동으로 들어갑니다.</span>}
+        </div>
+        <div className="flow-equipment__actions">
+          <Button variant="ghost" icon={RefreshCw} onClick={onChangeEquipment}>장비 바꾸기</Button>
+          <Button icon={ArrowRight} disabled={busy || !selectedEquipment || ownEquipment} onClick={createDraft}>
+            {busy ? "만드는 중…" : "의뢰서 쓰기"}
+          </Button>
+        </div>
       </div>
       {ownEquipment && <p className="inline-empty">우리 기관 장비에는 의뢰할 수 없습니다.</p>}
       <Feedback action={action} />
@@ -169,13 +176,14 @@ export default function Reservation({ setActiveMenu, openRequest, onChangeEquipm
   if (query.loading || query.error || !content)
     return <Panel><ApiState loading={query.loading} error={query.error} onRetry={query.reload} /></Panel>;
 
-  const copyApplicant = () => setEditor({ ...content, actualUser: {
+  const copyApplicant = (target: "actualUser" | "accounting") => setEditor({ ...content, [target]: {
     name: content.applicant?.contactName ?? "", phone: content.applicant?.phone ?? "", email: content.applicant?.email ?? "" } });
+  const remaining = Object.keys(local).length;
   const editable = draft.status === "DRAFT";
 
   return <form onSubmit={(event) => { event.preventDefault(); submit(); }} noValidate aria-busy={busy}>
     <div className="request-form__bar">
-      <span><strong>{draft.equipment?.name}</strong> · {draft.institution?.name} · {draft.requestNo}</span>
+      <span><strong>{draft.equipment?.name}</strong>{draft.institution?.name ? `, ${draft.institution.name}` : ""}</span>
       <Badge tone="cyan">{requestStatusLabels[draft.status] ?? draft.status}</Badge>
       {draft.revision.isAiGenerated && <Badge tone="violet">AI 초안</Badge>}
       {editor && <span className="small-note">저장하지 않은 변경 있음</span>}
@@ -204,7 +212,7 @@ export default function Reservation({ setActiveMenu, openRequest, onChangeEquipm
             </Field>
           </div>
         </FormGroup>
-        <FormGroup title="시험 조건" action={<span className="small-note">앞 단계에서 정리한 값이 들어 있습니다</span>}>
+        <FormGroup title="시험 조건" action={<span className="small-note">앞에서 정한 값이 들어 있어요</span>}>
           <div className="request-form__body">
             {rules.data ? <ConditionEditor rules={rules.data.conditionRules} conditions={content.conditions ?? []} disabled={!editable || busy}
               onChange={(conditions) => setEditor({ ...content, conditions })} /> :
@@ -220,16 +228,16 @@ export default function Reservation({ setActiveMenu, openRequest, onChangeEquipm
             <Field id="req-schedule-desiredEndDate" label="종료일" required error={errors["schedule.desiredEndDate"]}>
               {input("schedule", "desiredEndDate", { type: "date" })}</Field>
           </div>
-          <p className="small-note request-form__body">희망일이며 실제 일정은 시험기관과 조율합니다.</p>
+          <p className="small-note request-form__body">희망 날짜예요. 실제 일정은 시험기관과 조율합니다.</p>
         </FormGroup>
-        <FormGroup title="실사용자" action={<Button variant="ghost" className="button--sm" icon={Copy} onClick={copyApplicant}>신청자와 같음</Button>}>
+        <FormGroup title="실사용자" action={<Button variant="ghost" className="button--sm" icon={Copy} onClick={() => copyApplicant("actualUser")}>신청자와 같음</Button>}>
           <div className="form-grid request-form__body">
             <Field id="req-actualUser-name" label="이름" required error={errors["actualUser.name"]}>{input("actualUser", "name")}</Field>
             <Field id="req-actualUser-phone" label="전화" error={errors["actualUser.contact"]}>{input("actualUser", "phone", { type: "tel" })}</Field>
             <Field id="req-actualUser-email" label="이메일" wide hint="전화 또는 이메일 중 하나는 필수입니다.">{input("actualUser", "email", { type: "email" })}</Field>
           </div>
         </FormGroup>
-        <FormGroup title="회계 담당자">
+        <FormGroup title="회계 담당자" action={<Button variant="ghost" className="button--sm" icon={Copy} onClick={() => copyApplicant("accounting")}>신청자와 같음</Button>}>
           <div className="form-grid request-form__body">
             <Field id="req-accounting-name" label="이름" required error={errors["accounting.name"]}>{input("accounting", "name")}</Field>
             <Field id="req-accounting-phone" label="전화" error={errors["accounting.contact"]}>{input("accounting", "phone", { type: "tel" })}</Field>
@@ -250,7 +258,15 @@ export default function Reservation({ setActiveMenu, openRequest, onChangeEquipm
     </Panel>
     <div className="request-form__actions">
       <Feedback action={action} onRetry={query.reload} />
-      <span className="small-note"><b>*</b> 필수 · 제출하면 시험기관이 검토합니다.</span>
+      {/* 누르면 첫 빈칸으로 이동 */}
+      <button type="button" className={`flow-remaining ${remaining ? "" : "is-ready"}`} disabled={!remaining}
+        onClick={() => {
+          setTouched(true);
+          requestAnimationFrame(() => document.querySelector<HTMLElement>(".form-field--invalid input, .form-field--invalid textarea")?.focus());
+        }}>
+        {remaining ? `필수 항목 ${remaining}개 남음, 눌러서 채우기` : "제출할 준비가 됐어요"}
+        <small>제출하면 시험기관이 검토합니다.</small>
+      </button>
       <Button variant="secondary" disabled={!editable || busy || !editor} onClick={save}>초안 저장</Button>
       <Button type="submit" icon={ArrowRight} disabled={!editable || busy}>{busy ? "처리 중…" : "제출"}</Button>
     </div>

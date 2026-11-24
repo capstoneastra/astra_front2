@@ -243,7 +243,8 @@ function Workspace() {
         </div>
       </AppShell>
         {/* 기업 대시보드에는 큰 AI 입력창이 있으므로 오른쪽 아래 버튼은 숨긴다 */}
-        {canAccessMenu(user.role, "assistant") && !(activeMenu === "home" && user.role === "COMPANY_USER") && (
+        {/* 기업 대시보드·시험 맡기기는 화면 안에 AI 입력이 있어 떠 있는 버튼을 숨긴다 */}
+        {canAccessMenu(user.role, "assistant") && !(user.role === "COMPANY_USER" && ["home", "request"].includes(activeMenu)) && (
           <AiAssistant
             chatPanelKey={chatPanelKey}
             open={assistantOpen}

@@ -15,11 +15,14 @@ export default function RequirementWorkbench({
   onMatched,
   onSaved,
   idPrefix = "",
+  plain = false,
 }: {
   requirementId: number;
   onMatched?: (matchRun: MatchRun) => void;
   onSaved?: (requirement: Requirement) => void;
   idPrefix?: string;
+  /** 바깥 카드 없이 (시험 맡기기 화면처럼 이미 카드 안에 넣을 때) */
+  plain?: boolean;
 }) {
   const query = useApiQuery(
     (signal) => requirementService.get(requirementId, signal),
@@ -70,16 +73,9 @@ export default function RequirementWorkbench({
     onSaved?.(saved);
     return result;
   };
-  return (
-    <Panel
-      className="workbench"
-      title="세부 조건"
-      description="입력하지 않은 조건은 미확인으로 남고, 시험기관이 확인합니다."
-    >
-      <p className="field-hint">
-        {rules.data?.nameKo} · 조건 #{data.id} ·{" "}
-        {data.purpose || "목적 정보 없음"}
-      </p>
+  const required = (rules.data?.conditionRules ?? []).filter((rule) => rule.isRequired);
+  const filled = required.filter((rule) => conditions.some((c) => c.key === rule.conditionKey && c.status !== "MISSING")).length;
+  const inner = <>
       <ConditionEditor
         idPrefix={idPrefix}
         rules={rules.data?.conditionRules ?? []}
@@ -87,28 +83,21 @@ export default function RequirementWorkbench({
         onChange={setEdited}
         disabled={action.busy}
       />
-      {analysis && (
+      {analysis && !analysis.readyForMatching && (
         <div className="content-note" role="status">
           <span>
-            {analysis.readyForMatching
-              ? "필수 조건이 확인되었습니다. 장비별 사양을 비교할 수 있습니다."
-              : `추가 확인 필요: ${[...analysis.missing, ...analysis.unconfirmed].map((c) => c.label).join(", ")}`}
-            <br />
-            {analysis.missing.map((c) => c.question).join(" ")}
+            {`더 필요한 조건: ${[...analysis.missing, ...analysis.unconfirmed].map((c) => c.label).join(", ")}`}
+            {analysis.missing.length > 0 && <><br />{analysis.missing.map((c) => c.question).join(" ")}</>}
           </span>
         </div>
       )}
       <Feedback action={action} />
       <div className="form-actions">
-        <Button
-          variant="secondary"
-          disabled={action.busy}
-          onClick={() =>
-            action.run(save, "조건을 저장하고 누락 항목을 확인했습니다.")
-          }
-        >
-          조건 저장·분석
-        </Button>
+        <span className="small-note">
+          {required.length ? `필수 조건 ${filled}/${required.length}개 입력` : "필수 조건 없음"}, 비워 둔 조건은 시험기관이 확인합니다.
+        </span>
+        {!onMatched && <Button variant="secondary" disabled={action.busy}
+          onClick={() => action.run(save, "조건을 저장했습니다.")}>조건 저장</Button>}
         {onMatched && (
           <Button
             disabled={action.busy}
@@ -116,19 +105,24 @@ export default function RequirementWorkbench({
               action.run(async (signal) => {
                 const result = await save(signal);
                 if (!result.readyForMatching) return;
-                const match = await requirementService.match(
-                  data.id,
-                  {},
-                  signal,
-                );
+                const match = await requirementService.match(data.id, {}, signal);
                 onMatched(match);
               })
             }
           >
-            적합 장비 추천
+            {action.busy ? "찾는 중…" : "맞는 장비 찾기"}
           </Button>
         )}
       </div>
+  </>;
+  if (plain) return <div className="workbench workbench--plain">{inner}</div>;
+  return (
+    <Panel
+      className="workbench"
+      title="세부 조건"
+      description="비워 둔 조건은 시험기관이 확인합니다."
+    >
+      {inner}
     </Panel>
   );
 }

@@ -26,6 +26,7 @@ import { toApiError } from "../../api/errors";
 import { Button, Panel, TextLink } from "../ui";
 import ApiState from "../ui/ApiState";
 import { requestStages } from "../../domain/requestStages";
+import { conditionNames } from "../../domain/conditionNames";
 
 interface Props {
   setActiveMenu: (menu: string) => void;
@@ -34,15 +35,6 @@ interface Props {
 
 const DAY = 86_400_000;
 /** AI 응답에 조건 이름이 빠졌을 때 쓰는 기본 이름 */
-const conditionNames: Record<string, string> = {
-  sample_mass: "시료 질량",
-  fixture_mass: "고정구 질량",
-  frequency: "주파수",
-  excitation_axis: "가진 축",
-  temperature: "온도",
-  humidity: "습도",
-  accredited_required: "공인성적서",
-};
 /** AI 답변의 마크다운 강조 기호(**, __, #)를 지워 읽기 쉽게 */
 const plain = (text: string) => text.replace(/\*\*|__|^#+\s*/gm, "");
 /** 의뢰 진행 단계(한 줄 막대). 반려·취소는 기업 화면에서 빼고 보여 준다 */
