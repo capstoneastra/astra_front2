@@ -32,7 +32,7 @@ const nextAction: Record<string, string> = {
   CONFIRMED: "결과 등록",
 };
 const updateReasonLabels: Record<string, string> = {
-  NOT_CONFIRMED: "조직 확인 전",
+  NOT_CONFIRMED: "기관 확인 전",
   OUTDATED: "6개월 넘게 갱신 안 됨",
   AVAILABILITY_UNKNOWN: "가용 상태 미확인",
 };

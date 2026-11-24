@@ -44,13 +44,13 @@ export default function DuplicateEquipment({ setActiveMenu, embedded = false }) 
               ))}
             </select>
           </FormField>
-          <FormField id="duplicate-test-type" label="시험유형">
+          <FormField id="duplicate-test-type" label="시험 종류">
             <select
               id="duplicate-test-type"
               value={testType}
               onChange={(e) => setType(e.target.value)}
             >
-              <option value="">전체 시험유형</option>
+              <option value="">전체 시험 종류</option>
               {types.data?.map((t) => (
                 <option key={t.code} value={t.code}>
                   {t.nameKo}
@@ -102,9 +102,9 @@ export default function DuplicateEquipment({ setActiveMenu, embedded = false }) 
                       {e.name}
                       <small>{e.externalId}</small>
                     </td>
-                    <td>{e.model ?? "확인 필요"}</td>
+                    <td>{e.model ?? "정보 없음"}</td>
                     <td>{e.institution.name}</td>
-                    <td>{e.isMock ? "DEMO 포함" : "등록 정보"}</td>
+                    <td>{e.isMock ? "예시 포함" : "등록 정보"}</td>
                   </tr>
                 ))}
               </tbody>

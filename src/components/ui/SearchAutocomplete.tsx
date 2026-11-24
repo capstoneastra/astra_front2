@@ -43,7 +43,7 @@ function Highlight({ text, term }: { text: string; term: string }) {
 /**
  * 장비 검색창 + DB 기준 자동완성.
  * - 장비: GET /equipment?q= (입력 후 0.2초 뒤, 6개)
- * - 시험유형: GET /test-types, 보유 조직: GET /institutions (한 번 받아 두고 화면에서 거름)
+ * - 시험 종류: GET /test-types, 시험기관: GET /institutions (한 번 받아 두고 화면에서 거름)
  * - 비어 있을 때: 최근 검색 + 자주 찾는 시험
  * 목록이 열리면 뒤 화면을 반투명하게 덮어(scrim) 목록에 집중하게 한다.
  */
@@ -104,10 +104,10 @@ export default function SearchAutocomplete({ onPick, initialText = "", variant =
         detail: [item.model, item.institution, availabilityLabels[item.availability ?? "UNKNOWN"]].filter(Boolean).join(" · "),
         pick: { kind: "equipment", id: item.id, name: item.name } });
     for (const type of (types.data ?? []).filter((type) => type.nameKo.toLowerCase().includes(lower) || type.code.toLowerCase().includes(lower)).slice(0, 4))
-      list.push({ key: `type:${type.code}`, group: "시험유형", icon: <FlaskConical size={15} />, label: type.nameKo,
+      list.push({ key: `type:${type.code}`, group: "시험 종류", icon: <FlaskConical size={15} />, label: type.nameKo,
         detail: `장비 ${type.equipmentCount ?? 0}대`, pick: { kind: "testType", code: type.code, name: type.nameKo } });
     for (const org of (institutions.data ?? []).filter((org) => org.name.toLowerCase().includes(lower)).slice(0, 4))
-      list.push({ key: `org:${org.id}`, group: "보유 조직", icon: <Building2 size={15} />, label: org.name,
+      list.push({ key: `org:${org.id}`, group: "시험기관", icon: <Building2 size={15} />, label: org.name,
         detail: [org.region, org.equipmentCount != null ? `장비 ${org.equipmentCount}대` : null].filter(Boolean).join(" · "),
         pick: { kind: "institution", id: org.id, name: org.name } });
     return list;

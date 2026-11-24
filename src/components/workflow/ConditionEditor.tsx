@@ -38,7 +38,7 @@ export default function ConditionEditor({
             <span className="condition-row__label" id={`${id}-label`}>
               {rule.label}
               {rule.isRequired && <b aria-label="필수"> *</b>}
-              {rule.comparator === "NONE" && <small> 조직 확인</small>}
+              {rule.comparator === "NONE" && <small> 기관 확인</small>}
             </span>
             <span className="condition-row__inputs">
               {rule.valueType === "RANGE" ? (

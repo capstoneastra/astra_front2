@@ -31,7 +31,7 @@ export default function ReservationCalendar() {
   const busy = useApiQuery((signal) => requestService.availability(filters.equipment, {}, signal),
     `calendar-busy:${user.id}:${filters.equipment}`, Boolean(filters.equipment));
   const names = new Map((types.data ?? []).map((type) => [type.code, type.nameKo]));
-  const testName = (code) => names.get(code) ?? (code === "UNKNOWN" || !code ? "시험 유형 확인 필요" : code);
+  const testName = (code) => names.get(code) ?? (code === "UNKNOWN" || !code ? "시험 종류 정보 없음" : code);
   const all = query.data?.schedules ?? [];
   const anonymousBusy = (busy.data ?? []).filter((interval) => !all.some((event) =>
     event.status === "CONFIRMED" && String(event.equipment?.id) === filters.equipment &&
@@ -49,7 +49,7 @@ export default function ReservationCalendar() {
     (!filters.test || r.revision?.content?.test?.testTypeCode === filters.test));
   const chooseDate = (date: string, id?: number) => { setSelection({ date, id }); setMonth(monthOf(date)); };
   const openRequest = (id, date) => { setSelection(null); setRequestDetail({ id, date }); };
-  const scope = !box ? "전체 시험 예약" : box === "RECEIVED" ? "소속 조직에 접수된 시험 예약" : "내가 신청한 시험 예약";
+  const scope = !box ? "전체 시험 예약" : box === "RECEIVED" ? "우리 기관에 접수된 시험 예약" : "내가 신청한 시험 예약";
   return <div className="content-page page-enter reservation-calendar">
     <PageHeader title="시험 일정" description={scope}>
       <Button variant="secondary" icon={RefreshCw} disabled={query.loading || query.refreshing} onClick={query.reload}>새로고침</Button>

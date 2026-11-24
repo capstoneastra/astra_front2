@@ -119,9 +119,9 @@ export default function ReservationCheck({
                 <Text type="supporting" color="secondary">{item.equipment?.externalId ?? ""}</Text>
               </VStack> },
               { key: "party", header: admin ? "맡긴 곳 / 맡은 곳" : received ? "맡긴 곳" : "맡은 곳", width: proportional(1.4), renderCell: (item) => admin
-                ? <VStack gap={0.5}><Text>{item.companyName ?? item.requester?.name ?? "확인 필요"}</Text>
+                ? <VStack gap={0.5}><Text>{item.companyName ?? item.requester?.name ?? "정보 없음"}</Text>
                   <Text type="supporting" color="secondary">{item.institution?.name ?? ""}</Text></VStack>
-                : <Text>{received ? item.companyName ?? item.requester?.name ?? "확인 필요" : item.institution?.name ?? "확인 필요"}</Text> },
+                : <Text>{received ? item.companyName ?? item.requester?.name ?? "정보 없음" : item.institution?.name ?? "정보 없음"}</Text> },
               { key: "status", header: "상태", width: pixel(110), renderCell: (item) =>
                 <AxBadge variant={statusVariant(item.status)} label={requestStatusLabels[item.status] ?? item.status} /> },
               { key: "schedule", header: "희망 기간", width: pixel(150), renderCell: (item) => {

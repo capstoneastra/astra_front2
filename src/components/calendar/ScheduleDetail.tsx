@@ -36,14 +36,14 @@ export default function ScheduleDetail({ date, events, busy = [], initialId, eli
           {query.loading || query.error ? <ApiState loading={query.loading} error={query.error} onRetry={query.reload} /> : reservation && request ? <>
             <Badge tone={reservationStatuses[reservation.status]?.tone}>{reservationStatuses[reservation.status]?.label}</Badge>
             <h3>{testName(request.revision?.content?.test?.testTypeCode)}</h3>
-            <p className="schedule-detail__request-number">{request.requestNo ?? "의뢰번호 확인 필요"}</p>
+            <p className="schedule-detail__request-number">{request.requestNo ?? "의뢰번호 없음"}</p>
             <dl className="schedule-detail__facts">
               <div><dt><CalendarDays size={15} />예약 기간</dt><dd>{formatRange(reservation.startAt, reservation.endAt)}</dd></div>
-              <div><dt>시험장비</dt><dd>{request.equipment?.name ?? "확인 필요"}</dd></div>
-              <div><dt><Building2 size={15} />수행기관</dt><dd>{request.institution?.name ?? "확인 필요"}</dd></div>
-              <div><dt>신청 기업</dt><dd>{request.revision?.content?.applicant?.companyName ?? "확인 필요"}</dd></div>
-              <div><dt>의뢰 진행</dt><dd>{requestStatusLabels[request.status] ?? "확인 필요"}</dd></div>
-              <div><dt>예약 확정 여부</dt><dd>{reservation.status === "CONFIRMED" ? "기관 확인 완료 · 예약 확정" : reservation.status === "CANCELED" ? "취소된 일정" : "미확정 · 기관 확인 필요"}</dd></div>
+              <div><dt>시험장비</dt><dd>{request.equipment?.name ?? "정보 없음"}</dd></div>
+              <div><dt><Building2 size={15} />수행기관</dt><dd>{request.institution?.name ?? "정보 없음"}</dd></div>
+              <div><dt>신청 기업</dt><dd>{request.revision?.content?.applicant?.companyName ?? "정보 없음"}</dd></div>
+              <div><dt>의뢰 진행</dt><dd>{requestStatusLabels[request.status] ?? "정보 없음"}</dd></div>
+              <div><dt>예약 확정 여부</dt><dd>{reservation.status === "CONFIRMED" ? "기관 확인 완료 · 예약 확정" : reservation.status === "CANCELED" ? "취소된 일정" : "미확정, 시험기관 확인 전"}</dd></div>
             </dl>
             <Button variant="secondary" onClick={() => onRequest(request.id, date)}>시험 의뢰 상세보기</Button>
             {["SCHEDULING", "CONFIRMED", "COMPLETED"].includes(request.status) && <fieldset className="schedule-detail__controls" disabled={query.refreshing}>

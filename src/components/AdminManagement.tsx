@@ -198,7 +198,7 @@ export default function AdminManagement({ approvalFocus }: { approvalFocus?: App
                   <tr key={org.id}>
                     <td>{org.name}</td>
                     <td>{organizationTypeLabels[org.orgType] ?? org.orgType}</td>
-                    <td>{org.isVerified ? "승인" : "확인 필요"}</td>
+                    <td>{org.isVerified ? "승인" : "정보 없음"}</td>
                     <td>
                       {["INSTITUTION", "UNIVERSITY"].includes(org.orgType) && !org.isVerified ? (
                         <Button

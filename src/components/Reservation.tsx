@@ -156,13 +156,13 @@ export default function Reservation({ setActiveMenu, openRequest, onChangeEquipm
   if (!draftRequestId)
     return <Panel title="의뢰서 만들기" action={<Button variant="ghost" className="button--sm" icon={RefreshCw} onClick={onChangeEquipment}>장비 바꾸기</Button>}>
       <div className="inline-empty" style={{ color: "var(--text-secondary)" }}>
-        <span><strong>{selectedEquipment?.name}</strong> · {selectedEquipment?.institution || "보유 조직 확인 필요"}
+        <span><strong>{selectedEquipment?.name}</strong> · {selectedEquipment?.institution || "기관 정보 없음"}
           {requirementId ? " · 앞에서 정리한 조건을 함께 넣습니다(AI 초안)" : ""}</span>
         <Button icon={ArrowRight} disabled={busy || !selectedEquipment || ownEquipment} onClick={createDraft}>
           {busy ? "만드는 중…" : "의뢰서 작성 시작"}
         </Button>
       </div>
-      {ownEquipment && <p className="inline-empty">우리 조직이 보유한 장비에는 의뢰할 수 없습니다.</p>}
+      {ownEquipment && <p className="inline-empty">우리 기관 장비에는 의뢰할 수 없습니다.</p>}
       <Feedback action={action} />
     </Panel>;
 
@@ -188,7 +188,7 @@ export default function Reservation({ setActiveMenu, openRequest, onChangeEquipm
     <Panel className="request-sheet">
     <fieldset disabled={!editable || busy} className="request-form">
       <div className="request-form__main">
-        <FormGroup title="시험" action={<span className="small-note">{testTypeCode ? testTypeLabel(testTypeCode) : "시험유형 확인 필요"}</span>}>
+        <FormGroup title="시험" action={<span className="small-note">{testTypeCode ? testTypeLabel(testTypeCode) : "시험 종류 정보 없음"}</span>}>
           <div className="form-grid request-form__body">
             <Field id="req-test-purpose" label="시험 목적" required error={errors["test.purpose"]} wide>
               <textarea id="req-test-purpose" rows={2} value={text("test", "purpose")} onChange={(e) => change("test", "purpose", e.target.value)} />
@@ -220,7 +220,7 @@ export default function Reservation({ setActiveMenu, openRequest, onChangeEquipm
             <Field id="req-schedule-desiredEndDate" label="종료일" required error={errors["schedule.desiredEndDate"]}>
               {input("schedule", "desiredEndDate", { type: "date" })}</Field>
           </div>
-          <p className="small-note request-form__body">희망일이며 실제 일정은 장비 보유 조직과 조율합니다.</p>
+          <p className="small-note request-form__body">희망일이며 실제 일정은 시험기관과 조율합니다.</p>
         </FormGroup>
         <FormGroup title="실사용자" action={<Button variant="ghost" className="button--sm" icon={Copy} onClick={copyApplicant}>신청자와 같음</Button>}>
           <div className="form-grid request-form__body">
@@ -250,7 +250,7 @@ export default function Reservation({ setActiveMenu, openRequest, onChangeEquipm
     </Panel>
     <div className="request-form__actions">
       <Feedback action={action} onRetry={query.reload} />
-      <span className="small-note"><b>*</b> 필수 · 제출하면 장비 보유 조직이 검토합니다.</span>
+      <span className="small-note"><b>*</b> 필수 · 제출하면 시험기관이 검토합니다.</span>
       <Button variant="secondary" disabled={!editable || busy || !editor} onClick={save}>초안 저장</Button>
       <Button type="submit" icon={ArrowRight} disabled={!editable || busy}>{busy ? "처리 중…" : "제출"}</Button>
     </div>

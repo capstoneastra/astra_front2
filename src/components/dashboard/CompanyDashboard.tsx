@@ -144,8 +144,8 @@ function AiExplore({ setActiveMenu }: Pick<Props, "setActiveMenu">) {
             description={[item.institution, item.region, item.testTypes.map(testTypeLabel).join(", "),
               availabilityLabels[item.availability ?? "UNKNOWN"]].filter(Boolean).join(", ")}
             endContent={<Button variant="secondary" className="button--sm" disabled={handoff.busy || own(item)}
-              title={own(item) ? "우리 조직 장비에는 의뢰할 수 없습니다" : undefined}
-              onClick={() => continueRequest(item)}>이 장비로 의뢰</Button>} />)}
+              title={own(item) ? "우리 기관 장비에는 의뢰할 수 없습니다" : undefined}
+              onClick={() => continueRequest(item)}>이 장비로 맡기기</Button>} />)}
         </List>}
         {equipment && equipment.length === 0 && !chat && <Text color="secondary">맞는 장비를 찾지 못했습니다. 시험 이름이나 조건을 바꿔 보세요.</Text>}
         <HStack gap={2} vAlign="center" wrap="wrap">

@@ -20,16 +20,16 @@ import { accessScopeLabels, availabilityLabels, equipmentTypeLabels, valueText }
 import { formatAgo, formatFee, formatRange } from "../domain/format";
 
 const updateReasonLabels: Record<string, string> = {
-  NOT_CONFIRMED: "조직 확인 전",
+  NOT_CONFIRMED: "기관 확인 전",
   OUTDATED: "정보 오래됨",
   AVAILABILITY_UNKNOWN: "가용 상태 미확인",
 };
 
 const verificationLabels: Record<string, string> = {
-  LISTING_CONFIRMED: "등록 확인",
-  VERIFIED: "검증 완료",
-  NEEDS_MANUAL_REVIEW: "검토 필요",
-  NOT_VERIFIED: "미검증",
+  LISTING_CONFIRMED: "기관 확인",
+  VERIFIED: "확인 완료",
+  NEEDS_MANUAL_REVIEW: "확인 중",
+  NOT_VERIFIED: "확인 전",
 };
 const availabilityVariant = (value?: string | null): "success" | "warning" | "error" | "neutral" =>
   value === "AVAILABLE" ? "success" : value === "MAINTENANCE" ? "warning" : value === "UNAVAILABLE" ? "error" : "neutral";
@@ -47,7 +47,7 @@ function EquipmentRowDetail({ item }: { item: OwnedEquipment }) {
   return <dl className="equip-detail">
     <dt>주요 사양</dt>
     <dd>{data?.specs?.length ? data.specs.map((spec) => <span key={spec.key}>{spec.label ?? spec.key} {valueText(spec)}
-      {spec.verificationStatus === "NOT_VERIFIED" && <small> (미검증)</small>}</span>) : "등록된 사양 없음"}</dd>
+      {spec.verificationStatus === "NOT_VERIFIED" && <small> (예시 값)</small>}</span>) : "등록된 사양 없음"}</dd>
     <dt>이용료</dt><dd>{formatFee(usage?.feeText ?? data?.feeText, "입력 필요")}</dd>
     <dt>이용 범위</dt><dd>{accessScopeLabels[usage?.accessScope ?? ""] ?? "입력 필요"}</dd>
     <dt>제조사</dt><dd>{data?.manufacturer ?? "입력 필요"}</dd>
@@ -153,8 +153,8 @@ export default function EquipmentManager(_props: { setActiveMenu: (menu: string)
   return (
     <div className="content-page page-enter">
       <PageHeader title={admin ? "장비 데이터 관리" : "우리 장비"} description={list.data ? `${list.data.totalElements}대${needsUpdate ? `, 갱신 필요 ${needsUpdate}대` : ""}` : undefined}>
-        {admin && <select aria-label="조직 선택" value={adminInstitution} onChange={(e) => setAdminInstitution(e.target.value)}>
-          <option value="">조직 선택</option>
+        {admin && <select aria-label="기관 선택" value={adminInstitution} onChange={(e) => setAdminInstitution(e.target.value)}>
+          <option value="">기관 선택</option>
           {institutions.data?.map((o) => <option key={o.id} value={o.id}>{o.name}</option>)}
         </select>}
         <Button icon={Plus} disabled={admin && !adminInstitution} onClick={() => setAdding((value) => !value)}>장비 등록</Button>
@@ -171,7 +171,7 @@ export default function EquipmentManager(_props: { setActiveMenu: (menu: string)
               <select id="new-equipment-type" value={newEquip.equipmentType} onChange={(e) => setNewEquip({ ...newEquip, equipmentType: e.target.value })}>
                 {Object.entries(equipmentTypeLabels).map(([key, label]) => <option key={key} value={key}>{label}</option>)}
               </select></div>
-            <div className="form-field"><label htmlFor="new-equipment-test">시험유형 {["TEST", "MEASUREMENT"].includes(newEquip.equipmentType) ? <b>*</b> : <span className="small-note">(선택)</span>}</label>
+            <div className="form-field"><label htmlFor="new-equipment-test">시험 종류 {["TEST", "MEASUREMENT"].includes(newEquip.equipmentType) ? <b>*</b> : <span className="small-note">(선택)</span>}</label>
               <select id="new-equipment-test" value={newEquip.testType} onChange={(e) => setNewEquip({ ...newEquip, testType: e.target.value })}>
                 <option value="">선택</option>
                 {types.data?.map((t) => <option key={t.code} value={t.code}>{t.nameKo}</option>)}
@@ -190,7 +190,7 @@ export default function EquipmentManager(_props: { setActiveMenu: (menu: string)
         </form>
       </section>}
       <Feedback action={action} />
-        {admin && !adminInstitution ? <p className="inline-empty">관리할 조직을 위에서 선택해주세요.</p> :
+        {admin && !adminInstitution ? <p className="inline-empty">관리할 기관을 위에서 선택해주세요.</p> :
           list.loading || list.error ? <ApiState loading={list.loading} error={list.error} onRetry={list.reload} /> :
           rows.length === 0 ? <p className="inline-empty">등록된 장비가 없습니다.
             <Button variant="secondary" icon={Plus} onClick={() => setAdding(true)}>장비 등록</Button></p> :
@@ -205,16 +205,16 @@ export default function EquipmentManager(_props: { setActiveMenu: (menu: string)
                 <Link onClick={() => setEditing(item.id)} weight="semibold" color="primary">{item.name}</Link>
                 <Text type="supporting" color="secondary">{[item.model, item.externalId, equipmentTypeLabels[item.equipmentType ?? ""]].filter(Boolean).join(", ")}</Text>
               </VStack> },
-              { key: "testTypes", header: "시험유형", width: proportional(1.2), renderCell: (item) => <HStack gap={1} wrap="wrap">
+              { key: "testTypes", header: "시험 종류", width: proportional(1.2), renderCell: (item) => <HStack gap={1} wrap="wrap">
                 {item.testTypes.length ? item.testTypes.map((code) => <AxBadge key={code} variant="neutral" label={testTypeLabel(code)} />) : <Text color="secondary">없음</Text>}
               </HStack> },
               { key: "availability", header: "가용 상태", width: pixel(110), renderCell: (item) =>
                 <AxBadge variant={availabilityVariant(item.availability)} label={availabilityLabels[item.availability ?? "UNKNOWN"]} /> },
-              { key: "verificationStatus", header: "검증", width: pixel(100), renderCell: (item) =>
+              { key: "verificationStatus", header: "정보 확인", width: pixel(100), renderCell: (item) =>
                 <Text color={item.verificationStatus === "NEEDS_MANUAL_REVIEW" ? "secondary" : undefined}>{verificationLabels[item.verificationStatus ?? ""] ?? "확인 전"}</Text> },
               { key: "update", header: "정보 갱신", width: proportional(1.3), renderCell: (item) => <VStack gap={0.5}>
                 <HStack gap={1}><AxBadge variant={item.needsUpdate ? "warning" : "success"} label={item.needsUpdate ? "갱신 필요" : "최신"} />
-                  {item.isMock && <AxBadge variant="neutral" label="시연" />}</HStack>
+                  {item.isMock && <AxBadge variant="neutral" label="예시" />}</HStack>
                 <Text type="supporting" color="secondary">{[...(item.updateReasons ?? []).map((reason) => updateReasonLabels[reason] ?? reason),
                   item.infoUpdatedAt ? `${formatAgo(item.infoUpdatedAt)} 갱신` : null].filter(Boolean).join(", ")}</Text>
               </VStack> },

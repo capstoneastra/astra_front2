@@ -40,7 +40,7 @@ export default function ReservationControls({ request, initialDate, canConfirm }
     <section>
       <h3>예약 일정 협의</h3>
       <p className="field-hint">
-        일정은 한국 시간으로 표시합니다. 최종 예약 확정은 장비 보유 조직에서 할 수
+        일정은 한국 시간으로 표시합니다. 최종 예약 확정은 시험기관에서 할 수
         있습니다.
       </p>
       {(busy.loading || busy.error) && (

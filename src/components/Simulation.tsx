@@ -56,7 +56,7 @@ export default function Simulation({ setActiveMenu }: { setActiveMenu?: (menu: s
     (signal) => simulationService.history(signal),
     "simulation-history",
   );
-  // 시험 이름으로 찾기: 시험유형 목록에서 입력한 이름과 맞는 것을 고른다
+  // 시험 이름으로 찾기: 시험 종류 목록에서 입력한 이름과 맞는 것을 고른다
   const types = useApiQuery((signal) => catalogService.testTypes(signal), "test-types");
   const term = testText.trim().toLowerCase();
   const matchedType = term ? (types.data ?? []).find((type) => type.nameKo.toLowerCase() === term)
@@ -96,7 +96,7 @@ export default function Simulation({ setActiveMenu }: { setActiveMenu?: (menu: s
   // 실제 시험 의뢰로 넘어가는 버튼: 실행 버튼 옆과 결과 아래에 둔다
   const requestButton = selected && canAccessMenu(user.role, "request") && setActiveMenu ? (
     <Button variant="secondary" icon={ArrowRight} disabled={selected.institutionId === user.organization?.id}
-      title={selected.institutionId === user.organization?.id ? "우리 조직 장비에는 의뢰할 수 없습니다" : undefined}
+      title={selected.institutionId === user.organization?.id ? "우리 기관 장비에는 의뢰할 수 없습니다" : undefined}
       onClick={() => { setDraftRequestId(null); setSelectedEquipment(selected); setActiveMenu("request"); }}>
       이 장비로 실제 시험 의뢰
     </Button>
@@ -140,7 +140,7 @@ export default function Simulation({ setActiveMenu }: { setActiveMenu?: (menu: s
                 ? "이 시험은 가상 모델이 있는 장비가 없습니다" : "장비를 선택하세요"}</option>
               {equipmentOptions.map((e) => (
                 <option key={e.id} value={e.id}>
-                  {e.name} ({e.institution || "보유 조직 확인 필요"}, {e.externalId})
+                  {e.name} ({e.institution || "기관 정보 없음"})
                 </option>
               ))}
             </select>
@@ -184,7 +184,7 @@ export default function Simulation({ setActiveMenu }: { setActiveMenu?: (menu: s
         >
           <p className="content-note">{model.limitation}</p>
           <p className="field-hint">
-            아래 값은 프리셋의 가상 입력값이며 실제 장비 사양이 아닙니다.
+            아래 값은 예시 입력값입니다. 내 시료에 맞게 바꿔 보세요.
           </p>
           <form
             onSubmit={(e) => {
@@ -280,7 +280,7 @@ export default function Simulation({ setActiveMenu }: { setActiveMenu?: (menu: s
               <table>
                 <thead>
                   <tr>
-                    <th>시연 사양</th>
+                    <th>예시 사양</th>
                     <th>입력</th>
                     <th>가상 비교</th>
                     <th>출처</th>
@@ -300,7 +300,7 @@ export default function Simulation({ setActiveMenu }: { setActiveMenu?: (menu: s
                           }[c.result]
                         }
                       </td>
-                      <td>{c.sourceType ?? "확인 필요"}</td>
+                      <td>{c.sourceType ?? "정보 없음"}</td>
                     </tr>
                   ))}
                 </tbody>

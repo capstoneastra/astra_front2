@@ -34,7 +34,7 @@ export function simulationFrame(modelType: string, input: SimulationInput | null
   const t = clamp(Number.isFinite(progress) ? progress : 0, 0, 1);
   const kind = simulationSceneKind(modelType);
   const base = { kind, progress: t, valid: true, movement: 0, compression: 0 } as const;
-  const invalid = { ...base, valid: false, label: "입력 조건", value: "확인 필요", unit: "" };
+  const invalid = { ...base, valid: false, label: "입력 조건", value: "정보 없음", unit: "" };
   const finite = (...keys: string[]) => keys.every((key) => Number.isFinite(p[key]));
 
   if (kind === "vibration") {

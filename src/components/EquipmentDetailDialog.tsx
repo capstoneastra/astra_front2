@@ -24,7 +24,7 @@ function specValue(spec: EquipmentSpec) {
     return `${spec.min} ${spec.unit ?? ""} 이상`;
   if (spec.max !== null && spec.max !== undefined)
     return `${spec.max} ${spec.unit ?? ""} 이하`;
-  return spec.valueText || "확인 필요";
+  return spec.valueText || "정보 없음";
 }
 
 export default function EquipmentDetailDialog({
@@ -62,7 +62,7 @@ export default function EquipmentDetailDialog({
       }}
     >
       <div className="dialog__heading">
-        <Badge tone="cyan">장비 정보{data?.isMock ? ", 시연 값 포함" : ""}</Badge>
+        <Badge tone="cyan">장비 정보{data?.isMock ? ", 예시 값 포함" : ""}</Badge>
         <button
           className="icon-button"
           aria-label="장비 상세 닫기"
@@ -90,36 +90,36 @@ export default function EquipmentDetailDialog({
           <dl className="detail-list">
             <div>
               <dt>시험항목</dt>
-              <dd>{data.testItem || "확인 필요"}</dd>
+              <dd>{data.testItem || "정보 없음"}</dd>
             </div>
             <div>
               <dt>보유기관</dt>
-              <dd>{data.institution || "확인 필요"}</dd>
+              <dd>{data.institution || "정보 없음"}</dd>
             </div>
             <div>
               <dt>활용 설명</dt>
-              <dd>{data.reason || "확인 필요"}</dd>
+              <dd>{data.reason || "정보 없음"}</dd>
             </div>
             <div>
               <dt>정보 갱신일</dt>
-              <dd>{data.updateDate || "확인 필요"}</dd>
+              <dd>{data.updateDate || "정보 없음"}</dd>
             </div>
             <div>
               <dt>가용 상태</dt>
               <dd>
                 {data.usage?.availability === "AVAILABLE"
-                  ? "이용 가능 · 최종 일정은 기관 확인 필요"
+                  ? "이용 가능, 최종 일정은 시험기관이 확인"
                   : data.usage?.availability &&
                       data.usage.availability !== "UNKNOWN"
                     ? data.usage.availability
-                    : "확인 필요"}
+                    : "정보 없음"}
               </dd>
             </div>
             <div>
               <dt>비용·기간</dt>
               <dd>
                 {formatFee(data.usage?.feeText ?? data.feeText)} /{" "}
-                {data.usage?.durationText || "기간 확인 필요"}
+                {data.usage?.durationText || "기간 정보 없음"}
               </dd>
             </div>
             <div>
@@ -129,7 +129,7 @@ export default function EquipmentDetailDialog({
                   ? "외부 이용 가능"
                   : data.usage?.accessScope === "INTERNAL_ONLY"
                     ? "기관 내부 전용"
-                    : "확인 필요"}
+                    : "정보 없음"}
               </dd>
             </div>
             <div>
@@ -140,15 +140,15 @@ export default function EquipmentDetailDialog({
                       <p key={`${spec.key}:${spec.sourceType}:${index}`}>
                         {spec.label || spec.key}: {specValue(spec)}{" "}
                         {spec.sourceType === "MOCK" ? (
-                          <Badge tone="amber">시연 값, 미검증</Badge>
+                          <Badge tone="amber">예시 값</Badge>
                         ) : (
                           <Badge>
-                            {spec.verificationStatus || "검증 확인 필요"}
+                            {spec.verificationStatus || "확인 전"}
                           </Badge>
                         )}
                       </p>
                     ))
-                  : "확인 필요"}
+                  : "정보 없음"}
               </dd>
             </div>
           </dl>
@@ -161,7 +161,7 @@ export default function EquipmentDetailDialog({
               dialog.current.close();
             }}
           >
-            이 장비로 시험 의뢰하기
+            이 장비로 시험 맡기기
           </Button>}
           <div className="form-actions">
             {canAccessMenu(user.role, "simulation") && <Button

@@ -130,7 +130,7 @@ export default function EquipmentEditDialog({ equipmentId, onClose }) {
                   value={value.usage.availability ?? "UNKNOWN"}
                   onChange={(e) => setUsage("availability", e.target.value)}
                 >
-                  <option value="UNKNOWN">확인 필요</option>
+                  <option value="UNKNOWN">정보 없음</option>
                   <option value="AVAILABLE">이용 가능</option>
                   <option value="BUSY">사용 중</option>
                   <option value="MAINTENANCE">점검 중</option>
@@ -143,7 +143,7 @@ export default function EquipmentEditDialog({ equipmentId, onClose }) {
                   value={value.usage.accessScope ?? "UNKNOWN"}
                   onChange={(e) => setUsage("accessScope", e.target.value)}
                 >
-                  <option value="UNKNOWN">확인 필요</option>
+                  <option value="UNKNOWN">정보 없음</option>
                   <option value="EXTERNAL_ALLOWED">외부 이용 가능</option>
                   <option value="INTERNAL_ONLY">기관 내부 전용</option>
                 </select>
@@ -167,10 +167,9 @@ export default function EquipmentEditDialog({ equipmentId, onClose }) {
               </Button>
             </div>
           </form>
-          <h3>기관 등록 REAL 사양</h3>
+          <h3>기관이 입력한 사양</h3>
           <p className="field-hint">
-            기존 MOCK 사양은 이 입력란에서 수정하지 않습니다. 시연 모드의 입력은
-            실제 장비 검증을 의미하지 않습니다.
+            공개 자료로 미리 채운 예시 사양은 여기서 바꾸지 않습니다. 실제 장비 값을 아래에 입력해 주세요.
           </p>
           {specs.map((spec, index) => (
             <div className="form-grid" key={index}>
@@ -245,7 +244,7 @@ export default function EquipmentEditDialog({ equipmentId, onClose }) {
                 ])
               }
             >
-              REAL 사양 추가
+              사양 추가
             </Button>
             <Button
               disabled={
@@ -255,18 +254,18 @@ export default function EquipmentEditDialog({ equipmentId, onClose }) {
               onClick={() =>
                 action.run(
                   () => catalogService.saveSpecs(value.id, specs),
-                  "REAL 사양을 저장했습니다. MOCK 사양은 유지됩니다.",
+                  "사양을 저장했습니다.",
                 )
               }
             >
-              REAL 사양 저장
+              사양 저장
             </Button>
           </div>
           {data.specs
             .filter((s) => s.sourceType === "MOCK")
             .map((s, i) => (
               <p className="field-hint" key={`${s.key}:${i}`}>
-                시연 값: {s.label} (수정하지 않음)
+                예시 값: {s.label} (수정하지 않음)
               </p>
             ))}
         </>

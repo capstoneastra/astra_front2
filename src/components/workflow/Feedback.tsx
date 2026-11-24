@@ -22,7 +22,7 @@ export function DemoNotice({ children }: { children?: ReactNode }) {
   return (
     <p className="content-note content-note--quiet">
       <Info size={13} aria-hidden="true" />
-      <span>최종 시험 가능 여부와 일정은 장비 보유 조직이 확인합니다.{children && <> {children}</>}</span>
+      <span>최종 시험 가능 여부와 일정은 시험기관이 확인합니다.{children && <> {children}</>}</span>
     </p>
   );
 }

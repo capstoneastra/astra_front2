@@ -96,7 +96,7 @@ export default function AdminDashboard({ setActiveMenu, onSearch, openRequest, o
       <Stat label="마친 의뢰" value={finished} hint={`완료 ${counts.COMPLETED ?? 0}, 반려·취소 ${sum(["REJECTED", "CANCELED"])}`}
         onClick={() => openRequest("RECEIVED", undefined, "COMPLETED")} />
       <Stat label="등록 장비" value={summary.equipmentStats.total}
-        hint={listed ? `정보 검증 ${Math.round((verified / listed) * 100)}% (${verified}/${listed}대)` : undefined}
+        hint={listed ? `정보 확인 ${Math.round((verified / listed) * 100)}% (${verified}/${listed}대)` : undefined}
         onClick={() => setActiveMenu("equipment")} />
     </div>
 
@@ -127,21 +127,21 @@ export default function AdminDashboard({ setActiveMenu, onSearch, openRequest, o
     </div>
 
     <div className="dash-grid dash-grid--even">
-      <Panel title="시험유형별 장비 수" description="어떤 시험을 맡길 곳이 많고 적은지">
+      <Panel title="시험 종류별 장비 수" description="어떤 시험을 맡길 곳이 많고 적은지">
         {types.loading || types.error ? <ApiState loading={types.loading} error={types.error} onRetry={types.reload} /> :
-          <Bars rows={typeBars} unit="대" label="시험유형별 장비 수" />}
+          <Bars rows={typeBars} unit="대" label="시험 종류별 장비 수" />}
       </Panel>
       <Panel title="지역별 장비 분포" description={`등록 장비 ${summary.equipmentStats.total.toLocaleString("ko-KR")}대`}>
         <Bars rows={regionBars} unit="대" label="지역별 장비 수" />
       </Panel>
     </div>
 
-    <Panel title="기관별 정보 검증" description="검증이 덜 된 기관부터"
+    <Panel title="기관별 장비 정보 확인" description="확인이 덜 된 기관부터"
       action={<TextLink onClick={() => setActiveMenu("equipment")}>장비 데이터 관리</TextLink>}>
-      {orgRows.length === 0 ? <p className="inline-empty">표시할 검증 현황이 없습니다.</p> : <>
-        <ul className="hbars hbars--progress" aria-label="기관별 장비 정보 검증률">
+      {orgRows.length === 0 ? <p className="inline-empty">표시할 확인 현황이 없습니다.</p> : <>
+        <ul className="hbars hbars--progress" aria-label="기관별 장비 정보 확인율">
           {(showAllOrgs ? orgRows : orgRows.slice(0, 6)).map((item) => <li key={item.id}
-            title={`${item.name}: ${item.verifiedCount}/${item.equipmentCount}대 검증`}>
+            title={`${item.name}: ${item.verifiedCount}/${item.equipmentCount}대 확인`}>
             <button type="button" className="hbars__row" onClick={() => onSearch("", { institutionId: item.id })}>
               <span className="hbars__label">{item.name}<small>{item.region}</small></span>
               <span className="hbars__track" aria-hidden="true">

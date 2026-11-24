@@ -6,13 +6,13 @@ import Automation from "../Automation";
 const modes = [
   {
     id: "chatbot",
-    label: "시험 상담",
+    label: "질문하기",
     icon: MessageSquareText,
     description: "대화로 시험조건을 정리하고 필요한 장비를 찾아보세요.",
   },
   {
     id: "autopilot",
-    label: "자동 추진",
+    label: "자동 진행",
     icon: Workflow,
     description: "조건 분석부터 의뢰서 초안까지 단계별로 진행하세요.",
   },
@@ -121,7 +121,7 @@ export default function AiAssistant({
         hidden={open}
         className="ai-launcher"
         aria-label={open ? "AI 어시스턴트 닫기" : "AI 어시스턴트 열기"}
-        title={open ? "AI 어시스턴트 닫기" : "시험 상담과 자동 추진 열기"}
+        title={open ? "AI 어시스턴트 닫기" : "AI 도우미 열기"}
         aria-expanded={open}
         aria-controls="astra-ai-assistant"
         onClick={open ? onClose : onOpen}

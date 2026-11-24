@@ -23,7 +23,7 @@ export default function TestInformation({ setActiveMenu }) {
       />
       <DemoNotice />
       <Panel className="form-panel">
-        <FormField id="information-test-type" label="시험유형">
+        <FormField id="information-test-type" label="시험 종류">
           <select
             id="information-test-type"
             value={selected}
@@ -105,24 +105,24 @@ export default function TestInformation({ setActiveMenu }) {
                   {detail.data.institutions.map((org) => (
                     <tr key={org.id}>
                       <td>{org.name}</td>
-                      <td>{org.region ?? "확인 필요"}</td>
+                      <td>{org.region ?? "정보 없음"}</td>
                       <td>{org.equipmentCount}대</td>
                       <td>
                         {org.estCostMin != null
                           ? `${org.estCostMin.toLocaleString("ko-KR")}원~`
-                          : "확인 필요"}
+                          : "정보 없음"}
                       </td>
                       <td>
                         {org.estDurationDays != null
                           ? `${org.estDurationDays}일`
-                          : "확인 필요"}
+                          : "정보 없음"}
                       </td>
                       <td>
                         {org.accessScope === "EXTERNAL_ALLOWED"
                           ? "외부 이용 가능"
                           : org.accessScope === "INTERNAL_ONLY"
                             ? "기관 내부 전용"
-                            : "확인 필요"}
+                            : "정보 없음"}
                       </td>
                     </tr>
                   ))}

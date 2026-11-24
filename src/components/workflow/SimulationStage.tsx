@@ -10,11 +10,11 @@ import type { SimulationInput, SimulationResult } from "../../services/simulatio
 import { simulationFrame, simulationSceneKind } from "../../domain/simulationView";
 
 const sceneInfo = {
-  vibration: { title: "진동 시험대", subtitle: "시료와 시험대의 진동을 입체적으로 살펴보세요.", note: "1자유도 모델의 응답비를 반영한 시연입니다. 움직임은 느리게 재생하며 변위를 과장합니다." },
+  vibration: { title: "진동 시험대", subtitle: "시료와 시험대의 진동을 입체적으로 살펴보세요.", note: "1자유도 모델의 응답비를 반영한 움직임입니다. 움직임은 느리게 재생하며 변위를 과장합니다." },
   thermal: { title: "온도 시험 챔버", subtitle: "챔버 내부 시료와 설정 온도 변화를 살펴보세요.", note: "챔버는 내부를 볼 수 있는 절개 모형입니다. 색상은 설정 온도이며 실제 온도 분포가 아닙니다." },
   load: { title: "하중 시험 프레임", subtitle: "하중 변화와 시료의 개념적 변형을 살펴보세요.", note: "변형은 시험 과정을 설명하는 연출입니다. 실제 변형량·응력·파손을 예측하지 않습니다." },
   impact: { title: "낙하 시험 가이드", subtitle: "시료가 낙하하는 과정을 입체적으로 살펴보세요.", note: "낙하 높이를 화면 크기에 맞춰 표현합니다. 충돌·파손 해석은 수행하지 않습니다." },
-  inspection: { title: "3D 시료 둘러보기", subtitle: "시료를 회전하고 확대해 형태를 확인하세요.", note: "선택한 시험은 3D 외형 보기만 지원합니다. 계산 결과는 아래 가상 시연 결과에서 확인하세요." },
+  inspection: { title: "3D 시료 둘러보기", subtitle: "시료를 회전하고 확대해 형태를 확인하세요.", note: "선택한 시험은 3D 외형 보기만 지원합니다. 계산 결과는 아래 가상 시험 결과에서 확인하세요." },
 };
 const specimens = [
   { id: "satellite", name: "소형 위성", detail: "본체 · 태양전지판 · 안테나" },
@@ -130,19 +130,19 @@ export default function SimulationStage({ modelType, input, result, equipmentNam
                     <h2>눈앞에서 살펴보는 가상 시험실</h2>
           <p>물체를 돌려보고, 시험 조건에 따른 변화를 확인하세요.</p>
         </div>
-        <span className="sim-lab__badge"><Box size={14} /> 3D 시연</span>
+        <span className="sim-lab__badge"><Box size={14} /> 3D 보기</span>
       </div>
       <div className="sim-lab__layout">
         <div className="sim-lab__main">
           <div className="sim-viewport">
             <div className="sim-viewport__title">
-              <span className="sim-status"><i /> {playing && frame.valid ? "시연 재생 중" : "시료 둘러보기"}</span>
+              <span className="sim-status"><i /> {playing && frame.valid ? "재생 중" : "시료 둘러보기"}</span>
               <h3>{info.title}</h3>
               <p>{info.subtitle}</p>
             </div>
             <div ref={host} className="sim-canvas" />
             {error && <div className="sim-viewport__error" role="alert"><p>{error}</p><button type="button" onClick={() => setRevision((v) => v + 1)}>3D 다시 열기</button></div>}
-            <div className="sim-telemetry" aria-label="현재 시연 값">
+            <div className="sim-telemetry" aria-label="현재 값">
               <span>{frame.label}</span>
               <strong>{display(frame.value)} <small>{frame.unit}</small></strong>
               {frame.secondaryLabel && <p>{frame.secondaryLabel}{frame.secondaryValue != null ? ` ${display(frame.secondaryValue)}배` : ""}</p>}
@@ -155,13 +155,13 @@ export default function SimulationStage({ modelType, input, result, equipmentNam
             </div>
           </div>
           <div className="sim-playback">
-            <button type="button" className="sim-playback__play" onClick={togglePlay} disabled={!animated || !frame.valid || Boolean(error)} aria-label={playing ? "3D 시연 일시정지" : "3D 시연 재생"}>
+            <button type="button" className="sim-playback__play" onClick={togglePlay} disabled={!animated || !frame.valid || Boolean(error)} aria-label={playing ? "3D 보기 일시정지" : "3D 보기 재생"}>
               {playing ? <Pause size={18} /> : <Play size={18} />}
             </button>
-            <button type="button" className="sim-playback__reset" aria-label="3D 시연 처음으로" onClick={() => seek(0)} disabled={!animated}><RotateCcw size={16} /></button>
-            <input type="range" aria-label="3D 시연 진행률" min="0" max="1000" value={Math.round(progress * 1000)} onChange={(e) => seek(Number(e.target.value) / 1000)} disabled={!animated || !frame.valid || Boolean(error)} />
+            <button type="button" className="sim-playback__reset" aria-label="3D 보기 처음으로" onClick={() => seek(0)} disabled={!animated}><RotateCcw size={16} /></button>
+            <input type="range" aria-label="3D 보기 진행률" min="0" max="1000" value={Math.round(progress * 1000)} onChange={(e) => seek(Number(e.target.value) / 1000)} disabled={!animated || !frame.valid || Boolean(error)} />
             <span className="sim-playback__position">{Math.round(progress * 100)}%</span>
-            <select aria-label="3D 시연 재생 속도" value={speed} onChange={(e) => setSpeed(Number(e.target.value))} disabled={!animated}><option value="0.5">0.5×</option><option value="1">1×</option><option value="2">2×</option></select>
+            <select aria-label="3D 보기 재생 속도" value={speed} onChange={(e) => setSpeed(Number(e.target.value))} disabled={!animated}><option value="0.5">0.5×</option><option value="1">1×</option><option value="2">2×</option></select>
           </div>
           <p className="sim-lab__note">{info.note}</p>
         </div>

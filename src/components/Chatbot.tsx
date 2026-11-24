@@ -131,7 +131,7 @@ export default function Chatbot({ setActiveMenu }) {
                   <Sparkles size={14} />
                 </span>
                 <div className="message__bubble" role="status">
-                  시연 응답을 준비하고 있습니다…
+                  답변을 준비하고 있습니다…
                 </div>
               </div>
             )}
@@ -154,12 +154,12 @@ export default function Chatbot({ setActiveMenu }) {
                       <div className="chat-suggested__item" key={item.id}>
                         <div>
                           <strong>{item.name}</strong>
-                          <small>{item.institution}, {item.region ?? "지역 확인 필요"}</small>
+                          <small>{item.institution}, {item.region ?? "지역 정보 없음"}</small>
                           <Badge tone={availabilityTone[item.availability ?? "UNKNOWN"]}>
                             {availabilityLabels[item.availability ?? "UNKNOWN"]}
                           </Badge>
                         </div>
-                        <Button variant="secondary" className="button--sm" disabled={action.busy} onClick={() => handOff(item)}>이 장비로 의뢰</Button>
+                        <Button variant="secondary" className="button--sm" disabled={action.busy} onClick={() => handOff(item)}>이 장비로 맡기기</Button>
                       </div>
                     ))}
                   </div>
@@ -209,7 +209,7 @@ export default function Chatbot({ setActiveMenu }) {
             </Button>
           </div>
           <p className="chat-panel__footnote">
-            시연 응답은 실제 장비 적합성 판단이나 예약 가능 여부를 보장하지
+            AI 답변은 실제 장비 적합성 판단이나 예약 가능 여부를 보장하지
             않습니다.
           </p>
         </Panel>

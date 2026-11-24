@@ -30,7 +30,7 @@ export default function Automation({ setActiveMenu, embedded = false }) {
   const running = run && ["RUNNING", "PENDING"].includes(run.status);
   return (
     <div className="content-page page-enter">
-      {!embedded && <PageHeader title="AI 자동 추진" />}
+      {!embedded && <PageHeader title="AI 자동 진행" />}
       <DemoNotice>
         최종 결과는 DRAFT 초안입니다. 사용자 승인 없이 의뢰를 제출하거나 예약을
         확정하지 않습니다.
@@ -59,7 +59,7 @@ export default function Automation({ setActiveMenu, embedded = false }) {
               })
             }
           >
-            자동 추진 시작
+            자동 진행 시작
           </Button>
           {run &&
             ["RUNNING", "WAITING_USER", "PENDING"].includes(run.status) && (
@@ -125,7 +125,7 @@ export default function Automation({ setActiveMenu, embedded = false }) {
           </ol>
           {run.status === "WAITING_USER" && (
             <p role="status">
-              확인되지 않은 조건을 아래에서 저장한 뒤 재개해주세요. 시험유형이
+              확인되지 않은 조건을 아래에서 저장한 뒤 재개해주세요. 시험 종류이
               없으면 목적에 시험 종류를 포함해 다시 시작해주세요.
             </p>
           )}

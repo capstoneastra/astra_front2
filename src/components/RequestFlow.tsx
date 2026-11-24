@@ -27,7 +27,7 @@ const steps: { id: Step; label: string }[] = [
   { id: 3, label: "의뢰서" },
 ];
 
-/** 조건 입력 화면의 도움말: 선택한 시험유형의 가능 기관·예상 비용·입력할 조건 (구 '시험 정보 안내') */
+/** 조건 입력 화면의 도움말: 선택한 시험 종류의 가능 기관·예상 비용·입력할 조건 (구 '시험 정보 안내') */
 function TestTypeHelp({ code, openTestInfo }: { code: string; openTestInfo: (code: string) => void }) {
   const query = useApiQuery((signal) => catalogService.testType(code, signal), `test-type:${code}`, Boolean(code));
   const data = query.data;
@@ -37,8 +37,8 @@ function TestTypeHelp({ code, openTestInfo }: { code: string; openTestInfo: (cod
   return <div className="request-help">
     <p><strong>{data.nameKo}</strong> {data.description}</p>
     <ul>
-      <li>가능 조직 {data.institutions.length}곳, 장비 {data.institutions.reduce((sum, item) => sum + item.equipmentCount, 0)}대</li>
-      <li>예상 비용 {costs.length ? `${Math.min(...costs).toLocaleString("ko-KR")}원부터` : "조직 확인 필요"}
+      <li>가능 기관 {data.institutions.length}곳, 장비 {data.institutions.reduce((sum, item) => sum + item.equipmentCount, 0)}대</li>
+      <li>예상 비용 {costs.length ? `${Math.min(...costs).toLocaleString("ko-KR")}원부터` : "기관 문의"}
         {days.length ? ` · 최소 ${Math.min(...days)}일` : ""}</li>
       <li>입력할 조건: {data.conditionRules.map((rule) => `${rule.label}${rule.isRequired ? "*" : ""}`).join(", ")}</li>
     </ul>
@@ -69,7 +69,7 @@ function ConditionStep({ setActiveMenu, onMatched }: { setActiveMenu: (menu: str
         }}>
           <div className="form-grid">
             <div className="form-field">
-              <label htmlFor="flow-test-type">시험유형 <b>*</b></label>
+              <label htmlFor="flow-test-type">시험 종류 <b>*</b></label>
               <select id="flow-test-type" value={form.testTypeCode} onChange={(e) => setForm({ ...form, testTypeCode: e.target.value })}>
                 {types.data?.map((t) => <option key={t.code} value={t.code}>{t.nameKo}</option>)}
               </select>
@@ -153,7 +153,7 @@ function MatchStep({ matchRun, onChoose, setActiveMenu }: {
               <Badge tone={availabilityTone[equipment.availability ?? "UNKNOWN"]} dot>{availabilityLabels[equipment.availability ?? "UNKNOWN"]}</Badge>
               {accessScopeLabels[equipment.accessScope ?? ""] && <Badge tone={equipment.accessScope === "EXTERNAL_ALLOWED" ? "blue" : "violet"}>
                 {accessScopeLabels[equipment.accessScope]}</Badge>}
-              {result.usedMockData && <Badge tone="amber">DEMO</Badge>}
+              {result.usedMockData && <Badge tone="amber">예시 포함</Badge>}
             </div></td>
             <td className="match-reason">{result.reason}</td>
             <td className="cell-actions">
@@ -161,7 +161,7 @@ function MatchStep({ matchRun, onChoose, setActiveMenu }: {
                 title="예약이 차 있어도 결과를 미리 가늠해 볼 수 있습니다" onClick={() => openSimulation(equipment.id)}>가상 시험</Button>}
               <Button className="button--sm" icon={ArrowRight} disabled={action.busy || result.verdict === "UNSUITABLE"}
               title={result.verdict === "UNSUITABLE" ? "조건이 맞지 않는 장비입니다" : undefined}
-              onClick={() => choose(result)}>이 장비로 의뢰</Button></td>
+              onClick={() => choose(result)}>이 장비로 맡기기</Button></td>
           </tr>, open === result.id && <tr key={`${result.id}-checks`} className="match-checks"><td />
             <td colSpan={5}><div className="badges">{result.checks.map((check) => <span key={check.conditionKey} className="small-note">
               <Badge tone={check.result === "MET" ? "green" : check.result === "NOT_MET" ? "red" : "neutral"}>{checkLabels[check.result]}</Badge>{" "}
@@ -175,7 +175,7 @@ function MatchStep({ matchRun, onChoose, setActiveMenu }: {
 
 /**
  * 시험 맡기기: ① 조건 말하기(AI 상담 또는 직접 입력) → ② 추천 장비 → ③ 의뢰서(조건·장비 자동 채움) → 초안 저장/제출
- * 장비 찾기·비교·AI 상담에서 "이 장비로 의뢰"를 누르면 ③으로 바로 들어온다.
+ * 장비 찾기·비교·AI 상담에서 "이 장비로 맡기기"를 누르면 ③으로 바로 들어온다.
  */
 export default function RequestFlow({ setActiveMenu, openRequest }: {
   setActiveMenu: (menu: string) => void;

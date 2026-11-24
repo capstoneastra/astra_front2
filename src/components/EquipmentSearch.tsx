@@ -59,7 +59,7 @@ function SpecSummary({ id }: { id: number }) {
   const specs = [...(detail.data?.specs ?? [])].sort((a, b) => (a.sourceType === "REAL" ? -1 : 0) - (b.sourceType === "REAL" ? -1 : 0)).slice(0, 2);
   const fee = detail.data?.usage?.feeText ?? detail.data?.feeText;
   return <Text type="supporting" maxLines={2}>
-    {specs.length ? specs.map((spec) => `${spec.label ?? spec.key} ${valueText(spec)}`).join(", ") : "사양 확인 필요"}
+    {specs.length ? specs.map((spec) => `${spec.label ?? spec.key} ${valueText(spec)}`).join(", ") : "사양 정보 없음"}
     <Text type="supporting" color="secondary">{`, ${formatFee(fee)}`}</Text>
   </Text>;
 }
@@ -177,7 +177,7 @@ export default function EquipmentSearch({
     filters.availability && { label: availabilityLabels[filters.availability], clear: () => update("availability", "") },
     filters.externalOnly && { label: "공동활용만", clear: () => update("externalOnly", false) },
     filters.accreditedOnly && { label: "공인시험 가능만", clear: () => update("accreditedOnly", false) },
-    !filters.includeMock && { label: "시연 데이터 제외", clear: () => update("includeMock", true) },
+    !filters.includeMock && { label: "예시 데이터 제외", clear: () => update("includeMock", true) },
   ].filter(Boolean);
 
   const ownEquipment = (item: Equipment) => user.organization?.id != null && item.institutionId === user.organization.id;
@@ -227,8 +227,8 @@ export default function EquipmentSearch({
 
       <Panel className="search-results">
         <div className="search-filters" aria-label="필터">
-          <select aria-label="시험유형" value={filters.testType} onChange={(event) => update("testType", event.target.value)}>
-            <option value="">시험유형 전체</option>
+          <select aria-label="시험 종류" value={filters.testType} onChange={(event) => update("testType", event.target.value)}>
+            <option value="">시험 종류 전체</option>
             {types.data?.map((type) => <option key={type.code} value={type.code}>{type.nameKo}</option>)}
           </select>
           <details className="filter-menu">
@@ -245,8 +245,8 @@ export default function EquipmentSearch({
             <option value="">가용 상태 전체</option>
             {Object.entries(availabilityLabels).map(([key, label]) => <option key={key} value={key}>{label}</option>)}
           </select>
-          <select aria-label="보유 조직" value={filters.institutionId ?? ""} onChange={(event) => update("institutionId", event.target.value ? Number(event.target.value) : null)}>
-            <option value="">보유 조직 전체</option>
+          <select aria-label="시험기관" value={filters.institutionId ?? ""} onChange={(event) => update("institutionId", event.target.value ? Number(event.target.value) : null)}>
+            <option value="">시험기관 전체</option>
             {institutions.data?.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
           </select>
           <select aria-label="장비 유형" value={filters.equipmentType} onChange={(event) => update("equipmentType", event.target.value)}>
@@ -258,7 +258,7 @@ export default function EquipmentSearch({
           <label className="check-row"><input type="checkbox" checked={filters.accreditedOnly} disabled={query.sentence}
             onChange={(event) => update("accreditedOnly", event.target.checked)} />공인시험 가능만</label>
           <label className="check-row"><input type="checkbox" checked={filters.includeMock}
-            onChange={(event) => update("includeMock", event.target.checked)} />시연 데이터 포함</label>
+            onChange={(event) => update("includeMock", event.target.checked)} />예시 데이터 포함</label>
         </div>
 
         <div className="search-summary" aria-live="polite">
@@ -282,7 +282,7 @@ export default function EquipmentSearch({
           <Sparkles size={13} aria-hidden="true" />
           문장을 이렇게 이해했어요: <strong>{[...(interpreted.testTypes ?? []).map(testTypeLabel),
             ...(interpreted.conditions ?? []).map((condition) => valueText(condition)),
-            ...(interpreted.regions ?? [])].join(" · ") || "시험유형을 찾지 못해 장비명으로 검색"}</strong>
+            ...(interpreted.regions ?? [])].join(" · ") || "시험 종류을 찾지 못해 장비명으로 검색"}</strong>
           <button type="button" className="text-link" onClick={() => setQuery({ ...query, sentence: false })}>검색어 그대로 찾기</button>
         </p>}
 
@@ -305,10 +305,10 @@ export default function EquipmentSearch({
                 <Link onClick={() => setDetailEquipment(item)} weight="semibold" color="primary">{item.name}</Link>
                 {item.model && <Text type="supporting" color="secondary">{item.model}</Text>}
               </HStack> },
-              { key: "institution", header: "보유 조직", width: proportional(1.4), renderCell: (item) =>
-                <Text maxLines={1}>{[item.institution || "확인 필요", item.region].filter(Boolean).join(", ")}</Text> },
+              { key: "institution", header: "시험기관", width: proportional(1.4), renderCell: (item) =>
+                <Text maxLines={1}>{[item.institution || "정보 없음", item.region].filter(Boolean).join(", ")}</Text> },
               { key: "specs", header: "주요 사양과 이용료", width: proportional(1.8), renderCell: (item) => <SpecSummary id={item.id} /> },
-              { key: "testTypes", header: "시험유형", width: proportional(1), renderCell: (item) => <HStack gap={1} wrap="wrap">
+              { key: "testTypes", header: "시험 종류", width: proportional(1), renderCell: (item) => <HStack gap={1} wrap="wrap">
                 {item.testTypes.length ? item.testTypes.map((code) => <AxBadge key={code} variant="neutral" label={testTypeLabel(code)} />) :
                   <Text color="secondary">없음</Text>}
               </HStack> },
@@ -321,7 +321,7 @@ export default function EquipmentSearch({
                     <Text>{availabilityLabels[item.availability ?? "UNKNOWN"] ?? String(item.availability)}</Text>
                   </HStack>
                   {scope && accessScopeLabels[scope] && <AxBadge variant={scope === "EXTERNAL_ALLOWED" ? "blue" : "purple"} label={accessScopeLabels[scope]} />}
-                  {item.isMock && <AxBadge variant="neutral" label="시연" />}
+                  {item.isMock && <AxBadge variant="neutral" label="예시" />}
                 </HStack>;
               } },
               { key: "actions", header: <span className="sr-only">동작</span>, width: pixel(canRequest ? 260 : 80), align: "end", renderCell: (item) => <HStack gap={1} hAlign="end">
@@ -329,9 +329,9 @@ export default function EquipmentSearch({
                   title="예약이 차 있어도 결과를 미리 가늠해 볼 수 있습니다" onClick={() => openSimulation(item.id)}>가상 시험</Button>}
                 {canRequest ? <Button variant="secondary" className="button--sm"
                   disabled={selecting !== null || ownEquipment(item)}
-                  title={ownEquipment(item) ? "우리 조직 장비에는 의뢰할 수 없습니다" : undefined}
+                  title={ownEquipment(item) ? "우리 기관 장비에는 의뢰할 수 없습니다" : undefined}
                   onClick={() => requestEquipment(item)}>
-                  {selecting === item.id ? "확인 중…" : "이 장비로 의뢰"}
+                  {selecting === item.id ? "확인 중…" : "이 장비로 맡기기"}
                 </Button> : <Button variant="ghost" className="button--sm" onClick={() => setDetailEquipment(item)}>상세</Button>}
               </HStack> },
             ]}

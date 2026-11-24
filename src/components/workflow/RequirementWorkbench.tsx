@@ -74,11 +74,11 @@ export default function RequirementWorkbench({
     <Panel
       className="workbench"
       title="세부 조건"
-      description="입력하지 않은 조건은 미확인으로 남고, 조직이 확인합니다."
+      description="입력하지 않은 조건은 미확인으로 남고, 시험기관이 확인합니다."
     >
       <p className="field-hint">
         {rules.data?.nameKo} · 조건 #{data.id} ·{" "}
-        {data.purpose || "목적 확인 필요"}
+        {data.purpose || "목적 정보 없음"}
       </p>
       <ConditionEditor
         idPrefix={idPrefix}

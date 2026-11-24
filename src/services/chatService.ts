@@ -14,7 +14,7 @@ interface ChatMessage {
     suggestedTestType?: string;
     extractedConditions?: RequirementCondition[];
     missingQuestions?: string[];
-    /** 상담 AI가 소개한 그 시험유형의 장비 (최대 5대, 내 조직 제외). 적합 판단은 매칭이 한다 */
+    /** 상담 AI가 소개한 그 시험 종류의 장비 (최대 5대, 내 조직 제외). 적합 판단은 매칭이 한다 */
     suggestedEquipmentIds?: number[];
   } | null;
 }

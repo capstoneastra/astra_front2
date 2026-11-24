@@ -36,15 +36,15 @@ export const accountStatusLabels = {
 /** 날짜+시각 (예: 11월 24일 (화) 14:00). 표기 규칙은 domain/format.ts */
 export const formatDate = (value) => formatDateTime(value, "기록 없음");
 export function valueText(value) {
-  if (!value) return "확인 필요";
-  return `${value.value ?? (value.min != null && value.max != null ? `${value.min}~${value.max}` : (value.valueText ?? "확인 필요"))} ${value.unit ?? ""}`.trim();
+  if (!value) return "정보 없음";
+  return `${value.value ?? (value.min != null && value.max != null ? `${value.min}~${value.max}` : (value.valueText ?? "정보 없음"))} ${value.unit ?? ""}`.trim();
 }
 export const availabilityLabels: Record<string, string> = {
   AVAILABLE: "예약 가능",
   BUSY: "사용 중",
   MAINTENANCE: "정비 중",
   UNAVAILABLE: "사용 불가",
-  UNKNOWN: "확인 필요",
+  UNKNOWN: "정보 없음",
 };
 export const availabilityTone: Record<string, string> = {
   AVAILABLE: "green",

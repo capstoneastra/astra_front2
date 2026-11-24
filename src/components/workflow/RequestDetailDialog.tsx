@@ -67,7 +67,7 @@ function SupplementResponse({ request, supplement, content, onContent }: {
     void action.run(() => requestService.respond(supplement.id, {
       version: request.version, content, message,
       changeSummary: items.map((field) => `${field.label}: ${readPath(content, field.key) ?? ""}`).join(", ") || message,
-    }), "답변을 보냈습니다. 상대 조직이 다시 검토합니다.");
+    }), "답변을 보냈습니다. 상대 기관이 다시 검토합니다.");
   }}>
     <div className="form-grid">
       {items.map((field) => {
