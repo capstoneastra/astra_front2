@@ -1338,3 +1338,51 @@ label b {
   .ac--hero .ac__box input { flex: 1 1 200px; }
   .ac--hero .ac__submit { width: 100%; }
 }
+
+/* ── 회의(11/24) 공통: 여백 최소화 ── */
+.main-content { padding: 10px 18px 16px; }
+.page-header,
+.content-page > .page-header { margin-bottom: 8px; min-height: 36px; }
+.search-hero { padding: 10px 0 12px; gap: 10px; }
+.search-hero h1 { font-size: 20px; }
+.ac--hero .ac__box input { height: 48px; font-size: 16px; }
+.ac--hero .ac__submit { min-height: 44px; }
+.panel__header { padding: 8px 12px; }
+.form-panel, .request-card { padding: 12px; }
+.grid-2, .grid-3, .grid-4, .dash-grid, .dash-stats { gap: 10px; }
+.work-dashboard { gap: 10px; }
+
+/* ── 회의(11/24) 공통: 누른 것에 반응하는 짧은 움직임만 (150~200ms) ── */
+:root { --motion-fast: 150ms; --motion-base: 200ms; --motion-ease: cubic-bezier(0.2, 0, 0, 1); }
+.dash-stat,
+.segmented > button,
+.search-hero__chips button,
+.chip,
+.stepper button,
+.filter-menu summary,
+.bell-trigger,
+.account-trigger,
+.ac__item,
+.chat-suggested__item {
+  transition: background-color var(--motion-fast) var(--motion-ease), border-color var(--motion-fast) var(--motion-ease),
+    color var(--motion-fast) var(--motion-ease), box-shadow var(--motion-fast) var(--motion-ease), transform var(--motion-fast) var(--motion-ease);
+}
+.dash-stat:not(:disabled):active,
+.search-hero__chips button:active,
+.segmented > button:active { transform: scale(0.98); }
+/* 탭을 바꾸면 내용이 살짝 떠오르며 바뀜 */
+.dash-board__body > *,
+.ai-assistant__pane:not([hidden]) { animation: astra-swap var(--motion-base) var(--motion-ease); }
+/* 펼침: 필터 메뉴, 접는 묶음 */
+.filter-menu[open] .filter-menu__list,
+details[open] > :not(summary) { animation: astra-reveal var(--motion-base) var(--motion-ease); }
+/* 창 열림: 의뢰·장비 상세 */
+dialog[open] { animation: astra-pop var(--motion-base) var(--motion-ease); }
+dialog[open]::backdrop { animation: astra-fade var(--motion-base) var(--motion-ease); }
+@keyframes astra-swap { from { opacity: 0; transform: translateY(4px); } }
+@keyframes astra-reveal { from { opacity: 0; transform: translateY(-4px); } }
+@keyframes astra-pop { from { opacity: 0; transform: translateY(6px) scale(0.985); } }
+@keyframes astra-fade { from { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}
