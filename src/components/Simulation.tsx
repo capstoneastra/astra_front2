@@ -63,19 +63,23 @@ export default function Simulation({ setActiveMenu }: { setActiveMenu?: (menu: s
     ?? ((types.data ?? []).filter((type) => type.nameKo.toLowerCase().includes(term)).length === 1
       ? (types.data ?? []).find((type) => type.nameKo.toLowerCase().includes(term)) : undefined) : undefined;
   const typeCandidates = matchedType ? equipmentList.filter((item) => item.testTypes.includes(matchedType.code)).slice(0, 40) : [];
-  // 그 시험의 장비 중 가상 모델이 있는 것만 남긴다 (장비별 프리셋 조회)
+  // 그 시험의 장비 중 가상 모델이 있는 것만 남긴다. 목록 응답의 simulation.presetIds로 알 수 있고,
+  // 그 값이 없는 장비(서버 없이 보기 등)만 장비별 프리셋을 조회한다.
+  const hasPresets = (item: (typeof equipmentList)[number]) =>
+    item.simulation !== undefined ? (item.simulation?.presetIds?.length ?? 0) > 0 : undefined;
+  const unknownCandidates = typeCandidates.filter((item) => hasPresets(item) === undefined);
   const withModel = useApiQuery(
     async (signal) => {
-      const checks = await Promise.all(typeCandidates.map(async (item) => {
+      const checks = await Promise.all(unknownCandidates.map(async (item) => {
         try { return (await simulationService.presets(item.id, signal)).length > 0 ? item.id : null; } catch { return null; }
       }));
       return checks.filter((id): id is number => id != null);
     },
-    `simulation-capable:${matchedType?.code}:${typeCandidates.length}`,
-    typeCandidates.length > 0,
+    `simulation-capable:${matchedType?.code}:${unknownCandidates.length}`,
+    unknownCandidates.length > 0,
   );
   const equipmentOptions = matchedType
-    ? typeCandidates.filter((item) => withModel.data?.includes(item.id))
+    ? typeCandidates.filter((item) => hasPresets(item) ?? withModel.data?.includes(item.id))
     : equipmentList;
   const chooseEquipment = (id: number | null) => {
     setSimulationEquipmentId(id);
@@ -121,7 +125,7 @@ export default function Simulation({ setActiveMenu }: { setActiveMenu?: (menu: s
       <Panel className="form-panel">
         <div className="form-grid">
           <FormField id="simulation-test" label="시험 이름" hint={matchedType
-            ? (withModel.loading ? "가상 모델이 있는 장비를 찾는 중…" : `${matchedType.nameKo}: 가상 시험이 되는 장비 ${equipmentOptions.length}대`)
+            ? (withModel.loading ? "가상 시험이 되는 장비를 찾는 중…" : `${matchedType.nameKo}: 가상 시험이 되는 장비 ${equipmentOptions.length}대`)
             : "예: 진동시험, 온습도시험. 입력하면 그 시험을 하는 장비만 보여 줍니다."}>
             <input id="simulation-test" list="simulation-test-types" value={testText} autoComplete="off"
               placeholder="시험 이름을 입력하세요"
@@ -137,7 +141,7 @@ export default function Simulation({ setActiveMenu }: { setActiveMenu?: (menu: s
               onChange={(e) => chooseEquipment(e.target.value ? Number(e.target.value) : null)}
             >
               <option value="">{matchedType && !withModel.loading && equipmentOptions.length === 0
-                ? "이 시험은 가상 모델이 있는 장비가 없습니다" : "장비를 선택하세요"}</option>
+                ? "이 시험은 가상 시험이 되는 장비가 없습니다" : "장비를 선택하세요"}</option>
               {equipmentOptions.map((e) => (
                 <option key={e.id} value={e.id}>
                   {e.name} ({e.institution || "기관 정보 없음"})
@@ -160,7 +164,7 @@ export default function Simulation({ setActiveMenu }: { setActiveMenu?: (menu: s
       {presets.data?.length === 0 && (
         <Panel>
           <p className="inline-empty">
-            {selected?.name ?? "이 장비"}에는 아직 가상 시험 모델이 없습니다. 같은 시험을 하는 다른 장비로 돌려 보세요.
+            {selected?.name ?? "이 장비"}로는 아직 가상 시험을 할 수 없습니다. 같은 시험을 하는 다른 장비로 돌려 보세요.
             {setActiveMenu && <Button variant="secondary" onClick={() => setActiveMenu("search")}>다른 장비 찾기</Button>}
           </p>
         </Panel>

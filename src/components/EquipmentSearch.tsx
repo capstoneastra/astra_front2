@@ -13,6 +13,7 @@ import { Button, Panel } from "./ui";
 import { useApiQuery } from "../hooks/useApiQuery";
 import { equipmentService, equipmentView, testTypeLabel } from "../services/equipmentService";
 import type { Equipment } from "../services/equipmentService";
+import type { EquipmentSpec } from "../services/contracts";
 import { catalogService } from "../services/catalogService";
 import { canAccessMenu } from "../auth/permissions";
 import type { SearchView } from "../hooks/useWorkspaceNavigation";
@@ -48,20 +49,27 @@ type Filters = typeof emptyFilters;
  */
 
 
-/**
- * 주요 사양 2개와 이용료. 목록 응답에는 없어서 장비 상세(GET /equipment/{id})를 불러온다.
- * 상세 창과 같은 캐시 키를 써서 같은 장비는 한 번만 불러온다.
- */
-function SpecSummary({ id }: { id: number }) {
+/** 주요 사양 2개와 이용료 한 줄 */
+function SpecLine({ specs, fee }: { specs: EquipmentSpec[]; fee?: string | null }) {
+  const top = [...specs].sort((a, b) => (a.sourceType === "REAL" ? -1 : 0) - (b.sourceType === "REAL" ? -1 : 0)).slice(0, 2);
+  return <Text type="supporting" maxLines={2}>
+    {top.length ? top.map((spec) => `${spec.label ?? spec.key} ${valueText(spec)}`).join(", ") : "사양 정보 없음"}
+    <Text type="supporting" color="secondary">{`, ${formatFee(fee)}`}</Text>
+  </Text>;
+}
+
+/** 목록 응답에 keySpecs·usage가 없을 때(AI 검색 결과, 서버 없이 보기)만 장비 상세를 불러온다. */
+function SpecFromDetail({ id }: { id: number }) {
   const { resolveEquipment, user } = useWorkspace();
   const detail = useApiQuery((signal) => resolveEquipment(id, signal), `equipment-detail:${user.id}:${id}`);
   if (detail.loading) return <Text type="supporting" color="secondary">불러오는 중…</Text>;
-  const specs = [...(detail.data?.specs ?? [])].sort((a, b) => (a.sourceType === "REAL" ? -1 : 0) - (b.sourceType === "REAL" ? -1 : 0)).slice(0, 2);
-  const fee = detail.data?.usage?.feeText ?? detail.data?.feeText;
-  return <Text type="supporting" maxLines={2}>
-    {specs.length ? specs.map((spec) => `${spec.label ?? spec.key} ${valueText(spec)}`).join(", ") : "사양 정보 없음"}
-    <Text type="supporting" color="secondary">{`, ${formatFee(fee)}`}</Text>
-  </Text>;
+  return <SpecLine specs={detail.data?.specs ?? []} fee={detail.data?.usage?.feeText ?? detail.data?.feeText} />;
+}
+
+function SpecSummary({ item }: { item: Equipment }) {
+  return item.keySpecs !== undefined
+    ? <SpecLine specs={item.keySpecs} fee={item.usage?.feeText ?? item.feeText} />
+    : <SpecFromDetail id={item.id} />;
 }
 
 /** 장비 가용 상태 → 상태 점 색 */
@@ -307,7 +315,7 @@ export default function EquipmentSearch({
               </HStack> },
               { key: "institution", header: "시험기관", width: proportional(1.4), renderCell: (item) =>
                 <Text maxLines={1}>{[item.institution || "정보 없음", item.region].filter(Boolean).join(", ")}</Text> },
-              { key: "specs", header: "주요 사양과 이용료", width: proportional(1.8), renderCell: (item) => <SpecSummary id={item.id} /> },
+              { key: "specs", header: "주요 사양과 이용료", width: proportional(1.8), renderCell: (item) => <SpecSummary item={item} /> },
               { key: "testTypes", header: "시험 종류", width: proportional(1), renderCell: (item) => <HStack gap={1} wrap="wrap">
                 {item.testTypes.length ? item.testTypes.map((code) => <AxBadge key={code} variant="neutral" label={testTypeLabel(code)} />) :
                   <Text color="secondary">없음</Text>}

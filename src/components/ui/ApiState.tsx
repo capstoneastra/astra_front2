@@ -27,6 +27,8 @@ export default function ApiState({ loading = false, error, onRetry }: ApiStatePr
               ? "AI가 응답하지 못했습니다"
             : (error?.status ?? 0) >= 500
               ? "500 · 서버 오류가 발생했습니다"
+            : error?.status === 400 || error?.status === 422
+              ? "입력한 내용을 확인해주세요"
               : "정보를 불러오지 못했습니다";
   return (
     <div role={loading ? "status" : "alert"} aria-live="polite">

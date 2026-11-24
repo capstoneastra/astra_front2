@@ -1,6 +1,6 @@
 import { useState } from "react";
 import type { FormEvent } from "react";
-import { LogOut, Save } from "lucide-react";
+import { KeyRound, LogOut, Save } from "lucide-react";
 import { useAuth } from "../auth/context";
 import { useAction } from "../hooks/useAction";
 import { authService } from "../services/authService";
@@ -9,6 +9,52 @@ import { Badge, Button, PageHeader, Panel } from "./ui";
 import { Feedback } from "./workflow/Feedback";
 import { TextInput } from "@astryxdesign/core/TextInput";
 import { HStack } from "@astryxdesign/core/HStack";
+
+/** 비밀번호 변경(PATCH /users/me/password). 새 비밀번호 규칙은 회원가입과 같다(8~72자). */
+function PasswordSection({ disabled }: { disabled: boolean }) {
+  const empty = { currentPassword: "", newPassword: "", confirm: "" };
+  const [form, setForm] = useState(empty);
+  const [touched, setTouched] = useState(false);
+  const action = useAction();
+  const serverErrors = action.error?.details?.fieldErrors ?? {};
+  const errors = {
+    currentPassword: serverErrors.currentPassword ?? (touched && !form.currentPassword ? "현재 비밀번호를 입력해주세요." : undefined),
+    newPassword: serverErrors.newPassword ?? (touched && form.newPassword.length < 8 ? "8자 이상 입력해주세요." :
+      touched && form.newPassword === form.currentPassword ? "지금 쓰는 비밀번호와 다르게 정해주세요." : undefined),
+    confirm: touched && form.confirm !== form.newPassword ? "새 비밀번호와 같게 입력해주세요." : undefined,
+  };
+  const ready = form.currentPassword && form.newPassword.length >= 8 && form.newPassword.length <= 72 &&
+    form.newPassword === form.confirm && form.newPassword !== form.currentPassword;
+  const submit = (event: FormEvent) => {
+    event.preventDefault();
+    setTouched(true);
+    if (!ready) return;
+    void action.run(async (signal) => {
+      await authService.changePassword({ currentPassword: form.currentPassword, newPassword: form.newPassword }, signal);
+      setForm(empty);
+      setTouched(false);
+    }, "비밀번호를 바꿨습니다. 다음 로그인부터 새 비밀번호를 쓰세요.");
+  };
+  const field = (key: keyof typeof empty, label: string, autoComplete: string) =>
+    <TextInput key={key} label={label} type="password" isRequired autoComplete={autoComplete} value={form[key]} isDisabled={disabled} width="100%"
+      onChange={(value) => setForm({ ...form, [key]: value })}
+      status={errors[key] ? { type: "error", message: errors[key] } : undefined} />;
+  return <Panel title="비밀번호 변경">
+    <form className="profile-form" onSubmit={submit} noValidate>
+      <HStack gap={4} wrap="wrap" className="profile-grid">
+        {field("currentPassword", "현재 비밀번호", "current-password")}
+        {field("newPassword", "새 비밀번호 (8자 이상)", "new-password")}
+        {field("confirm", "새 비밀번호 확인", "new-password")}
+      </HStack>
+      {/* 칸 밑에 이미 보여 준 오류는 아래에 한 번 더 띄우지 않는다 */}
+      <Feedback action={{ ...action, error: action.error?.details?.fieldErrors ? null : action.error }} />
+      <div className="form-actions">
+        <span className="small-note">{disabled ? "미리보기 모드에서는 바꿀 수 없습니다." : ""}</span>
+        <Button type="submit" icon={KeyRound} disabled={disabled || action.busy}>비밀번호 변경</Button>
+      </div>
+    </form>
+  </Panel>;
+}
 
 const orgTypeLabels: Record<string, string> = { COMPANY: "기업", INSTITUTION: "기관", UNIVERSITY: "대학" };
 
@@ -66,7 +112,7 @@ export default function Profile() {
           {user.role === "INSTITUTION_MANAGER" && <><dt>국가연구자번호</dt><dd>{user.researcherNo ?? "미등록"}</dd></>}
           {user.lastLoginAt && <><dt>최근 로그인</dt><dd>{formatDate(user.lastLoginAt)}</dd></>}
         </dl>
-        <p className="small-note">이메일·소속·역할 변경과 비밀번호 변경은 관리자에게 요청해주세요.</p>
+        <p className="small-note">이메일·소속·역할을 바꾸려면 관리자에게 요청해주세요.</p>
 
         <Feedback action={action} />
         <div className="form-actions">
@@ -75,5 +121,6 @@ export default function Profile() {
         </div>
       </form>
     </Panel>
+    <PasswordSection disabled={local} />
   </div>;
 }

@@ -55,6 +55,8 @@ interface DashboardSummary {
   view?: DashboardView;
   requestCounts: Record<RequestStatus, number>;
   equipmentStats: { total: number; byRegion?: Record<string, number> };
+  /** 관리자: 시험 종류별 의뢰 수(작성 중 제외)와 장비 수 */
+  byTestType?: { code: string; nameKo: string; requestCount: number; equipmentCount: number }[];
   dataAvailable: { requests: boolean; chats?: boolean };
   institution?: NamedResource | null;
   actionRequired?: DashboardRequest[];

@@ -107,6 +107,10 @@ export const authService = {
       throw contractError("가입용 기관·대학 목록의 응답 형식이 명세와 다릅니다.");
     return data;
   },
+  /** PATCH /users/me/password: 현재 비밀번호가 틀리면 400 INVALID_PASSWORD (details.field = currentPassword) */
+  async changePassword(body: { currentPassword: string; newPassword: string }, signal?: AbortSignal) {
+    await apiClient.patch("/users/me/password", body, { signal });
+  },
   /** PATCH /users/me: 이름·연락처만 바꿀 수 있다(보낸 값만 수정) */
   async updateMe(body: { name?: string; phone?: string }, signal?: AbortSignal) {
     return validateUser(

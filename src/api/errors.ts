@@ -92,7 +92,8 @@ export function errorFromEnvelope(body: ErrorEnvelope | null | undefined, status
   if (code === "TOO_MANY_REQUESTS" && typeof source?.retryAfter === "number" &&
       Number.isSafeInteger(source.retryAfter) && source.retryAfter >= 0)
     details = { retryAfter: source.retryAfter };
-  if (code === "VALIDATION_FAILED" && source) {
+  // 입력값 오류: 칸 밑에 보여 줄 수 있게 필드별로 모은다 (INVALID_PASSWORD는 details.field = currentPassword)
+  if ((code === "VALIDATION_FAILED" || code === "INVALID_PASSWORD") && source) {
     const fieldErrors: Record<string, string> = {};
     // 명세 형식: details.fields = [{ field, reason }]
     if (Array.isArray(source.fields))

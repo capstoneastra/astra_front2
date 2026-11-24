@@ -53,6 +53,47 @@ function topWithOther(rows: Bar[], limit = 9) {
 }
 
 
+interface Pair { key: string; label: string; requests: number; equipment: number }
+
+/**
+ * 시험 종류별 수요(의뢰)와 공급(장비). 단위가 달라 한 축에 겹치지 않고, 열을 나눠 각자의 눈금으로 그린다.
+ * 열 이름이 계열을 알려 주므로 색에만 기대지 않는다.
+ */
+function PairBars({ rows }: { rows: Pair[] }) {
+  const [all, setAll] = useState(false);
+  if (rows.length === 0) return <p className="inline-empty">표시할 데이터가 없습니다.</p>;
+  const maxReq = Math.max(1, ...rows.map((row) => row.requests));
+  const maxEq = Math.max(1, ...rows.map((row) => row.equipment));
+  const shown = all ? rows : rows.slice(0, 8);
+  return <>
+    <div className="pairbars" role="table" aria-label="시험 종류별 의뢰 수와 장비 수">
+      <div className="pairbars__row pairbars__head" role="row">
+        <span role="columnheader">시험 종류</span>
+        <span role="columnheader">의뢰 (작성 중 제외)</span>
+        <span role="columnheader">장비</span>
+      </div>
+      {shown.map((row) => {
+        const tight = row.requests > 0 && row.requests >= row.equipment;
+        return <div key={row.key} className="pairbars__row" role="row"
+          title={`${row.label}: 의뢰 ${row.requests}건, 장비 ${row.equipment}대`}>
+          <span role="rowheader" className="hbars__label">{row.label}{tight && <small>장비 부족</small>}</span>
+          <span role="cell" className="pairbars__cell">
+            <span className="hbars__track" aria-hidden="true"><span className="hbars__fill" style={{ width: `${(row.requests / maxReq) * 100}%` }} /></span>
+            <span className="hbars__value">{row.requests}건</span>
+          </span>
+          <span role="cell" className="pairbars__cell">
+            <span className="hbars__track" aria-hidden="true"><span className="hbars__fill pairbars__fill--supply" style={{ width: `${(row.equipment / maxEq) * 100}%` }} /></span>
+            <span className="hbars__value">{row.equipment}대</span>
+          </span>
+        </div>;
+      })}
+    </div>
+    {rows.length > 8 && <p className="inline-empty">
+      <TextLink onClick={() => setAll((value) => !value)}>{all ? "접기" : `${rows.length - 8}개 더 보기`}</TextLink>
+    </p>}
+  </>;
+}
+
 function Stat({ label, value, hint, onClick }: { label: string; value: number | null; hint?: string; onClick: () => void }) {
   return <button type="button" className="dash-stat" onClick={onClick}>
     <span>{label}</span>
@@ -65,7 +106,8 @@ export default function AdminDashboard({ setActiveMenu, onSearch, openRequest, o
   const { user } = useWorkspace();
   const action = useAction();
   const query = useApiQuery((signal) => dashboardService.summary(user, "ADMIN", signal), `summary:${user.id}:ADMIN`);
-  const types = useApiQuery((signal) => catalogService.testTypes(signal), "test-types");
+  // 서버가 시험 종류별 의뢰 수를 주지 않을 때(서버 없이 보기)는 장비 수만 보여 준다
+  const types = useApiQuery((signal) => catalogService.testTypes(signal), "test-types", Boolean(query.data && !query.data.byTestType));
   const pending = useApiQuery((signal) => adminService.users({ status: "PENDING" }, signal), "admin-users:PENDING");
   const [showAllOrgs, setShowAllOrgs] = useState(false);
   if (query.loading || query.error) return <Panel><ApiState loading={query.loading} error={query.error} onRetry={query.reload} /></Panel>;
@@ -81,6 +123,10 @@ export default function AdminDashboard({ setActiveMenu, onSearch, openRequest, o
 
   const stageBars: Bar[] = requestStages.map((stage) => ({ key: stage.id, label: stage.label, value: sum(stage.statuses),
     onClick: () => openRequest("RECEIVED", undefined, stage.id) }));
+  const pairs: Pair[] | null = summary.byTestType ? summary.byTestType
+    .filter((item) => item.requestCount > 0 || item.equipmentCount > 0)
+    .map((item) => ({ key: item.code, label: item.nameKo, requests: item.requestCount, equipment: item.equipmentCount }))
+    .sort((a, b) => b.requests - a.requests || b.equipment - a.equipment) : null;
   const typeBars = topWithOther((types.data ?? []).filter((type) => (type.equipmentCount ?? 0) > 0)
     .map((type) => ({ key: type.code, label: type.nameKo, value: type.equipmentCount ?? 0 })));
   const regionBars = topWithOther(Object.entries(summary.equipmentStats.byRegion ?? {})
@@ -126,20 +172,21 @@ export default function AdminDashboard({ setActiveMenu, onSearch, openRequest, o
       </Panel>
     </div>
 
+    {pairs ? <Panel title="시험 종류별 수요와 공급" description="의뢰가 장비 수만큼 몰리면 '장비 부족'으로 표시">
+      <PairBars rows={pairs} />
+    </Panel> : <Panel title="시험 종류별 장비 수" description="어떤 시험을 맡길 곳이 많고 적은지">
+      {types.loading || types.error ? <ApiState loading={types.loading} error={types.error} onRetry={types.reload} /> :
+        <Bars rows={typeBars} unit="대" label="시험 종류별 장비 수" />}
+    </Panel>}
+
     <div className="dash-grid dash-grid--even">
-      <Panel title="시험 종류별 장비 수" description="어떤 시험을 맡길 곳이 많고 적은지">
-        {types.loading || types.error ? <ApiState loading={types.loading} error={types.error} onRetry={types.reload} /> :
-          <Bars rows={typeBars} unit="대" label="시험 종류별 장비 수" />}
-      </Panel>
       <Panel title="지역별 장비 분포" description={`등록 장비 ${summary.equipmentStats.total.toLocaleString("ko-KR")}대`}>
         <Bars rows={regionBars} unit="대" label="지역별 장비 수" />
       </Panel>
-    </div>
-
-    <Panel title="기관별 장비 정보 확인" description="확인이 덜 된 기관부터"
+      <Panel title="기관별 장비 정보 확인" description="확인이 덜 된 기관부터"
       action={<TextLink onClick={() => setActiveMenu("equipment")}>장비 데이터 관리</TextLink>}>
       {orgRows.length === 0 ? <p className="inline-empty">표시할 확인 현황이 없습니다.</p> : <>
-        <ul className="hbars hbars--progress" aria-label="기관별 장비 정보 확인율">
+        <ul className="hbars hbars--progress hbars--narrow" aria-label="기관별 장비 정보 확인율">
           {(showAllOrgs ? orgRows : orgRows.slice(0, 6)).map((item) => <li key={item.id}
             title={`${item.name}: ${item.verifiedCount}/${item.equipmentCount}대 확인`}>
             <button type="button" className="hbars__row" onClick={() => onSearch("", { institutionId: item.id })}>
@@ -155,6 +202,7 @@ export default function AdminDashboard({ setActiveMenu, onSearch, openRequest, o
           <TextLink onClick={() => setShowAllOrgs((value) => !value)}>{showAllOrgs ? "접기" : `${orgRows.length - 6}곳 더 보기`}</TextLink>
         </p>}
       </>}
-    </Panel>
+      </Panel>
+    </div>
   </>;
 }

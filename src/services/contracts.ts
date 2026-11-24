@@ -46,17 +46,20 @@ export interface EquipmentDto {
   utilizationRate?: number | null;
   feeText?: string | null;
   specs?: EquipmentSpec[];
+  /** 목록 응답의 주요 사양 2개 (GET /equipment) */
+  keySpecs?: EquipmentSpec[];
   usage?: {
     feeText?: string | null;
     feeAmount?: number | null;
     feeUnit?: string | null;
     durationText?: string | null;
     accessScope?: string | null;
+    vatIncluded?: boolean | null;
     availability?: string | null;
     utilizationRate?: number | null;
   } | null;
   source?: { type?: string; url?: string; file?: string; page?: number } | null;
-  simulation?: { capability?: string; presetIds?: number[] } | null;
+  simulation?: { capability?: string; presetIds?: (string | number)[] } | null;
 }
 
 export interface TimeInterval {

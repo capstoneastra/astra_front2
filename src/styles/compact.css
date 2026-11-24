@@ -1571,3 +1571,21 @@ button.hbars__row:hover { background: var(--color-overlay-hover); }
 .hbars__fill { display: block; height: 100%; min-width: 2px; border-radius: 0 4px 4px 0; background: var(--color-accent); transition: width var(--motion-base) var(--motion-ease); }
 .hbars__value { color: var(--color-text-secondary); font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap; }
 .hbars--progress .hbars__row { grid-template-columns: minmax(140px, 16rem) minmax(0, 1fr) minmax(64px, max-content); }
+
+/* ── 관리자: 시험 종류별 수요(의뢰)와 공급(장비) — 열마다 따로 눈금 ── */
+.pairbars { display: grid; gap: 2px; padding: 0 12px 10px; }
+.pairbars__row {
+  display: grid;
+  grid-template-columns: minmax(110px, 12rem) minmax(0, 1fr) minmax(0, 1fr);
+  gap: 16px;
+  align-items: center;
+  min-height: 28px;
+  padding: 2px 6px;
+  font-size: 13px;
+}
+.pairbars__head { min-height: 0; color: var(--color-text-secondary); font-size: 12px; }
+.pairbars__cell { display: grid; grid-template-columns: minmax(0, 1fr) 44px; gap: 8px; align-items: center; }
+.pairbars__fill--supply { background: var(--color-text-secondary); }
+.pairbars .hbars__label small { color: var(--color-text-warning); }
+.hbars--narrow .hbars__row { grid-template-columns: minmax(110px, 12rem) minmax(0, 1fr) minmax(56px, max-content); }
+@media (max-width: 640px) { .pairbars__row { grid-template-columns: minmax(84px, 7rem) minmax(0, 1fr) minmax(0, 1fr); gap: 8px; } }
