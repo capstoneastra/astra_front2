@@ -6,6 +6,7 @@ import { useWorkspace } from "../context/AppContext";
 import { catalogService } from "../services/catalogService";
 import { Table, proportional, pixel } from "@astryxdesign/core/Table";
 import { Text } from "@astryxdesign/core/Text";
+import { SegmentedControl, SegmentedControlItem } from "@astryxdesign/core/SegmentedControl";
 import { Badge, Button, FormField, PageHeader, Panel } from "./ui/index";
 import { useApiQuery } from "../hooks/useApiQuery";
 import { useAction } from "../hooks/useAction";
@@ -92,6 +93,8 @@ export default function Simulation({ setActiveMenu }: { setActiveMenu?: (menu: s
     setEdited(null);
     setResult(null);
   };
+  // 기본은 간단 보기(입력·그래프·핵심 수치). 3D 시험실은 고를 때만 불러온다.
+  const [view, setView] = useState<"simple" | "3d">("simple");
   const selected = equipmentList.find((item) => item.id === simulationEquipmentId) ?? null;
   // 장비마다 가상 모델(프리셋)이 하나씩이라 고르지 않고 첫 번째를 쓴다
   const preset =
@@ -112,6 +115,10 @@ export default function Simulation({ setActiveMenu }: { setActiveMenu?: (menu: s
   return (
     <div className="content-page page-enter">
       <PageHeader title="가상 시험" description="예약이 차 있어도 결과를 먼저 가늠해 보세요">
+        <SegmentedControl label="보기 방식" size="sm" value={view} onChange={(value) => setView(value as "simple" | "3d")}>
+          <SegmentedControlItem value="simple" label="간단 보기" />
+          <SegmentedControlItem value="3d" label="3D 보기" />
+        </SegmentedControl>
         <Badge tone="amber">참고용 계산</Badge>
       </PageHeader>
       {selected && selected.availability !== "AVAILABLE" && <p className="content-note">
@@ -169,7 +176,7 @@ export default function Simulation({ setActiveMenu }: { setActiveMenu?: (menu: s
           </p>
         </Panel>
       )}
-      {model && preset && (
+      {view === "3d" && model && preset && (
         <Suspense fallback={<div className="sim-stage-loading" role="status">3D 시험실을 준비하고 있습니다…</div>}>
           <SimulationStage
             key={preset.presetId}
