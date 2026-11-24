@@ -12,6 +12,7 @@ import type { ApprovalFocus } from "../../hooks/useWorkspaceNavigation";
 import { Button, Panel, TextLink } from "../ui";
 import ApiState from "../ui/ApiState";
 import { Feedback } from "../workflow/Feedback";
+import { requestStages } from "../../domain/requestStages";
 
 interface Props {
   setActiveMenu: (menu: string) => void;
@@ -51,15 +52,6 @@ function topWithOther(rows: Bar[], limit = 9) {
   return [...sorted.slice(0, limit), { key: "__other", label: `기타 ${sorted.length - limit}개`, value: rest }];
 }
 
-const stages: { label: string; statuses: string[] }[] = [
-  { label: "작성 중", statuses: ["DRAFT"] },
-  { label: "접수·검토", statuses: ["SUBMITTED", "UNDER_REVIEW", "RESUBMITTED"] },
-  { label: "보완 요청", statuses: ["SUPPLEMENT_REQUESTED"] },
-  { label: "일정 협의", statuses: ["SCHEDULING"] },
-  { label: "예약 확정", statuses: ["CONFIRMED"] },
-  { label: "시험 완료", statuses: ["COMPLETED"] },
-  { label: "반려·취소", statuses: ["REJECTED", "CANCELED"] },
-];
 
 function Stat({ label, value, hint, onClick }: { label: string; value: number | null; hint?: string; onClick: () => void }) {
   return <button type="button" className="dash-stat" onClick={onClick}>
@@ -87,8 +79,8 @@ export default function AdminDashboard({ setActiveMenu, onSearch, openRequest, o
   const listed = verification.reduce((total, item) => total + item.equipmentCount, 0);
   const pendingTotal = (summary.pendingUsers ?? 0) + (summary.pendingInstitutions ?? 0);
 
-  const stageBars: Bar[] = stages.map((stage) => ({ key: stage.label, label: stage.label, value: sum(stage.statuses),
-    onClick: () => openRequest("RECEIVED", undefined, stage.statuses[0]) }));
+  const stageBars: Bar[] = requestStages.map((stage) => ({ key: stage.id, label: stage.label, value: sum(stage.statuses),
+    onClick: () => openRequest("RECEIVED", undefined, stage.id) }));
   const typeBars = topWithOther((types.data ?? []).filter((type) => (type.equipmentCount ?? 0) > 0)
     .map((type) => ({ key: type.code, label: type.nameKo, value: type.equipmentCount ?? 0 })));
   const regionBars = topWithOther(Object.entries(summary.equipmentStats.byRegion ?? {})

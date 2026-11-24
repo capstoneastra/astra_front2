@@ -23,6 +23,7 @@ import { availabilityLabels, valueText } from "../../domain/constants";
 import { toApiError } from "../../api/errors";
 import { Button, Panel, TextLink } from "../ui";
 import ApiState from "../ui/ApiState";
+import { requestStages } from "../../domain/requestStages";
 
 interface Props {
   setActiveMenu: (menu: string) => void;
@@ -42,15 +43,8 @@ const conditionNames: Record<string, string> = {
 };
 /** AI 답변의 마크다운 강조 기호(**, __, #)를 지워 읽기 쉽게 */
 const plain = (text: string) => text.replace(/\*\*|__|^#+\s*/gm, "");
-/** 의뢰 진행 단계(한 줄 막대). 상태 여러 개를 한 칸으로 묶는다 */
-const stages: { label: string; statuses: string[]; filter: string }[] = [
-  { label: "작성 중", statuses: ["DRAFT"], filter: "DRAFT" },
-  { label: "접수·검토", statuses: ["SUBMITTED", "UNDER_REVIEW", "RESUBMITTED"], filter: "ACTIVE" },
-  { label: "보완 요청", statuses: ["SUPPLEMENT_REQUESTED"], filter: "SUPPLEMENT_REQUESTED" },
-  { label: "일정 협의", statuses: ["SCHEDULING"], filter: "SCHEDULING" },
-  { label: "예약 확정", statuses: ["CONFIRMED"], filter: "CONFIRMED" },
-  { label: "시험 완료", statuses: ["COMPLETED"], filter: "COMPLETED" },
-];
+/** 의뢰 진행 단계(한 줄 막대). 반려·취소는 기업 화면에서 빼고 보여 준다 */
+const stages = requestStages.filter((stage) => stage.id !== "CLOSED");
 /** 지금 처리할 일: 상태별 바로 할 일 */
 const todoAction: Record<string, string> = {
   SUPPLEMENT_REQUESTED: "보완하기",
@@ -201,7 +195,7 @@ export default function CompanyDashboard({ setActiveMenu, openRequest }: Props) 
     {/* 의뢰 진행 단계: 작게 한 줄 */}
     <nav className="stage-strip" aria-label="내 의뢰 단계">
       {stages.map((stage, index) => <button key={stage.label} type="button" className={counts[index] ? "has-count" : ""}
-        onClick={() => openRequest("SENT", undefined, stage.filter)}>
+        onClick={() => openRequest("SENT", undefined, stage.id)}>
         <span>{stage.label}</span><strong>{list.data ? counts[index] : "–"}</strong>
       </button>)}
     </nav>

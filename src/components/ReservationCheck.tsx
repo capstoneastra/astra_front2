@@ -13,6 +13,7 @@ import { requestService } from "../services/requestService";
 import RequestDetailDialog from "./workflow/RequestDetailDialog";
 import ApiState from "./ui/ApiState";
 import { requestStatusLabels } from "../domain/constants";
+import { groupedStages } from "../domain/requestStages";
 import { seoulDate } from "../domain/calendar";
 import type { RequestBox, RequestSummary } from "../services/contracts";
 
@@ -23,7 +24,7 @@ const quickFilters: { id: string; label: string; statuses: string[] }[] = [
   { id: "REVIEW_QUEUE", label: "검토 대기", statuses: ["SUBMITTED", "RESUBMITTED"] },
   { id: "MY_TURN", label: "내가 답할 차례", statuses: ["SUPPLEMENT_REQUESTED", "SCHEDULING"] },
   { id: "DRAFT", label: "작성 중", statuses: ["DRAFT"] },
-  { id: "COMPLETED", label: "완료", statuses: ["COMPLETED"] },
+  { id: "COMPLETED", label: "시험 완료", statuses: ["COMPLETED"] },
 ];
 
 /** 상태 배지 색: 내가 할 일(보완 요청)은 경고색, 완료는 성공색, 반려·취소는 오류색, 나머지는 차분하게 */
@@ -55,7 +56,9 @@ export default function ReservationCheck({
   // 관리자는 받은 의뢰 화면에서 전체 의뢰를 본다.
   const box: RequestBox | undefined = admin && received ? undefined : received ? "RECEIVED" : "SENT";
   const filters = quickFilters.filter((item) => received ? !["DRAFT", "MY_TURN"].includes(item.id) : item.id !== "REVIEW_QUEUE");
-  const group = quickFilters.find((item) => item.id === status);
+  // 빠른 필터에 없는 단계 묶음(접수·검토, 반려·취소)은 아래 선택 상자에 묶음으로 나온다
+  const quick = filters.find((item) => item.id === status); // 이 화면에 보이는 칩만
+  const group = quick ?? groupedStages.find((item) => item.id === status);
   const query = useApiQuery(
     async (signal) => {
       const statuses = group?.statuses.length ? group.statuses : status ? [status] : [];
@@ -86,9 +89,15 @@ export default function ReservationCheck({
         </div>
         <span className="finder__bar-end">
           <label className="sr-only" htmlFor="requests-status">개별 상태</label>
-          <select id="requests-status" value={group ? "" : status} onChange={(e) => setStatus(e.target.value)}>
+          <select id="requests-status" value={quick ? "" : status} onChange={(e) => setStatus(e.target.value)}>
             <option value="">상태별 보기</option>
-            {Object.entries(requestStatusLabels).map(([key, label]) => <option key={key} value={key}>{label}</option>)}
+            <optgroup label="단계 묶음">
+              {groupedStages.map((stage) => <option key={stage.id} value={stage.id}>
+                {stage.label} ({stage.statuses.map((key) => requestStatusLabels[key as keyof typeof requestStatusLabels]).join(", ")})</option>)}
+            </optgroup>
+            <optgroup label="개별 상태">
+              {Object.entries(requestStatusLabels).map(([key, label]) => <option key={key} value={key}>{label}</option>)}
+            </optgroup>
           </select>
         </span>
       </div>
